@@ -1,0 +1,10 @@
+env: "local"
+grpc_server:
+  host: "localhost"
+  port: "50058"
+order_db:
+  dsn: "host=localhost user=postgres password=admin dbname=shvark_order_service port=5432 sslmode=disable"
+log_config:
+  log_level: "debug"
+  log_format: "json"
+  log_output: "stdout"
