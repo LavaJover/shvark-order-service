@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "github.com/LavaJover/shvark-order-service/proto/gen;orderpb";
+
+service OrderService {
+    rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
+}
+
+enum OrderStatus {
+    UNKNOWN = 0;
+    DETAILS_PROVIDED = 1;
+    PAID = 2;
+    COMPLETED = 3;
+    FAILED = 4;
+}
+
+message CreateOrderRequest {
+    string merchant_id = 1;
+    double amount = 2;
+    string currency = 3;
+    string country = 4;
+    string client_email = 5;
+    string metadata_json = 6;
+}
+
+message CreateOrderResponse {
+    string order_id = 1;
+    OrderStatus status = 2;
+
+    string bank_detail_id = 3;
+}
