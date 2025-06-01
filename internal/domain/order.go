@@ -10,4 +10,5 @@ type Order struct {
 	MetadataJSON  string
 	Status 		  string
 	PaymentSystem string
+	BankDetailsID string
 }

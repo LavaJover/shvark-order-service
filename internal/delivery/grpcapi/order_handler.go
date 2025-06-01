@@ -70,6 +70,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 		MetadataJSON: r.MetadataJson,
 		Status: orderpb.OrderStatus_DETAILS_PROVIDED.String(),
 		PaymentSystem: r.PaymentSystem,
+		BankDetailsID: chosenBankDetail.ID,
 	}
 	
 	orderID, err := h.uc.CreateOrder(&order)
@@ -78,19 +79,100 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 	}
 
 	return &orderpb.CreateOrderResponse{
-		OrderId: orderID,
-		Status: orderpb.OrderStatus_DETAILS_PROVIDED,
-		BankDetail: &orderpb.BankDetail{
-			BankDetailId: chosenBankDetail.ID,
-			TraderId: chosenBankDetail.TraderID,
-			Currency: chosenBankDetail.Currency,
-			Country: chosenBankDetail.Country,
-			MinAmount: float64(chosenBankDetail.MinAmount),
-			MaxAmount: float64(chosenBankDetail.MaxAmount),
-			BankName: chosenBankDetail.BankName,
-			PaymentSystem: chosenBankDetail.PaymentSystem,
-			Enabled: chosenBankDetail.Enabled,
-			Delay: durationpb.New(chosenBankDetail.Delay),
+		Order: &orderpb.Order{
+			OrderId: orderID,
+			Status: orderpb.OrderStatus_DETAILS_PROVIDED,
+			BankDetail: &orderpb.BankDetail{
+				BankDetailId: chosenBankDetail.ID,
+				TraderId: chosenBankDetail.TraderID,
+				Currency: chosenBankDetail.Currency,
+				Country: chosenBankDetail.Country,
+				MinAmount: float64(chosenBankDetail.MinAmount),
+				MaxAmount: float64(chosenBankDetail.MaxAmount),
+				BankName: chosenBankDetail.BankName,
+				PaymentSystem: chosenBankDetail.PaymentSystem,
+				Enabled: chosenBankDetail.Enabled,
+				Delay: durationpb.New(chosenBankDetail.Delay),
+			},
+			Amount: float64(order.Amount),
 		},
+	}, nil
+}
+
+func (h *OrderHandler) ApproveOrder(ctx context.Context, r *orderpb.ApproveOrderRequest) (*orderpb.ApproveOrderResponse, error) {
+	orderID := r.OrderId
+	if err := h.uc.ApproveOrder(orderID); err != nil {
+		return nil, err
+	}
+
+	return &orderpb.ApproveOrderResponse{
+		Message: "Order was successfully approved",
+	}, nil
+}
+
+func (h *OrderHandler) CancelOrder(ctx context.Context, r *orderpb.CancelOrderRequest) (*orderpb.CancelOrderResponse, error) {
+	orderID := r.OrderId
+	if err := h.uc.CancelOrder(orderID); err != nil {
+		return nil, err
+	}
+
+	return &orderpb.CancelOrderResponse{
+		Message: "Order was successfully cancelled",
+	}, nil
+}
+
+func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByIDRequest) (*orderpb.GetOrderByIDResponse, error) {
+	orderID := r.OrderId
+	responseOrder, err := h.uc.GetOrderByID(orderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// get corresponding bank detail for order
+	bankDetailResponse, err := h.client.GetBankDetailByID(responseOrder.BankDetailsID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &orderpb.GetOrderByIDResponse{
+		Order: &orderpb.Order{
+			OrderId: responseOrder.ID,
+			Status: orderpb.OrderStatus(orderpb.OrderStatus_value[responseOrder.Status]),
+			BankDetail: &orderpb.BankDetail{
+				BankDetailId: bankDetailResponse.BankDetail.BankDetailId,
+				TraderId: bankDetailResponse.BankDetail.TraderId,
+				Currency: bankDetailResponse.BankDetail.Currency,
+				Country: bankDetailResponse.BankDetail.Country,
+				MinAmount: bankDetailResponse.BankDetail.MinAmount,
+				MaxAmount: bankDetailResponse.BankDetail.MaxAmount,
+				BankName: bankDetailResponse.BankDetail.BankName,
+				PaymentSystem: bankDetailResponse.BankDetail.PaymentSystem,
+				Enabled: bankDetailResponse.BankDetail.Enabled,
+				Delay: bankDetailResponse.BankDetail.Delay,
+			},
+			Amount: float64(responseOrder.Amount),
+		},
+	}, nil
+}
+
+func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOrdersByTraderIDRequest) (*orderpb.GetOrdersByTraderIDResponse, error) {
+	traderID := r.TraderId
+	responseOrders, err := h.uc.GetOrdersByTraderID(traderID)
+	if err != nil {
+		return nil, err
+	}
+
+	orders := make([]*orderpb.Order, len(responseOrders))
+	for i, responseOrder := range responseOrders {
+		orders[i] = &orderpb.Order{
+			OrderId: responseOrder.ID,
+			Status: orderpb.OrderStatus(orderpb.OrderStatus_value[responseOrder.Status]),
+			BankDetail: &orderpb.BankDetail{},
+			Amount: float64(responseOrder.Amount),
+		}
+	}
+
+	return &orderpb.GetOrdersByTraderIDResponse{
+		Orders: orders,
 	}, nil
 }

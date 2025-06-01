@@ -7,7 +7,11 @@ import "google/protobuf/duration.proto";
 option go_package = "github.com/LavaJover/shvark-order-service/proto/gen;orderpb";
 
 service OrderService {
-    rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse); 
+    rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
+    rpc ApproveOrder (ApproveOrderRequest) returns (ApproveOrderResponse);
+    rpc CancelOrder (CancelOrderRequest) returns (CancelOrderResponse);
+    rpc GetOrderByID (GetOrderByIDRequest) returns (GetOrderByIDResponse);
+    rpc GetOrdersByTraderID (GetOrdersByTraderIDRequest) returns (GetOrdersByTraderIDResponse);
 }
 
 enum OrderStatus {
@@ -29,10 +33,7 @@ message CreateOrderRequest {
 }
 
 message CreateOrderResponse {
-    string order_id = 1;
-    OrderStatus status = 2;
-
-    BankDetail bank_detail = 3;
+    Order order = 1;
 }
 
 message BankDetail {
@@ -46,4 +47,44 @@ message BankDetail {
     string payment_system = 8;
     bool enabled = 9;
     google.protobuf.Duration delay = 10; 
+}
+
+message ApproveOrderRequest {
+    string order_id = 1;
+}
+
+message ApproveOrderResponse {
+    string message = 1;
+}
+
+message CancelOrderRequest {
+    string order_id = 1;
+}
+
+message CancelOrderResponse {
+    string message = 1;
+}
+
+message GetOrderByIDRequest {
+    string order_id = 1;
+}
+
+message GetOrderByIDResponse {
+    Order order = 1;
+}
+
+message Order {
+    string order_id = 1;
+    OrderStatus status = 2;
+
+    BankDetail bank_detail = 3;
+    double amount = 4;
+}
+
+message GetOrdersByTraderIDRequest {
+    string trader_id = 1;
+}
+
+message GetOrdersByTraderIDResponse {
+    repeated Order orders = 1;
 }

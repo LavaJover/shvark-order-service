@@ -51,3 +51,15 @@ func (c *BankingClient) GetEligibleBankDetails(query *domain.BankDetailQuery) (*
 		},
 	)
 }
+
+func (c *BankingClient) GetBankDetailByID(bankDetailID string) (*bankingpb.GetBankDetailByIDResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return c.service.GetBankDetailByID(
+		ctx,
+		&bankingpb.GetBankDetailByIDRequest{
+			BankDetailId: bankDetailID,
+		},
+	)
+}

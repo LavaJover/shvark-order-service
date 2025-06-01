@@ -13,3 +13,19 @@ func NewDefaultOrderUsecase(repo domain.OrderRepository) *DefaultOrderUsecase {
 func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (string, error) {
 	return uc.Repo.CreateOrder(order)
 }
+
+func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
+	return uc.Repo.UpdateOrderStatus(orderID, "COMPLITED")
+}
+
+func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
+	return uc.Repo.UpdateOrderStatus(orderID, "CANCELLED")
+}
+
+func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*domain.Order, error) {
+	return uc.Repo.GetOrderByID(orderID)
+}
+
+func (uc *DefaultOrderUsecase) GetOrdersByTraderID(traderID string) ([]*domain.Order, error) {
+	return uc.Repo.GetOrdersByTraderID(traderID)
+}
