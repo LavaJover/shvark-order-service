@@ -6,15 +6,20 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/client"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 type OrderHandler struct {
 	uc domain.OrderUsecase
-	client client.BankingClient
+	client *client.BankingClient
+	orderpb.UnimplementedOrderServiceServer
 }
 
-func NewOrderHandler(uc domain.OrderUsecase) *OrderHandler {
-	return &OrderHandler{uc: uc}
+func NewOrderHandler(uc domain.OrderUsecase, client *client.BankingClient) *OrderHandler {
+	return &OrderHandler{
+		uc: uc,
+		client: client,
+	}
 }
 
 func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRequest) (*orderpb.CreateOrderResponse, error) {
@@ -75,6 +80,17 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 	return &orderpb.CreateOrderResponse{
 		OrderId: orderID,
 		Status: orderpb.OrderStatus_DETAILS_PROVIDED,
-		BankDetailId: chosenBankDetail.ID,
+		BankDetail: &orderpb.BankDetail{
+			BankDetailId: chosenBankDetail.ID,
+			TraderId: chosenBankDetail.TraderID,
+			Currency: chosenBankDetail.Currency,
+			Country: chosenBankDetail.Country,
+			MinAmount: float64(chosenBankDetail.MinAmount),
+			MaxAmount: float64(chosenBankDetail.MaxAmount),
+			BankName: chosenBankDetail.BankName,
+			PaymentSystem: chosenBankDetail.PaymentSystem,
+			Enabled: chosenBankDetail.Enabled,
+			Delay: durationpb.New(chosenBankDetail.Delay),
+		},
 	}, nil
 }

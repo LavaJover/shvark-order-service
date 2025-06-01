@@ -9,6 +9,7 @@ package orderpb
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -172,7 +173,7 @@ type CreateOrderResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
 	Status        OrderStatus            `protobuf:"varint,2,opt,name=status,proto3,enum=order.OrderStatus" json:"status,omitempty"`
-	BankDetailId  string                 `protobuf:"bytes,3,opt,name=bank_detail_id,json=bankDetailId,proto3" json:"bank_detail_id,omitempty"`
+	BankDetail    *BankDetail            `protobuf:"bytes,3,opt,name=bank_detail,json=bankDetail,proto3" json:"bank_detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -221,18 +222,134 @@ func (x *CreateOrderResponse) GetStatus() OrderStatus {
 	return OrderStatus_UNKNOWN
 }
 
-func (x *CreateOrderResponse) GetBankDetailId() string {
+func (x *CreateOrderResponse) GetBankDetail() *BankDetail {
+	if x != nil {
+		return x.BankDetail
+	}
+	return nil
+}
+
+type BankDetail struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BankDetailId  string                 `protobuf:"bytes,1,opt,name=bank_detail_id,json=bankDetailId,proto3" json:"bank_detail_id,omitempty"`
+	TraderId      string                 `protobuf:"bytes,2,opt,name=trader_id,json=traderId,proto3" json:"trader_id,omitempty"`
+	Currency      string                 `protobuf:"bytes,3,opt,name=currency,proto3" json:"currency,omitempty"`
+	Country       string                 `protobuf:"bytes,4,opt,name=country,proto3" json:"country,omitempty"`
+	MinAmount     float64                `protobuf:"fixed64,5,opt,name=min_amount,json=minAmount,proto3" json:"min_amount,omitempty"`
+	MaxAmount     float64                `protobuf:"fixed64,6,opt,name=max_amount,json=maxAmount,proto3" json:"max_amount,omitempty"`
+	BankName      string                 `protobuf:"bytes,7,opt,name=bank_name,json=bankName,proto3" json:"bank_name,omitempty"`
+	PaymentSystem string                 `protobuf:"bytes,8,opt,name=payment_system,json=paymentSystem,proto3" json:"payment_system,omitempty"`
+	Enabled       bool                   `protobuf:"varint,9,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	Delay         *durationpb.Duration   `protobuf:"bytes,10,opt,name=delay,proto3" json:"delay,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BankDetail) Reset() {
+	*x = BankDetail{}
+	mi := &file_order_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BankDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BankDetail) ProtoMessage() {}
+
+func (x *BankDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BankDetail.ProtoReflect.Descriptor instead.
+func (*BankDetail) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *BankDetail) GetBankDetailId() string {
 	if x != nil {
 		return x.BankDetailId
 	}
 	return ""
 }
 
+func (x *BankDetail) GetTraderId() string {
+	if x != nil {
+		return x.TraderId
+	}
+	return ""
+}
+
+func (x *BankDetail) GetCurrency() string {
+	if x != nil {
+		return x.Currency
+	}
+	return ""
+}
+
+func (x *BankDetail) GetCountry() string {
+	if x != nil {
+		return x.Country
+	}
+	return ""
+}
+
+func (x *BankDetail) GetMinAmount() float64 {
+	if x != nil {
+		return x.MinAmount
+	}
+	return 0
+}
+
+func (x *BankDetail) GetMaxAmount() float64 {
+	if x != nil {
+		return x.MaxAmount
+	}
+	return 0
+}
+
+func (x *BankDetail) GetBankName() string {
+	if x != nil {
+		return x.BankName
+	}
+	return ""
+}
+
+func (x *BankDetail) GetPaymentSystem() string {
+	if x != nil {
+		return x.PaymentSystem
+	}
+	return ""
+}
+
+func (x *BankDetail) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *BankDetail) GetDelay() *durationpb.Duration {
+	if x != nil {
+		return x.Delay
+	}
+	return nil
+}
+
 var File_order_proto protoreflect.FileDescriptor
 
 const file_order_proto_rawDesc = "" +
 	"\n" +
-	"\vorder.proto\x12\x05order\"\xf2\x01\n" +
+	"\vorder.proto\x12\x05order\x1a\x1egoogle/protobuf/duration.proto\"\xf2\x01\n" +
 	"\x12CreateOrderRequest\x12\x1f\n" +
 	"\vmerchant_id\x18\x01 \x01(\tR\n" +
 	"merchantId\x12\x16\n" +
@@ -241,11 +358,27 @@ const file_order_proto_rawDesc = "" +
 	"\acountry\x18\x04 \x01(\tR\acountry\x12!\n" +
 	"\fclient_email\x18\x05 \x01(\tR\vclientEmail\x12#\n" +
 	"\rmetadata_json\x18\x06 \x01(\tR\fmetadataJson\x12%\n" +
-	"\x0epayment_system\x18\a \x01(\tR\rpaymentSystem\"\x82\x01\n" +
+	"\x0epayment_system\x18\a \x01(\tR\rpaymentSystem\"\x90\x01\n" +
 	"\x13CreateOrderResponse\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12*\n" +
-	"\x06status\x18\x02 \x01(\x0e2\x12.order.OrderStatusR\x06status\x12$\n" +
-	"\x0ebank_detail_id\x18\x03 \x01(\tR\fbankDetailId*U\n" +
+	"\x06status\x18\x02 \x01(\x0e2\x12.order.OrderStatusR\x06status\x122\n" +
+	"\vbank_detail\x18\x03 \x01(\v2\x11.order.BankDetailR\n" +
+	"bankDetail\"\xd2\x02\n" +
+	"\n" +
+	"BankDetail\x12$\n" +
+	"\x0ebank_detail_id\x18\x01 \x01(\tR\fbankDetailId\x12\x1b\n" +
+	"\ttrader_id\x18\x02 \x01(\tR\btraderId\x12\x1a\n" +
+	"\bcurrency\x18\x03 \x01(\tR\bcurrency\x12\x18\n" +
+	"\acountry\x18\x04 \x01(\tR\acountry\x12\x1d\n" +
+	"\n" +
+	"min_amount\x18\x05 \x01(\x01R\tminAmount\x12\x1d\n" +
+	"\n" +
+	"max_amount\x18\x06 \x01(\x01R\tmaxAmount\x12\x1b\n" +
+	"\tbank_name\x18\a \x01(\tR\bbankName\x12%\n" +
+	"\x0epayment_system\x18\b \x01(\tR\rpaymentSystem\x12\x18\n" +
+	"\aenabled\x18\t \x01(\bR\aenabled\x12/\n" +
+	"\x05delay\x18\n" +
+	" \x01(\v2\x19.google.protobuf.DurationR\x05delay*U\n" +
 	"\vOrderStatus\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x14\n" +
 	"\x10DETAILS_PROVIDED\x10\x01\x12\b\n" +
@@ -269,21 +402,25 @@ func file_order_proto_rawDescGZIP() []byte {
 }
 
 var file_order_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_order_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_order_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_order_proto_goTypes = []any{
 	(OrderStatus)(0),            // 0: order.OrderStatus
 	(*CreateOrderRequest)(nil),  // 1: order.CreateOrderRequest
 	(*CreateOrderResponse)(nil), // 2: order.CreateOrderResponse
+	(*BankDetail)(nil),          // 3: order.BankDetail
+	(*durationpb.Duration)(nil), // 4: google.protobuf.Duration
 }
 var file_order_proto_depIdxs = []int32{
 	0, // 0: order.CreateOrderResponse.status:type_name -> order.OrderStatus
-	1, // 1: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
-	2, // 2: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	3, // 1: order.CreateOrderResponse.bank_detail:type_name -> order.BankDetail
+	4, // 2: order.BankDetail.delay:type_name -> google.protobuf.Duration
+	1, // 3: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
+	2, // 4: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
+	4, // [4:5] is the sub-list for method output_type
+	3, // [3:4] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_order_proto_init() }
@@ -297,7 +434,7 @@ func file_order_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_order_proto_rawDesc), len(file_order_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

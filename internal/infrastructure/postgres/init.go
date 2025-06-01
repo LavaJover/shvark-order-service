@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func MustInitDB(cfg config.OrderConfig) *gorm.DB {
+func MustInitDB(cfg *config.OrderConfig) *gorm.DB {
 	dsn := cfg.OrderDB.Dsn
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {

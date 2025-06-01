@@ -2,10 +2,12 @@ syntax = "proto3";
 
 package order;
 
+import "google/protobuf/duration.proto";
+
 option go_package = "github.com/LavaJover/shvark-order-service/proto/gen;orderpb";
 
 service OrderService {
-    rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
+    rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse); 
 }
 
 enum OrderStatus {
@@ -30,5 +32,18 @@ message CreateOrderResponse {
     string order_id = 1;
     OrderStatus status = 2;
 
-    string bank_detail_id = 3;
+    BankDetail bank_detail = 3;
+}
+
+message BankDetail {
+    string bank_detail_id = 1;
+    string trader_id = 2;
+    string currency = 3;
+    string country = 4;
+    double min_amount = 5;
+    double max_amount = 6;
+    string bank_name = 7;
+    string payment_system = 8;
+    bool enabled = 9;
+    google.protobuf.Duration delay = 10; 
 }
