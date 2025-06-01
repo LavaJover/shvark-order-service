@@ -23,6 +23,7 @@ message CreateOrderRequest {
     string country = 4;
     string client_email = 5;
     string metadata_json = 6;
+    string payment_system = 7;
 }
 
 message CreateOrderResponse {

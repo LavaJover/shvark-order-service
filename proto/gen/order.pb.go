@@ -84,6 +84,7 @@ type CreateOrderRequest struct {
 	Country       string                 `protobuf:"bytes,4,opt,name=country,proto3" json:"country,omitempty"`
 	ClientEmail   string                 `protobuf:"bytes,5,opt,name=client_email,json=clientEmail,proto3" json:"client_email,omitempty"`
 	MetadataJson  string                 `protobuf:"bytes,6,opt,name=metadata_json,json=metadataJson,proto3" json:"metadata_json,omitempty"`
+	PaymentSystem string                 `protobuf:"bytes,7,opt,name=payment_system,json=paymentSystem,proto3" json:"payment_system,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -160,6 +161,13 @@ func (x *CreateOrderRequest) GetMetadataJson() string {
 	return ""
 }
 
+func (x *CreateOrderRequest) GetPaymentSystem() string {
+	if x != nil {
+		return x.PaymentSystem
+	}
+	return ""
+}
+
 type CreateOrderResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
@@ -224,7 +232,7 @@ var File_order_proto protoreflect.FileDescriptor
 
 const file_order_proto_rawDesc = "" +
 	"\n" +
-	"\vorder.proto\x12\x05order\"\xcb\x01\n" +
+	"\vorder.proto\x12\x05order\"\xf2\x01\n" +
 	"\x12CreateOrderRequest\x12\x1f\n" +
 	"\vmerchant_id\x18\x01 \x01(\tR\n" +
 	"merchantId\x12\x16\n" +
@@ -232,7 +240,8 @@ const file_order_proto_rawDesc = "" +
 	"\bcurrency\x18\x03 \x01(\tR\bcurrency\x12\x18\n" +
 	"\acountry\x18\x04 \x01(\tR\acountry\x12!\n" +
 	"\fclient_email\x18\x05 \x01(\tR\vclientEmail\x12#\n" +
-	"\rmetadata_json\x18\x06 \x01(\tR\fmetadataJson\"\x82\x01\n" +
+	"\rmetadata_json\x18\x06 \x01(\tR\fmetadataJson\x12%\n" +
+	"\x0epayment_system\x18\a \x01(\tR\rpaymentSystem\"\x82\x01\n" +
 	"\x13CreateOrderResponse\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12*\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x12.order.OrderStatusR\x06status\x12$\n" +
