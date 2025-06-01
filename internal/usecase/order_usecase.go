@@ -15,11 +15,11 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (string, error) 
 }
 
 func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
-	return uc.Repo.UpdateOrderStatus(orderID, "COMPLITED")
+	return uc.Repo.UpdateOrderStatus(orderID, "COMPLETED")
 }
 
 func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
-	return uc.Repo.UpdateOrderStatus(orderID, "CANCELLED")
+	return uc.Repo.UpdateOrderStatus(orderID, "FAILED")
 }
 
 func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*domain.Order, error) {
