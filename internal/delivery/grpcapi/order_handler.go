@@ -103,6 +103,7 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 				Enabled: orderResponse.BankDetail.Enabled,
 				Delay: durationpb.New(orderResponse.BankDetail.Delay),
 			},
+			Amount: float64(orderResponse.Amount),
 		},
 	}, nil
 }

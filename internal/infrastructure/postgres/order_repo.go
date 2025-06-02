@@ -38,7 +38,7 @@ func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error
 
 func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, error) {
 	var order OrderModel
-	if err := r.DB.Where("id = ?", orderID).First(&order).Error; err != nil {
+	if err := r.DB.Preload("BankDetail").First(&order, "id = ?", orderID).Error; err != nil {
 		return nil, err
 	}
 
@@ -53,6 +53,24 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 		Status: order.Status,
 		PaymentSystem: order.PaymentSystem,
 		BankDetailsID: order.BankDetailsID,
+		BankDetail: &domain.BankDetail{
+			ID: order.BankDetail.ID,
+			TraderID: order.BankDetail.TraderID,
+			Country: order.BankDetail.Country,
+			Currency: order.BankDetail.Currency,
+			MinAmount: order.BankDetail.MinAmount,
+			MaxAmount: order.BankDetail.MaxAmount,
+			BankName: order.BankDetail.BankName,
+			PaymentSystem: order.BankDetail.PaymentSystem,
+			Delay: order.BankDetail.Delay,
+			Enabled: order.BankDetail.Enabled,
+			CardNumber: order.BankDetail.CardNumber,
+			Phone: order.BankDetail.Phone,
+			Owner: order.BankDetail.Owner,
+			MaxOrdersSimultaneosly: order.BankDetail.MaxOrdersSimultaneosly,
+			MaxAmountDay: order.BankDetail.MaxAmountDay,
+			MaxAmountMonth: order.BankDetail.MaxAmountMonth,
+		},
 	}, nil
 }
 
