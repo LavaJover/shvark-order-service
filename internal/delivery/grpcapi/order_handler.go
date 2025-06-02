@@ -109,5 +109,35 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 }
 
 func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOrdersByTraderIDRequest) (*orderpb.GetOrdersByTraderIDResponse, error) {
-	return nil, nil
+	traderID := r.TraderId
+	ordersResponse, err := h.uc.GetOrdersByTraderID(traderID)
+	if err != nil {
+		return nil, err
+	}
+
+	orders := make([]*orderpb.Order, len(ordersResponse))
+	for i, order := range ordersResponse {
+		orders[i] = &orderpb.Order{
+			OrderId: order.ID,
+			Status: orderpb.OrderStatus(orderpb.OrderStatus_value[order.Status]),
+			BankDetail: &orderpb.BankDetail{
+				BankDetailId: order.BankDetail.ID,
+				TraderId: order.BankDetail.TraderID,
+				Currency: order.BankDetail.Currency,
+				Country: order.BankDetail.Country,
+				MinAmount: float64(order.BankDetail.MinAmount),
+				MaxAmount: float64(order.BankDetail.MaxAmount),
+				BankName: order.BankDetail.BankName,
+				PaymentSystem: order.BankDetail.PaymentSystem,
+				Enabled: order.BankDetail.Enabled,
+				Delay: durationpb.New(order.BankDetail.Delay),
+			},
+			Amount: float64(order.Amount),
+		}
+	}
+
+	return &orderpb.GetOrdersByTraderIDResponse{
+		Orders: orders,
+	}, nil
+
 }

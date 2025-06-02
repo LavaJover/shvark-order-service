@@ -90,7 +90,7 @@ func (r *DefaultOrderRepository) UpdateOrderStatus(orderID string, newStatus str
 func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string) ([]*domain.Order, error) {
 	var orderModels []OrderModel
 
-	if err := r.DB.Preload("BankDetailModel").Where("trader_id = ?", traderID).Find(&orderModels).Error; err != nil {
+	if err := r.DB.Preload("BankDetail").Where("trader_id = ?", traderID).Find(&orderModels).Error; err != nil {
 		return nil, err
 	}
 
@@ -106,6 +106,24 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string) ([]*domain
 			MetadataJSON: orderModel.MetadataJSON,
 			Status: orderModel.Status,
 			PaymentSystem: orderModel.PaymentSystem,
+			BankDetail: &domain.BankDetail{
+				ID: orderModel.BankDetail.ID,
+				TraderID: orderModel.BankDetail.TraderID,
+				Country: orderModel.BankDetail.Country,
+				Currency: orderModel.BankDetail.Currency,
+				MinAmount: orderModel.BankDetail.MinAmount,
+				MaxAmount: orderModel.BankDetail.MaxAmount,
+				BankName: orderModel.BankDetail.BankName,
+				PaymentSystem: orderModel.BankDetail.PaymentSystem,
+				Delay: orderModel.BankDetail.Delay,
+				Enabled: orderModel.BankDetail.Enabled,
+				CardNumber: orderModel.BankDetail.CardNumber,
+				Phone: orderModel.BankDetail.Phone,
+				Owner: orderModel.BankDetail.Owner,
+				MaxOrdersSimultaneosly: orderModel.BankDetail.MaxOrdersSimultaneosly,
+				MaxAmountDay: orderModel.BankDetail.MaxAmountDay,
+				MaxAmountMonth: orderModel.BankDetail.MaxAmountMonth,
+			},
 		}
 	}
 
