@@ -3,29 +3,36 @@ package usecase
 import "github.com/LavaJover/shvark-order-service/internal/domain"
 
 type DefaultOrderUsecase struct {
-	Repo domain.OrderRepository
+	OrderRepo 		domain.OrderRepository
+	BankDetailRepo 	domain.BankDetailRepository
 }
 
-func NewDefaultOrderUsecase(repo domain.OrderRepository) *DefaultOrderUsecase {
-	return &DefaultOrderUsecase{Repo: repo}
+func NewDefaultOrderUsecase(orderRepo domain.OrderRepository, bankDetailRepo domain.BankDetailRepository) *DefaultOrderUsecase {
+	return &DefaultOrderUsecase{
+		OrderRepo: orderRepo,
+		BankDetailRepo: bankDetailRepo,
+	}
 }
 
-func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (string, error) {
-	return uc.Repo.CreateOrder(order)
+func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order, bankDetail *domain.BankDetail) (string, error) {
+	if err := uc.BankDetailRepo.SaveBankDetail(bankDetail); err != nil {
+		return "", err
+	}
+	return uc.OrderRepo.CreateOrder(order)
 }
 
 func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
-	return uc.Repo.UpdateOrderStatus(orderID, "COMPLETED")
+	return uc.OrderRepo.UpdateOrderStatus(orderID, "COMPLETED")
 }
 
 func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
-	return uc.Repo.UpdateOrderStatus(orderID, "FAILED")
+	return uc.OrderRepo.UpdateOrderStatus(orderID, "FAILED")
 }
 
 func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*domain.Order, error) {
-	return uc.Repo.GetOrderByID(orderID)
+	return uc.OrderRepo.GetOrderByID(orderID)
 }
 
 func (uc *DefaultOrderUsecase) GetOrdersByTraderID(traderID string) ([]*domain.Order, error) {
-	return uc.Repo.GetOrdersByTraderID(traderID)
+	return uc.OrderRepo.GetOrdersByTraderID(traderID)
 }

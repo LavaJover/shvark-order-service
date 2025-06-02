@@ -22,8 +22,10 @@ func main() {
 
 	// Init order repo
 	orderRepo := postgres.NewDefaultOrderRepository(db)
+	// Init bank detail repo
+	bankDetailRepo := postgres.NewDefaultBankDetailRepo(db)
 	// Init order usecase
-	uc := usecase.NewDefaultOrderUsecase(orderRepo)
+	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo)
 
 	// Init banking client
 	bankingAddr := "localhost:50057"

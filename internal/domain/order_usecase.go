@@ -1,7 +1,7 @@
 package domain
 
 type OrderUsecase interface {
-	CreateOrder(order *Order) (string, error)
+	CreateOrder(order *Order, bankDetail *BankDetail) (string, error)
 	ApproveOrder(orderID string) error
 	CancelOrder(orderID string) error
 	GetOrderByID(orderID string) (*Order, error)

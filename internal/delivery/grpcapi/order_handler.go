@@ -73,7 +73,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 		BankDetailsID: chosenBankDetail.ID,
 	}
 	
-	orderID, err := h.uc.CreateOrder(&order)
+	orderID, err := h.uc.CreateOrder(&order, chosenBankDetail)
 	if err != nil {
 		return nil, err
 	}
