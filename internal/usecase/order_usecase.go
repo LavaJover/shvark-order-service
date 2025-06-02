@@ -98,7 +98,6 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		Status: order.Status,
 		PaymentSystem: order.PaymentSystem,
 		BankDetailsID: order.BankDetailsID,
-		TraderID: order.TraderID,
 		BankDetail: &domain.BankDetail{
 			ID: chosenBankDetail.ID,
 			TraderID: chosenBankDetail.TraderID,

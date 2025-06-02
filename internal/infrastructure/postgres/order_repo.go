@@ -26,7 +26,6 @@ func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error
 		MetadataJSON: order.MetadataJSON,
 		PaymentSystem: order.PaymentSystem,
 		BankDetailsID: order.BankDetailsID,
-		TraderID: order.TraderID,
 	}
 
 	if err := r.DB.Create(&orderModel).Error; err != nil {
@@ -54,7 +53,6 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 		Status: order.Status,
 		PaymentSystem: order.PaymentSystem,
 		BankDetailsID: order.BankDetailsID,
-		TraderID: order.TraderID,
 	}, nil
 }
 
@@ -90,7 +88,6 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string) ([]*domain
 			MetadataJSON: orderModel.MetadataJSON,
 			Status: orderModel.Status,
 			PaymentSystem: orderModel.PaymentSystem,
-			TraderID: orderModel.TraderID,
 		}
 	}
 

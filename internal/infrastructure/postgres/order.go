@@ -12,5 +12,4 @@ type OrderModel struct {
 	PaymentSystem string
 	BankDetailsID string  			`gorm:"type:uuid"`	
 	BankDetail 	  BankDetailModel   `gorm:"foreignKey:BankDetailsID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
-	TraderID 	  string			`gorm:"type:uuid"`
 }
