@@ -11,4 +11,6 @@ type Order struct {
 	Status 		  string
 	PaymentSystem string
 	BankDetailsID string
+	TraderID	  string
+	BankDetail    *BankDetail
 }

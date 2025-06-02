@@ -24,8 +24,6 @@ func main() {
 	orderRepo := postgres.NewDefaultOrderRepository(db)
 	// Init bank detail repo
 	bankDetailRepo := postgres.NewDefaultBankDetailRepo(db)
-	// Init order usecase
-	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo)
 
 	// Init banking client
 	bankingAddr := "localhost:50057"
@@ -34,9 +32,12 @@ func main() {
 		log.Fatalf("failed to init banking client: %v\n", err)
 	}
 
+	// Init order usecase
+	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient)
+
 	// Creating gRPC server
 	grpcServer := grpc.NewServer()
-	orderHandler := grpcapi.NewOrderHandler(uc, bankingClient)
+	orderHandler := grpcapi.NewOrderHandler(uc)
 
 	orderpb.RegisterOrderServiceServer(grpcServer, orderHandler)
 

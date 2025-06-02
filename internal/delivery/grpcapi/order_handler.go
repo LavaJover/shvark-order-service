@@ -3,7 +3,6 @@ package grpcapi
 import (
 	"context"
 
-	"github.com/LavaJover/shvark-order-service/internal/client"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -11,57 +10,18 @@ import (
 
 type OrderHandler struct {
 	uc domain.OrderUsecase
-	client *client.BankingClient
 	orderpb.UnimplementedOrderServiceServer
 }
 
-func NewOrderHandler(uc domain.OrderUsecase, client *client.BankingClient) *OrderHandler {
+func NewOrderHandler(uc domain.OrderUsecase) *OrderHandler {
 	return &OrderHandler{
 		uc: uc,
-		client: client,
 	}
 }
 
 func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRequest) (*orderpb.CreateOrderResponse, error) {
-	// create query
-	query := domain.BankDetailQuery{
-		Amount: float32(r.Amount),
-		Currency: r.Currency,
-		PaymentSystem: r.PaymentSystem,
-		Country: r.Country,
-	}
-	// find bank details
-	response, err := h.client.GetEligibleBankDetails(&query)
-	if err != nil {
-		return nil, err
-	}
 
-	bankDetailResponse := response.BankDetails
-
-	if len(bankDetailResponse) == 0{
-		return nil, domain.ErrNoAvailableBankDetails
-	}
-
-	bankDetails := make([]*domain.BankDetail, len(bankDetailResponse))
-	for i, bankDetail := range bankDetailResponse {
-		bankDetails[i] = &domain.BankDetail{
-			ID: bankDetail.BankDetailId,
-			TraderID: bankDetail.TraderId,
-			Country: bankDetail.Country,
-			Currency: bankDetail.Currency,
-			MinAmount: float32(bankDetail.MinAmount),
-			MaxAmount: float32(bankDetail.MaxAmount),
-			BankName: bankDetail.BankName,
-			PaymentSystem: bankDetail.PaymentSystem,
-			Delay: bankDetail.Delay.AsDuration(),
-			Enabled: bankDetail.Enabled,
-		}
-	}
-
-	// logic for choosing bankDetail, load-balancing
-	chosenBankDetail := bankDetails[0]
-	// 
-	order := domain.Order{
+	orderRequest := domain.Order{
 		MerchantID: r.MerchantId,
 		Amount: float32(r.Amount),
 		Currency: r.Currency,
@@ -70,31 +30,30 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 		MetadataJSON: r.MetadataJson,
 		Status: orderpb.OrderStatus_DETAILS_PROVIDED.String(),
 		PaymentSystem: r.PaymentSystem,
-		BankDetailsID: chosenBankDetail.ID,
 	}
 	
-	orderID, err := h.uc.CreateOrder(&order, chosenBankDetail)
+	savedOrder, err := h.uc.CreateOrder(&orderRequest)
 	if err != nil {
 		return nil, err
 	}
 
 	return &orderpb.CreateOrderResponse{
 		Order: &orderpb.Order{
-			OrderId: orderID,
+			OrderId: savedOrder.ID,
 			Status: orderpb.OrderStatus_DETAILS_PROVIDED,
 			BankDetail: &orderpb.BankDetail{
-				BankDetailId: chosenBankDetail.ID,
-				TraderId: chosenBankDetail.TraderID,
-				Currency: chosenBankDetail.Currency,
-				Country: chosenBankDetail.Country,
-				MinAmount: float64(chosenBankDetail.MinAmount),
-				MaxAmount: float64(chosenBankDetail.MaxAmount),
-				BankName: chosenBankDetail.BankName,
-				PaymentSystem: chosenBankDetail.PaymentSystem,
-				Enabled: chosenBankDetail.Enabled,
-				Delay: durationpb.New(chosenBankDetail.Delay),
+				BankDetailId: savedOrder.BankDetail.ID,
+				TraderId: savedOrder.BankDetail.TraderID,
+				Currency: savedOrder.BankDetail.Currency,
+				Country: savedOrder.BankDetail.Country, 
+				MinAmount: float64(savedOrder.BankDetail.MinAmount),
+				MaxAmount: float64(savedOrder.BankDetail.MaxAmount),
+				BankName: savedOrder.BankDetail.BankName,
+				PaymentSystem: savedOrder.BankDetail.PaymentSystem,
+				Enabled: savedOrder.BankDetail.Enabled,
+				Delay: durationpb.New(savedOrder.BankDetail.Delay),
 			},
-			Amount: float64(order.Amount),
+			Amount: float64(savedOrder.Amount),
 		},
 	}, nil
 }
@@ -123,56 +82,31 @@ func (h *OrderHandler) CancelOrder(ctx context.Context, r *orderpb.CancelOrderRe
 
 func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByIDRequest) (*orderpb.GetOrderByIDResponse, error) {
 	orderID := r.OrderId
-	responseOrder, err := h.uc.GetOrderByID(orderID)
-	if err != nil {
-		return nil, err
-	}
-
-	// get corresponding bank detail for order
-	bankDetailResponse, err := h.client.GetBankDetailByID(responseOrder.BankDetailsID)
+	orderResponse, err := h.uc.GetOrderByID(orderID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &orderpb.GetOrderByIDResponse{
 		Order: &orderpb.Order{
-			OrderId: responseOrder.ID,
-			Status: orderpb.OrderStatus(orderpb.OrderStatus_value[responseOrder.Status]),
+			OrderId: orderID,
+			Status: orderpb.OrderStatus(orderpb.OrderStatus_value[orderResponse.Status]),
 			BankDetail: &orderpb.BankDetail{
-				BankDetailId: bankDetailResponse.BankDetail.BankDetailId,
-				TraderId: bankDetailResponse.BankDetail.TraderId,
-				Currency: bankDetailResponse.BankDetail.Currency,
-				Country: bankDetailResponse.BankDetail.Country,
-				MinAmount: bankDetailResponse.BankDetail.MinAmount,
-				MaxAmount: bankDetailResponse.BankDetail.MaxAmount,
-				BankName: bankDetailResponse.BankDetail.BankName,
-				PaymentSystem: bankDetailResponse.BankDetail.PaymentSystem,
-				Enabled: bankDetailResponse.BankDetail.Enabled,
-				Delay: bankDetailResponse.BankDetail.Delay,
+				BankDetailId: orderResponse.BankDetail.ID,
+				TraderId: orderResponse.BankDetail.TraderID,
+				Currency: orderResponse.BankDetail.Currency,
+				Country: orderResponse.BankDetail.Country,
+				MinAmount: float64(orderResponse.BankDetail.MinAmount),
+				MaxAmount: float64(orderResponse.BankDetail.MaxAmount),
+				BankName: orderResponse.BankDetail.BankName,
+				PaymentSystem: orderResponse.BankDetail.PaymentSystem,
+				Enabled: orderResponse.BankDetail.Enabled,
+				Delay: durationpb.New(orderResponse.BankDetail.Delay),
 			},
-			Amount: float64(responseOrder.Amount),
 		},
 	}, nil
 }
 
 func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOrdersByTraderIDRequest) (*orderpb.GetOrdersByTraderIDResponse, error) {
-	traderID := r.TraderId
-	responseOrders, err := h.uc.GetOrdersByTraderID(traderID)
-	if err != nil {
-		return nil, err
-	}
-
-	orders := make([]*orderpb.Order, len(responseOrders))
-	for i, responseOrder := range responseOrders {
-		orders[i] = &orderpb.Order{
-			OrderId: responseOrder.ID,
-			Status: orderpb.OrderStatus(orderpb.OrderStatus_value[responseOrder.Status]),
-			BankDetail: &orderpb.BankDetail{},
-			Amount: float64(responseOrder.Amount),
-		}
-	}
-
-	return &orderpb.GetOrdersByTraderIDResponse{
-		Orders: orders,
-	}, nil
+	return nil, nil
 }
