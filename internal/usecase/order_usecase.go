@@ -104,6 +104,8 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	// BTC RATE
 	// IMPROVE THIS !!!
 	amountCrypto := float64(order.AmountFiat / 8599022)
+	order.AmountCrypto = float32(amountCrypto)
+	////////////////////////////////////////////////
 
 	fmt.Println(chosenBankDetail.TraderID, order.ID, amountCrypto)
 
@@ -165,7 +167,7 @@ func (uc *DefaultOrderUsecase) CancelExpiredOrders(ctx context.Context) error {
 	}
 
 	for _, order := range orders {
-		if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, 1); err != nil {
+		if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, float64(1.)); err != nil {
 			log.Printf("Unfreeze failed for order %s: %v", order.ID, err)
 			return status.Error(codes.Internal, err.Error())
 		}
@@ -180,6 +182,77 @@ func (uc *DefaultOrderUsecase) CancelExpiredOrders(ctx context.Context) error {
 	return nil
 }
 
-func (uc *DefaultOrderUsecase) UpdateOrderStatus(orderID string, newStatus domain.OrderStatus) error {
-	return uc.OrderRepo.UpdateOrderStatus(orderID, newStatus)
+func (uc *DefaultOrderUsecase) OpenOrderDispute(orderID string) error {
+	// Find exact order
+	order, err := uc.GetOrderByID(orderID)
+	if err != nil {
+		return err
+	}
+
+	// Check order status to open dispute (only cancelled can be opened with dispute status)
+	if order.Status != domain.StatusCanceled {
+		return domain.ErrOpenDisputeFailed
+	}
+
+	// Set order status to DISPUTE_CREATED
+	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusDisputeCreated); err != nil {
+		return err
+	}
+
+	// Freeze crypto
+	if err := uc.WalletHandler.Freeze(order.BankDetail.TraderID, order.ID, float64(order.AmountCrypto)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (uc *DefaultOrderUsecase) ResolveOrderDispute(orderID string) error {
+	// Find exact order
+	order, err := uc.GetOrderByID(orderID)
+	if err != nil {
+		return err
+	}
+
+	if order.Status != domain.StatusDisputeCreated {
+		return domain.ErrResolveDisputeFailed
+	}
+
+	// Set order status to DISPUTE_CREATED
+	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusDisputeResolved); err != nil {
+		return err
+	}
+
+	// Improve
+	rewardPercent := float64(0.09)
+	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, rewardPercent); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
+	// Find exact order
+	order, err := uc.GetOrderByID(orderID)
+	if err != nil {
+		return err
+	}
+
+	if order.Status != domain.StatusCreated {
+		return domain.ErrResolveDisputeFailed
+	}
+
+	// Set order status to DISPUTE_CREATED
+	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusSucceed); err != nil {
+		return err
+	}
+
+	// Improve
+	rewardPercent := float64(0.09)
+	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, rewardPercent); err != nil {
+		return err
+	}
+
+	return nil
 }

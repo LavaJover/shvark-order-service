@@ -11,6 +11,8 @@ service OrderService {
     rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
     rpc ApproveOrder (ApproveOrderRequest) returns (ApproveOrderResponse);
     rpc CancelOrder (CancelOrderRequest) returns (CancelOrderResponse);
+    rpc OpenOrderDispute (OpenOrderDisputeRequest) returns (OpenOrderDisputeResponse);
+    rpc ResolveOrderDispute (ResolveOrderDisputeRequest) returns (ResolveOrderDisputeResponse);
     rpc GetOrderByID (GetOrderByIDRequest) returns (GetOrderByIDResponse);
     rpc GetOrdersByTraderID (GetOrdersByTraderIDRequest) returns (GetOrdersByTraderIDResponse);
 }
@@ -83,4 +85,20 @@ message GetOrdersByTraderIDRequest {
 
 message GetOrdersByTraderIDResponse {
     repeated Order orders = 1;
+}
+
+message OpenOrderDisputeRequest {
+    string order_id = 1;
+}
+
+message OpenOrderDisputeResponse {
+    string message = 1;
+}
+
+message ResolveOrderDisputeRequest {
+    string order_id = 1;
+}
+
+message ResolveOrderDisputeResponse {
+    string message = 1;
 }

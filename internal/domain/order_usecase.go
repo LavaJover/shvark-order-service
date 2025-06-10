@@ -8,5 +8,7 @@ type OrderUsecase interface {
 	GetOrdersByTraderID(orderID string) ([]*Order, error)
 	FindExpiredOrders() ([]*Order, error)
 	CancelExpiredOrders(context.Context) error
-	UpdateOrderStatus(orderID string, newStatus OrderStatus) error
+	OpenOrderDispute(orderID string) error
+	ResolveOrderDispute(orderID string) error
+	ApproveOrder(orderID string) error
 }

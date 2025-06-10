@@ -7,7 +7,7 @@ type OrderStatus string
 const (
 	StatusCreated 		  OrderStatus = "CREATED"
 	StatusCanceled 		  OrderStatus = "CANCELED"
-	StatusSucceed 		  OrderStatus = "Succeed"
+	StatusSucceed 		  OrderStatus = "SUCCEED"
 	StatusDisputeCreated  OrderStatus = "DISPUTE_CREATED"
 	StatusDisputeResolved OrderStatus = "DISPUTE_RESOLVED"
 )

@@ -719,6 +719,182 @@ func (x *GetOrdersByTraderIDResponse) GetOrders() []*Order {
 	return nil
 }
 
+type OpenOrderDisputeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OpenOrderDisputeRequest) Reset() {
+	*x = OpenOrderDisputeRequest{}
+	mi := &file_order_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OpenOrderDisputeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OpenOrderDisputeRequest) ProtoMessage() {}
+
+func (x *OpenOrderDisputeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OpenOrderDisputeRequest.ProtoReflect.Descriptor instead.
+func (*OpenOrderDisputeRequest) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *OpenOrderDisputeRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+type OpenOrderDisputeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OpenOrderDisputeResponse) Reset() {
+	*x = OpenOrderDisputeResponse{}
+	mi := &file_order_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OpenOrderDisputeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OpenOrderDisputeResponse) ProtoMessage() {}
+
+func (x *OpenOrderDisputeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OpenOrderDisputeResponse.ProtoReflect.Descriptor instead.
+func (*OpenOrderDisputeResponse) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *OpenOrderDisputeResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type ResolveOrderDisputeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResolveOrderDisputeRequest) Reset() {
+	*x = ResolveOrderDisputeRequest{}
+	mi := &file_order_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResolveOrderDisputeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResolveOrderDisputeRequest) ProtoMessage() {}
+
+func (x *ResolveOrderDisputeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResolveOrderDisputeRequest.ProtoReflect.Descriptor instead.
+func (*ResolveOrderDisputeRequest) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ResolveOrderDisputeRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+type ResolveOrderDisputeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResolveOrderDisputeResponse) Reset() {
+	*x = ResolveOrderDisputeResponse{}
+	mi := &file_order_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResolveOrderDisputeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResolveOrderDisputeResponse) ProtoMessage() {}
+
+func (x *ResolveOrderDisputeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResolveOrderDisputeResponse.ProtoReflect.Descriptor instead.
+func (*ResolveOrderDisputeResponse) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ResolveOrderDisputeResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_order_proto protoreflect.FileDescriptor
 
 const file_order_proto_rawDesc = "" +
@@ -778,11 +954,21 @@ const file_order_proto_rawDesc = "" +
 	"\x1aGetOrdersByTraderIDRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\"C\n" +
 	"\x1bGetOrdersByTraderIDResponse\x12$\n" +
-	"\x06orders\x18\x01 \x03(\v2\f.order.OrderR\x06orders2\x8a\x03\n" +
+	"\x06orders\x18\x01 \x03(\v2\f.order.OrderR\x06orders\"4\n" +
+	"\x17OpenOrderDisputeRequest\x12\x19\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\"4\n" +
+	"\x18OpenOrderDisputeResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"7\n" +
+	"\x1aResolveOrderDisputeRequest\x12\x19\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\"7\n" +
+	"\x1bResolveOrderDisputeResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage2\xbd\x04\n" +
 	"\fOrderService\x12D\n" +
 	"\vCreateOrder\x12\x19.order.CreateOrderRequest\x1a\x1a.order.CreateOrderResponse\x12G\n" +
 	"\fApproveOrder\x12\x1a.order.ApproveOrderRequest\x1a\x1b.order.ApproveOrderResponse\x12D\n" +
-	"\vCancelOrder\x12\x19.order.CancelOrderRequest\x1a\x1a.order.CancelOrderResponse\x12G\n" +
+	"\vCancelOrder\x12\x19.order.CancelOrderRequest\x1a\x1a.order.CancelOrderResponse\x12S\n" +
+	"\x10OpenOrderDispute\x12\x1e.order.OpenOrderDisputeRequest\x1a\x1f.order.OpenOrderDisputeResponse\x12\\\n" +
+	"\x13ResolveOrderDispute\x12!.order.ResolveOrderDisputeRequest\x1a\".order.ResolveOrderDisputeResponse\x12G\n" +
 	"\fGetOrderByID\x12\x1a.order.GetOrderByIDRequest\x1a\x1b.order.GetOrderByIDResponse\x12\\\n" +
 	"\x13GetOrdersByTraderID\x12!.order.GetOrdersByTraderIDRequest\x1a\".order.GetOrdersByTraderIDResponseB=Z;github.com/LavaJover/shvark-order-service/proto/gen;orderpbb\x06proto3"
 
@@ -798,7 +984,7 @@ func file_order_proto_rawDescGZIP() []byte {
 	return file_order_proto_rawDescData
 }
 
-var file_order_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_order_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_order_proto_goTypes = []any{
 	(*CreateOrderRequest)(nil),          // 0: order.CreateOrderRequest
 	(*CreateOrderResponse)(nil),         // 1: order.CreateOrderResponse
@@ -812,29 +998,37 @@ var file_order_proto_goTypes = []any{
 	(*Order)(nil),                       // 9: order.Order
 	(*GetOrdersByTraderIDRequest)(nil),  // 10: order.GetOrdersByTraderIDRequest
 	(*GetOrdersByTraderIDResponse)(nil), // 11: order.GetOrdersByTraderIDResponse
-	(*timestamppb.Timestamp)(nil),       // 12: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),         // 13: google.protobuf.Duration
+	(*OpenOrderDisputeRequest)(nil),     // 12: order.OpenOrderDisputeRequest
+	(*OpenOrderDisputeResponse)(nil),    // 13: order.OpenOrderDisputeResponse
+	(*ResolveOrderDisputeRequest)(nil),  // 14: order.ResolveOrderDisputeRequest
+	(*ResolveOrderDisputeResponse)(nil), // 15: order.ResolveOrderDisputeResponse
+	(*timestamppb.Timestamp)(nil),       // 16: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),         // 17: google.protobuf.Duration
 }
 var file_order_proto_depIdxs = []int32{
-	12, // 0: order.CreateOrderRequest.expires_at:type_name -> google.protobuf.Timestamp
+	16, // 0: order.CreateOrderRequest.expires_at:type_name -> google.protobuf.Timestamp
 	9,  // 1: order.CreateOrderResponse.order:type_name -> order.Order
-	13, // 2: order.BankDetail.delay:type_name -> google.protobuf.Duration
+	17, // 2: order.BankDetail.delay:type_name -> google.protobuf.Duration
 	9,  // 3: order.GetOrderByIDResponse.order:type_name -> order.Order
 	2,  // 4: order.Order.bank_detail:type_name -> order.BankDetail
-	12, // 5: order.Order.expires_at:type_name -> google.protobuf.Timestamp
+	16, // 5: order.Order.expires_at:type_name -> google.protobuf.Timestamp
 	9,  // 6: order.GetOrdersByTraderIDResponse.orders:type_name -> order.Order
 	0,  // 7: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
 	3,  // 8: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
 	5,  // 9: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
-	7,  // 10: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
-	10, // 11: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
-	1,  // 12: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
-	4,  // 13: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
-	6,  // 14: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
-	8,  // 15: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
-	11, // 16: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
-	12, // [12:17] is the sub-list for method output_type
-	7,  // [7:12] is the sub-list for method input_type
+	12, // 10: order.OrderService.OpenOrderDispute:input_type -> order.OpenOrderDisputeRequest
+	14, // 11: order.OrderService.ResolveOrderDispute:input_type -> order.ResolveOrderDisputeRequest
+	7,  // 12: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
+	10, // 13: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
+	1,  // 14: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
+	4,  // 15: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
+	6,  // 16: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
+	13, // 17: order.OrderService.OpenOrderDispute:output_type -> order.OpenOrderDisputeResponse
+	15, // 18: order.OrderService.ResolveOrderDispute:output_type -> order.ResolveOrderDisputeResponse
+	8,  // 19: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
+	11, // 20: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
+	14, // [14:21] is the sub-list for method output_type
+	7,  // [7:14] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name
@@ -851,7 +1045,7 @@ func file_order_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_order_proto_rawDesc), len(file_order_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

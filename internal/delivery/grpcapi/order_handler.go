@@ -64,24 +64,15 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 
 func (h *OrderHandler) ApproveOrder(ctx context.Context, r *orderpb.ApproveOrderRequest) (*orderpb.ApproveOrderResponse, error) {
 	orderID := r.OrderId
-	if err := h.uc.UpdateOrderStatus(orderID, domain.StatusSucceed); err != nil {
-		return nil, err
+	if err := h.uc.ApproveOrder(orderID); err != nil {
+		return &orderpb.ApproveOrderResponse{
+			Message: "failed to approve order",
+		}, err
+	}else {
+		return &orderpb.ApproveOrderResponse{
+			Message: "Order approved successfully",
+		}, nil
 	}
-
-	return &orderpb.ApproveOrderResponse{
-		Message: "Order was successfully approved",
-	}, nil
-}
-
-func (h *OrderHandler) CancelOrder(ctx context.Context, r *orderpb.CancelOrderRequest) (*orderpb.CancelOrderResponse, error) {
-	orderID := r.OrderId
-	if err := h.uc.UpdateOrderStatus(orderID, domain.StatusCanceled); err != nil {
-		return nil, err
-	}
-
-	return &orderpb.CancelOrderResponse{
-		Message: "Order was successfully cancelled",
-	}, nil
 }
 
 func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByIDRequest) (*orderpb.GetOrderByIDResponse, error) {
@@ -148,4 +139,30 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 		Orders: orders,
 	}, nil
 
+}
+
+func (h *OrderHandler) OpenOrderDispute(ctx context.Context, r *orderpb.OpenOrderDisputeRequest) (*orderpb.OpenOrderDisputeResponse, error) {
+	orderID := r.OrderId
+	if err := h.uc.OpenOrderDispute(orderID); err != nil {
+		return &orderpb.OpenOrderDisputeResponse{
+			Message: "Failed to open dispute: " + err.Error(),
+		}, err
+	}else {
+		return &orderpb.OpenOrderDisputeResponse{
+			Message: "Dispute opened successfully!",
+		}, nil
+	}
+}
+
+func (h *OrderHandler) ResolveOrderDispute(ctx context.Context, r *orderpb.ResolveOrderDisputeRequest) (*orderpb.ResolveOrderDisputeResponse, error) {
+	orderID := r.OrderId
+	if err := h.uc.ResolveOrderDispute(orderID); err != nil {
+		return &orderpb.ResolveOrderDisputeResponse{
+			Message: "Failed to resolve dispute: " + err.Error(),
+		}, err
+	}else {
+		return &orderpb.ResolveOrderDisputeResponse{
+			Message: "Dispute resolved successfully!",
+		}, nil
+	}
 }
