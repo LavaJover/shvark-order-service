@@ -1,21 +1,32 @@
 package usecase
 
 import (
+	"fmt"
+
 	"github.com/LavaJover/shvark-order-service/internal/client"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type DefaultOrderUsecase struct {
 	OrderRepo 		domain.OrderRepository
 	BankDetailRepo 	domain.BankDetailRepository
 	BankingClient   *client.BankingClient
+	WalletUsecase   domain.WalletUsecase
 }
 
-func NewDefaultOrderUsecase(orderRepo domain.OrderRepository, bankDetailRepo domain.BankDetailRepository, bankingClient *client.BankingClient) *DefaultOrderUsecase {
+func NewDefaultOrderUsecase(
+	orderRepo domain.OrderRepository, 
+	bankDetailRepo domain.BankDetailRepository, 
+	bankingClient *client.BankingClient,
+	walletUsecase domain.WalletUsecase) *DefaultOrderUsecase {
+
 	return &DefaultOrderUsecase{
 		OrderRepo: orderRepo,
 		BankDetailRepo: bankDetailRepo,
 		BankingClient: bankingClient,
+		WalletUsecase: walletUsecase,
 	}
 }
 
@@ -65,13 +76,13 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	// searching for eligible bank details due to order query parameters
 	bankDetails, err := uc.FindEligibleBankDetails(&query)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.NotFound, "no eligible bank detail")
 	}
 
 	// business logic to pick best bank detail
 	chosenBankDetail, err := uc.PickBestBankDetail(bankDetails)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, "failed to pick best bank detail")
 	}
 
 	// relate found bank detail and order
@@ -85,6 +96,17 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	orderID, err := uc.OrderRepo.CreateOrder(order)
 	if err != nil {
 		return nil, err
+	}
+
+	// BTC RATE
+	// IMPROVE THIS !!!
+	amountCrypto := float64(order.Amount / 8599022)
+
+	fmt.Println(chosenBankDetail.TraderID, order.ID, amountCrypto)
+
+	// Freeze crypto
+	if err := uc.WalletUsecase.Freeze(chosenBankDetail.TraderID, order.ID, amountCrypto); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &domain.Order{

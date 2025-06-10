@@ -28,7 +28,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 		Country: r.Country,
 		ClientEmail: r.ClientEmail,
 		MetadataJSON: r.MetadataJson,
-		Status: orderpb.OrderStatus_DETAILS_PROVIDED.String(),
+		Status: domain.StatusCreated,
 		PaymentSystem: r.PaymentSystem,
 	}
 	
@@ -40,7 +40,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 	return &orderpb.CreateOrderResponse{
 		Order: &orderpb.Order{
 			OrderId: savedOrder.ID,
-			Status: orderpb.OrderStatus_DETAILS_PROVIDED,
+			Status: string(savedOrder.Status),
 			BankDetail: &orderpb.BankDetail{
 				BankDetailId: savedOrder.BankDetail.ID,
 				TraderId: savedOrder.BankDetail.TraderID,
@@ -90,7 +90,7 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 	return &orderpb.GetOrderByIDResponse{
 		Order: &orderpb.Order{
 			OrderId: orderID,
-			Status: orderpb.OrderStatus(orderpb.OrderStatus_value[orderResponse.Status]),
+			Status: string(orderResponse.Status),
 			BankDetail: &orderpb.BankDetail{
 				BankDetailId: orderResponse.BankDetail.ID,
 				TraderId: orderResponse.BankDetail.TraderID,
@@ -119,7 +119,7 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 	for i, order := range ordersResponse {
 		orders[i] = &orderpb.Order{
 			OrderId: order.ID,
-			Status: orderpb.OrderStatus(orderpb.OrderStatus_value[order.Status]),
+			Status: string(order.Status),
 			BankDetail: &orderpb.BankDetail{
 				BankDetailId: order.BankDetail.ID,
 				TraderId: order.BankDetail.TraderID,

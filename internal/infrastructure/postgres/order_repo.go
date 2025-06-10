@@ -19,7 +19,7 @@ func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error
 		ID: uuid.New().String(),
 		MerchantID: order.MerchantID,
 		Amount: order.Amount,
-		Status: "DETAILS_PROVIDED",
+		Status: domain.StatusCreated,
 		Currency: order.Currency,
 		Country: order.Country,
 		ClientEmail: order.ClientEmail,
@@ -77,7 +77,7 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 func (r *DefaultOrderRepository) UpdateOrderStatus(orderID string, newStatus string) error {
 	updatedOrderModel := OrderModel{
 		ID: orderID,
-		Status: newStatus,
+		Status: domain.OrderStatus(newStatus),
 	}
 
 	if err := r.DB.Updates(&updatedOrderModel).Error; err != nil {

@@ -22,61 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type OrderStatus int32
-
-const (
-	OrderStatus_UNKNOWN          OrderStatus = 0
-	OrderStatus_DETAILS_PROVIDED OrderStatus = 1
-	OrderStatus_PAID             OrderStatus = 2
-	OrderStatus_COMPLETED        OrderStatus = 3
-	OrderStatus_FAILED           OrderStatus = 4
-)
-
-// Enum value maps for OrderStatus.
-var (
-	OrderStatus_name = map[int32]string{
-		0: "UNKNOWN",
-		1: "DETAILS_PROVIDED",
-		2: "PAID",
-		3: "COMPLETED",
-		4: "FAILED",
-	}
-	OrderStatus_value = map[string]int32{
-		"UNKNOWN":          0,
-		"DETAILS_PROVIDED": 1,
-		"PAID":             2,
-		"COMPLETED":        3,
-		"FAILED":           4,
-	}
-)
-
-func (x OrderStatus) Enum() *OrderStatus {
-	p := new(OrderStatus)
-	*p = x
-	return p
-}
-
-func (x OrderStatus) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (OrderStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_order_proto_enumTypes[0].Descriptor()
-}
-
-func (OrderStatus) Type() protoreflect.EnumType {
-	return &file_order_proto_enumTypes[0]
-}
-
-func (x OrderStatus) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use OrderStatus.Descriptor instead.
-func (OrderStatus) EnumDescriptor() ([]byte, []int) {
-	return file_order_proto_rawDescGZIP(), []int{0}
-}
-
 type CreateOrderRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MerchantId    string                 `protobuf:"bytes,1,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
@@ -596,7 +541,7 @@ func (x *GetOrderByIDResponse) GetOrder() *Order {
 type Order struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	Status        OrderStatus            `protobuf:"varint,2,opt,name=status,proto3,enum=order.OrderStatus" json:"status,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
 	BankDetail    *BankDetail            `protobuf:"bytes,3,opt,name=bank_detail,json=bankDetail,proto3" json:"bank_detail,omitempty"`
 	Amount        float64                `protobuf:"fixed64,4,opt,name=amount,proto3" json:"amount,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -640,11 +585,11 @@ func (x *Order) GetOrderId() string {
 	return ""
 }
 
-func (x *Order) GetStatus() OrderStatus {
+func (x *Order) GetStatus() string {
 	if x != nil {
 		return x.Status
 	}
-	return OrderStatus_UNKNOWN
+	return ""
 }
 
 func (x *Order) GetBankDetail() *BankDetail {
@@ -791,24 +736,17 @@ const file_order_proto_rawDesc = "" +
 	"\x13GetOrderByIDRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\":\n" +
 	"\x14GetOrderByIDResponse\x12\"\n" +
-	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\x9a\x01\n" +
+	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\x86\x01\n" +
 	"\x05Order\x12\x19\n" +
-	"\border_id\x18\x01 \x01(\tR\aorderId\x12*\n" +
-	"\x06status\x18\x02 \x01(\x0e2\x12.order.OrderStatusR\x06status\x122\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x122\n" +
 	"\vbank_detail\x18\x03 \x01(\v2\x11.order.BankDetailR\n" +
 	"bankDetail\x12\x16\n" +
 	"\x06amount\x18\x04 \x01(\x01R\x06amount\"9\n" +
 	"\x1aGetOrdersByTraderIDRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\"C\n" +
 	"\x1bGetOrdersByTraderIDResponse\x12$\n" +
-	"\x06orders\x18\x01 \x03(\v2\f.order.OrderR\x06orders*U\n" +
-	"\vOrderStatus\x12\v\n" +
-	"\aUNKNOWN\x10\x00\x12\x14\n" +
-	"\x10DETAILS_PROVIDED\x10\x01\x12\b\n" +
-	"\x04PAID\x10\x02\x12\r\n" +
-	"\tCOMPLETED\x10\x03\x12\n" +
-	"\n" +
-	"\x06FAILED\x10\x042\x8a\x03\n" +
+	"\x06orders\x18\x01 \x03(\v2\f.order.OrderR\x06orders2\x8a\x03\n" +
 	"\fOrderService\x12D\n" +
 	"\vCreateOrder\x12\x19.order.CreateOrderRequest\x1a\x1a.order.CreateOrderResponse\x12G\n" +
 	"\fApproveOrder\x12\x1a.order.ApproveOrderRequest\x1a\x1b.order.ApproveOrderResponse\x12D\n" +
@@ -828,46 +766,43 @@ func file_order_proto_rawDescGZIP() []byte {
 	return file_order_proto_rawDescData
 }
 
-var file_order_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_order_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_order_proto_goTypes = []any{
-	(OrderStatus)(0),                    // 0: order.OrderStatus
-	(*CreateOrderRequest)(nil),          // 1: order.CreateOrderRequest
-	(*CreateOrderResponse)(nil),         // 2: order.CreateOrderResponse
-	(*BankDetail)(nil),                  // 3: order.BankDetail
-	(*ApproveOrderRequest)(nil),         // 4: order.ApproveOrderRequest
-	(*ApproveOrderResponse)(nil),        // 5: order.ApproveOrderResponse
-	(*CancelOrderRequest)(nil),          // 6: order.CancelOrderRequest
-	(*CancelOrderResponse)(nil),         // 7: order.CancelOrderResponse
-	(*GetOrderByIDRequest)(nil),         // 8: order.GetOrderByIDRequest
-	(*GetOrderByIDResponse)(nil),        // 9: order.GetOrderByIDResponse
-	(*Order)(nil),                       // 10: order.Order
-	(*GetOrdersByTraderIDRequest)(nil),  // 11: order.GetOrdersByTraderIDRequest
-	(*GetOrdersByTraderIDResponse)(nil), // 12: order.GetOrdersByTraderIDResponse
-	(*durationpb.Duration)(nil),         // 13: google.protobuf.Duration
+	(*CreateOrderRequest)(nil),          // 0: order.CreateOrderRequest
+	(*CreateOrderResponse)(nil),         // 1: order.CreateOrderResponse
+	(*BankDetail)(nil),                  // 2: order.BankDetail
+	(*ApproveOrderRequest)(nil),         // 3: order.ApproveOrderRequest
+	(*ApproveOrderResponse)(nil),        // 4: order.ApproveOrderResponse
+	(*CancelOrderRequest)(nil),          // 5: order.CancelOrderRequest
+	(*CancelOrderResponse)(nil),         // 6: order.CancelOrderResponse
+	(*GetOrderByIDRequest)(nil),         // 7: order.GetOrderByIDRequest
+	(*GetOrderByIDResponse)(nil),        // 8: order.GetOrderByIDResponse
+	(*Order)(nil),                       // 9: order.Order
+	(*GetOrdersByTraderIDRequest)(nil),  // 10: order.GetOrdersByTraderIDRequest
+	(*GetOrdersByTraderIDResponse)(nil), // 11: order.GetOrdersByTraderIDResponse
+	(*durationpb.Duration)(nil),         // 12: google.protobuf.Duration
 }
 var file_order_proto_depIdxs = []int32{
-	10, // 0: order.CreateOrderResponse.order:type_name -> order.Order
-	13, // 1: order.BankDetail.delay:type_name -> google.protobuf.Duration
-	10, // 2: order.GetOrderByIDResponse.order:type_name -> order.Order
-	0,  // 3: order.Order.status:type_name -> order.OrderStatus
-	3,  // 4: order.Order.bank_detail:type_name -> order.BankDetail
-	10, // 5: order.GetOrdersByTraderIDResponse.orders:type_name -> order.Order
-	1,  // 6: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
-	4,  // 7: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
-	6,  // 8: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
-	8,  // 9: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
-	11, // 10: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
-	2,  // 11: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
-	5,  // 12: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
-	7,  // 13: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
-	9,  // 14: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
-	12, // 15: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
-	11, // [11:16] is the sub-list for method output_type
-	6,  // [6:11] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	9,  // 0: order.CreateOrderResponse.order:type_name -> order.Order
+	12, // 1: order.BankDetail.delay:type_name -> google.protobuf.Duration
+	9,  // 2: order.GetOrderByIDResponse.order:type_name -> order.Order
+	2,  // 3: order.Order.bank_detail:type_name -> order.BankDetail
+	9,  // 4: order.GetOrdersByTraderIDResponse.orders:type_name -> order.Order
+	0,  // 5: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
+	3,  // 6: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
+	5,  // 7: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
+	7,  // 8: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
+	10, // 9: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
+	1,  // 10: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
+	4,  // 11: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
+	6,  // 12: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
+	8,  // 13: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
+	11, // 14: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_order_proto_init() }
@@ -880,14 +815,13 @@ func file_order_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_order_proto_rawDesc), len(file_order_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_order_proto_goTypes,
 		DependencyIndexes: file_order_proto_depIdxs,
-		EnumInfos:         file_order_proto_enumTypes,
 		MessageInfos:      file_order_proto_msgTypes,
 	}.Build()
 	File_order_proto = out.File
