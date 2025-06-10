@@ -1,11 +1,16 @@
 package postgres
 
-import "github.com/LavaJover/shvark-order-service/internal/domain"
+import (
+	"time"
+
+	"github.com/LavaJover/shvark-order-service/internal/domain"
+)
 
 type OrderModel struct {
 	ID 			  string  			`gorm:"primaryKey;type:uuid"`
 	MerchantID 	  string  			`gorm:"type:uuid"`
-	Amount 		  float32	
+	AmountFiat 	  float32
+	AmountCrypto  float32	
 	Currency 	  string		
 	Country 	  string
 	ClientEmail   string
@@ -14,4 +19,5 @@ type OrderModel struct {
 	PaymentSystem string
 	BankDetailsID string  			`gorm:"type:uuid"`	
 	BankDetail 	  BankDetailModel   `gorm:"foreignKey:BankDetailsID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	ExpiresAt  	  time.Time
 }

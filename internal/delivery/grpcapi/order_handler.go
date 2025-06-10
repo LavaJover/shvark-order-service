@@ -6,6 +6,7 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type OrderHandler struct {
@@ -23,13 +24,14 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 
 	orderRequest := domain.Order{
 		MerchantID: r.MerchantId,
-		Amount: float32(r.Amount),
+		AmountFiat: float32(r.AmountFiat),
 		Currency: r.Currency,
 		Country: r.Country,
 		ClientEmail: r.ClientEmail,
 		MetadataJSON: r.MetadataJson,
 		Status: domain.StatusCreated,
 		PaymentSystem: r.PaymentSystem,
+		ExpiresAt: r.ExpiresAt.AsTime(),
 	}
 	
 	savedOrder, err := h.uc.CreateOrder(&orderRequest)
@@ -53,14 +55,16 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 				Enabled: savedOrder.BankDetail.Enabled,
 				Delay: durationpb.New(savedOrder.BankDetail.Delay),
 			},
-			Amount: float64(savedOrder.Amount),
+			AmountFiat: float64(savedOrder.AmountFiat),
+			AmountCrypto: float64(savedOrder.AmountCrypto),
+			ExpiresAt: timestamppb.New(savedOrder.ExpiresAt),
 		},
 	}, nil
 }
 
 func (h *OrderHandler) ApproveOrder(ctx context.Context, r *orderpb.ApproveOrderRequest) (*orderpb.ApproveOrderResponse, error) {
 	orderID := r.OrderId
-	if err := h.uc.ApproveOrder(orderID); err != nil {
+	if err := h.uc.UpdateOrderStatus(orderID, domain.StatusSucceed); err != nil {
 		return nil, err
 	}
 
@@ -71,7 +75,7 @@ func (h *OrderHandler) ApproveOrder(ctx context.Context, r *orderpb.ApproveOrder
 
 func (h *OrderHandler) CancelOrder(ctx context.Context, r *orderpb.CancelOrderRequest) (*orderpb.CancelOrderResponse, error) {
 	orderID := r.OrderId
-	if err := h.uc.CancelOrder(orderID); err != nil {
+	if err := h.uc.UpdateOrderStatus(orderID, domain.StatusCanceled); err != nil {
 		return nil, err
 	}
 
@@ -103,7 +107,9 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 				Enabled: orderResponse.BankDetail.Enabled,
 				Delay: durationpb.New(orderResponse.BankDetail.Delay),
 			},
-			Amount: float64(orderResponse.Amount),
+			AmountFiat: float64(orderResponse.AmountFiat),
+			AmountCrypto: float64(orderResponse.AmountCrypto),
+			ExpiresAt: timestamppb.New(orderResponse.ExpiresAt),
 		},
 	}, nil
 }
@@ -132,7 +138,9 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 				Enabled: order.BankDetail.Enabled,
 				Delay: durationpb.New(order.BankDetail.Delay),
 			},
-			Amount: float64(order.Amount),
+			AmountFiat: float64(order.AmountFiat),
+			AmountCrypto: float64(order.AmountCrypto),
+			ExpiresAt: timestamppb.New(order.ExpiresAt),
 		}
 	}
 

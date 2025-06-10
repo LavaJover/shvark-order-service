@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"time"
+
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -18,7 +20,8 @@ func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error
 	orderModel := OrderModel{
 		ID: uuid.New().String(),
 		MerchantID: order.MerchantID,
-		Amount: order.Amount,
+		AmountFiat: order.AmountFiat,
+		AmountCrypto: order.AmountCrypto,
 		Status: domain.StatusCreated,
 		Currency: order.Currency,
 		Country: order.Country,
@@ -26,6 +29,7 @@ func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error
 		MetadataJSON: order.MetadataJSON,
 		PaymentSystem: order.PaymentSystem,
 		BankDetailsID: order.BankDetailsID,
+		ExpiresAt: order.ExpiresAt,
 	}
 
 	if err := r.DB.Create(&orderModel).Error; err != nil {
@@ -45,7 +49,8 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 	return &domain.Order{
 		ID: order.ID,
 		MerchantID: order.MerchantID,
-		Amount: order.Amount,
+		AmountFiat: order.AmountFiat,
+		AmountCrypto: order.AmountCrypto,
 		Currency: order.Currency,
 		Country: order.Country,
 		ClientEmail: order.ClientEmail,
@@ -53,6 +58,7 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 		Status: order.Status,
 		PaymentSystem: order.PaymentSystem,
 		BankDetailsID: order.BankDetailsID,
+		ExpiresAt: order.ExpiresAt,
 		BankDetail: &domain.BankDetail{
 			ID: order.BankDetail.ID,
 			TraderID: order.BankDetail.TraderID,
@@ -74,10 +80,10 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 	}, nil
 }
 
-func (r *DefaultOrderRepository) UpdateOrderStatus(orderID string, newStatus string) error {
+func (r *DefaultOrderRepository) UpdateOrderStatus(orderID string, newStatus domain.OrderStatus) error {
 	updatedOrderModel := OrderModel{
 		ID: orderID,
-		Status: domain.OrderStatus(newStatus),
+		Status: newStatus,
 	}
 
 	if err := r.DB.Updates(&updatedOrderModel).Error; err != nil {
@@ -99,13 +105,15 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string) ([]*domain
 		orders[i] = &domain.Order{
 			ID: orderModel.ID,
 			MerchantID: orderModel.MerchantID,
-			Amount: orderModel.Amount,
+			AmountFiat: orderModel.AmountFiat,
+			AmountCrypto: orderModel.AmountCrypto,
 			Currency: orderModel.Currency,
 			Country: orderModel.Country,
 			ClientEmail: orderModel.ClientEmail,
 			MetadataJSON: orderModel.MetadataJSON,
 			Status: orderModel.Status,
 			PaymentSystem: orderModel.PaymentSystem,
+			ExpiresAt: orderModel.ExpiresAt,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -124,6 +132,52 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string) ([]*domain
 				MaxAmountDay: orderModel.BankDetail.MaxAmountDay,
 				MaxAmountMonth: orderModel.BankDetail.MaxAmountMonth,
 			},
+		}
+	}
+
+	return orders, nil
+}
+
+func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
+	var orderModels []OrderModel
+	if err := r.DB.Preload("BankDetail").
+		Where("status = ?", domain.StatusCreated).
+		Where("expires_at < ?", time.Now()).
+		Find(&orderModels).Error; err != nil {return nil, err}
+	
+	orders := make([]*domain.Order, len(orderModels))
+	for i, orderModel := range orderModels {
+		orders[i] = &domain.Order{
+			ID: orderModel.ID,
+			MerchantID: orderModel.MerchantID,
+			AmountFiat: orderModel.AmountFiat,
+			AmountCrypto: orderModel.AmountCrypto,
+			Currency: orderModel.Currency,
+			Country: orderModel.Country,
+			ClientEmail: orderModel.ClientEmail,
+			MetadataJSON: orderModel.MetadataJSON,
+			Status: orderModel.Status,
+			PaymentSystem: orderModel.PaymentSystem,
+			BankDetailsID: orderModel.BankDetailsID,
+			BankDetail: &domain.BankDetail{
+				ID: orderModel.BankDetail.ID,
+				TraderID: orderModel.BankDetail.TraderID,
+				Country: orderModel.BankDetail.Country,
+				Currency: orderModel.BankDetail.Currency,
+				MinAmount: orderModel.BankDetail.MinAmount,
+				MaxAmount: orderModel.BankDetail.MaxAmount,
+				BankName: orderModel.BankDetail.BankName,
+				PaymentSystem: orderModel.BankDetail.PaymentSystem,
+				Delay: orderModel.BankDetail.Delay,
+				Enabled: orderModel.BankDetail.Enabled,
+				CardNumber: orderModel.BankDetail.CardNumber,
+				Phone: orderModel.BankDetail.Phone,
+				Owner: orderModel.BankDetail.Owner,
+				MaxOrdersSimultaneosly: orderModel.BankDetail.MaxOrdersSimultaneosly,
+				MaxAmountDay: orderModel.BankDetail.MaxAmountDay,
+				MaxAmountMonth: orderModel.BankDetail.MaxAmountMonth,
+			},
+			ExpiresAt: orderModel.ExpiresAt,
 		}
 	}
 

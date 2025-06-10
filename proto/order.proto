@@ -3,6 +3,7 @@ syntax = "proto3";
 package order;
 
 import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/LavaJover/shvark-order-service/proto/gen;orderpb";
 
@@ -16,12 +17,13 @@ service OrderService {
 
 message CreateOrderRequest {
     string merchant_id = 1;
-    double amount = 2;
+    double amount_fiat = 2;
     string currency = 3;
     string country = 4;
     string client_email = 5;
     string metadata_json = 6;
     string payment_system = 7;
+    google.protobuf.Timestamp expires_at = 8;
 }
 
 message CreateOrderResponse {
@@ -70,7 +72,9 @@ message Order {
     string status = 2;
 
     BankDetail bank_detail = 3;
-    double amount = 4;
+    double amount_fiat = 4;
+    double amount_crypto = 5;
+    google.protobuf.Timestamp expires_at = 6;
 }
 
 message GetOrdersByTraderIDRequest {

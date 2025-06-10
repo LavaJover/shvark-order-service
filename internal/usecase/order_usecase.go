@@ -2,8 +2,10 @@ package usecase
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/LavaJover/shvark-order-service/internal/client"
+	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,20 +15,20 @@ type DefaultOrderUsecase struct {
 	OrderRepo 		domain.OrderRepository
 	BankDetailRepo 	domain.BankDetailRepository
 	BankingClient   *client.BankingClient
-	WalletUsecase   domain.WalletUsecase
+	WalletHandler   *handlers.HTTPWalletHandler
 }
 
 func NewDefaultOrderUsecase(
 	orderRepo domain.OrderRepository, 
 	bankDetailRepo domain.BankDetailRepository, 
 	bankingClient *client.BankingClient,
-	walletUsecase domain.WalletUsecase) *DefaultOrderUsecase {
+	walletHandler *handlers.HTTPWalletHandler) *DefaultOrderUsecase {
 
 	return &DefaultOrderUsecase{
 		OrderRepo: orderRepo,
 		BankDetailRepo: bankDetailRepo,
 		BankingClient: bankingClient,
-		WalletUsecase: walletUsecase,
+		WalletHandler: walletHandler,
 	}
 }
 
@@ -67,7 +69,7 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(query *domain.BankDetailQ
 func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, error) {
 	// find eligible bank details
 	query := domain.BankDetailQuery{
-		Amount: order.Amount,
+		Amount: order.AmountFiat,
 		Currency: order.Currency,
 		PaymentSystem: order.PaymentSystem,
 		Country: order.Country,
@@ -100,19 +102,20 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 
 	// BTC RATE
 	// IMPROVE THIS !!!
-	amountCrypto := float64(order.Amount / 8599022)
+	amountCrypto := float64(order.AmountFiat / 8599022)
 
 	fmt.Println(chosenBankDetail.TraderID, order.ID, amountCrypto)
 
 	// Freeze crypto
-	if err := uc.WalletUsecase.Freeze(chosenBankDetail.TraderID, order.ID, amountCrypto); err != nil {
+	if err := uc.WalletHandler.Freeze(chosenBankDetail.TraderID, order.ID, amountCrypto); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &domain.Order{
 		ID: orderID,
 		MerchantID: order.MerchantID,
-		Amount: order.Amount,
+		AmountFiat: order.AmountFiat,
+		AmountCrypto: order.AmountCrypto,
 		Currency: order.Currency,
 		Country: order.Country,
 		ClientEmail: order.ClientEmail,
@@ -120,6 +123,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		Status: order.Status,
 		PaymentSystem: order.PaymentSystem,
 		BankDetailsID: order.BankDetailsID,
+		ExpiresAt: order.ExpiresAt,
 		BankDetail: &domain.BankDetail{
 			ID: chosenBankDetail.ID,
 			TraderID: chosenBankDetail.TraderID,
@@ -141,18 +145,40 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	}, nil
 }
 
-func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
-	return uc.OrderRepo.UpdateOrderStatus(orderID, "COMPLETED")
-}
-
-func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
-	return uc.OrderRepo.UpdateOrderStatus(orderID, "FAILED")
-}
-
 func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*domain.Order, error) {
 	return uc.OrderRepo.GetOrderByID(orderID)
 }
 
 func (uc *DefaultOrderUsecase) GetOrdersByTraderID(traderID string) ([]*domain.Order, error) {
 	return uc.OrderRepo.GetOrdersByTraderID(traderID)
+}
+
+func (uc *DefaultOrderUsecase) FindExpiredOrders() ([]*domain.Order, error) {
+	return uc.OrderRepo.FindExpiredOrders()
+}
+
+func (uc *DefaultOrderUsecase) CancelExpiredOrders() error {
+	orders, err := uc.FindExpiredOrders()
+	if err != nil {
+		return nil
+	}
+
+	for _, order := range orders {
+		if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, 1); err != nil {
+			log.Printf("Unfreeze failed for order %s: %v", order.ID, err)
+			return status.Error(codes.Internal, err.Error())
+		}
+		
+		if err := uc.OrderRepo.UpdateOrderStatus(order.ID, domain.StatusCanceled); err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		log.Printf("Order %s canceled due to timeout!\n", order.ID)
+	}
+
+	return nil
+}
+
+func (uc *DefaultOrderUsecase) UpdateOrderStatus(orderID string, newStatus domain.OrderStatus) error {
+	return uc.OrderRepo.UpdateOrderStatus(orderID, newStatus)
 }

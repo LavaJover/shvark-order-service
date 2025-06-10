@@ -8,6 +8,7 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/client"
 	"github.com/LavaJover/shvark-order-service/internal/config"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi"
+	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
@@ -32,14 +33,14 @@ func main() {
 		log.Fatalf("failed to init banking client: %v\n", err)
 	}
 
-	// Init wallet usecase
-	httpWalletUsecase, err := usecase.NewHTTPWalletUsecase()
+	// Init wallet handler
+	httpWalletHandler, err := handlers.NewHTTPWalletHandler()
 	if err != nil {
 		log.Fatalf("failed to init wallet usecase")
 	}
 
 	// Init order usecase
-	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient, httpWalletUsecase)
+	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient, httpWalletHandler)
 
 	// Creating gRPC server
 	grpcServer := grpc.NewServer()

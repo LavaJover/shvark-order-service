@@ -1,19 +1,22 @@
 package domain
 
+import "time"
+
 type OrderStatus string
 
 const (
 	StatusCreated 		  OrderStatus = "CREATED"
 	StatusCanceled 		  OrderStatus = "CANCELED"
+	StatusSucceed 		  OrderStatus = "Succeed"
 	StatusDisputeCreated  OrderStatus = "DISPUTE_CREATED"
 	StatusDisputeResolved OrderStatus = "DISPUTE_RESOLVED"
 )
 
-
 type Order struct {
 	ID 			  string
 	MerchantID 	  string
-	Amount 		  float32
+	AmountFiat 	  float32
+	AmountCrypto  float32
 	Currency 	  string
 	Country 	  string
 	ClientEmail   string
@@ -22,4 +25,5 @@ type Order struct {
 	PaymentSystem string
 	BankDetailsID string
 	BankDetail    *BankDetail
+	ExpiresAt	  time.Time
 }

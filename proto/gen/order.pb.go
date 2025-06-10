@@ -10,6 +10,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	durationpb "google.golang.org/protobuf/types/known/durationpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -25,12 +26,13 @@ const (
 type CreateOrderRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MerchantId    string                 `protobuf:"bytes,1,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
-	Amount        float64                `protobuf:"fixed64,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	AmountFiat    float64                `protobuf:"fixed64,2,opt,name=amount_fiat,json=amountFiat,proto3" json:"amount_fiat,omitempty"`
 	Currency      string                 `protobuf:"bytes,3,opt,name=currency,proto3" json:"currency,omitempty"`
 	Country       string                 `protobuf:"bytes,4,opt,name=country,proto3" json:"country,omitempty"`
 	ClientEmail   string                 `protobuf:"bytes,5,opt,name=client_email,json=clientEmail,proto3" json:"client_email,omitempty"`
 	MetadataJson  string                 `protobuf:"bytes,6,opt,name=metadata_json,json=metadataJson,proto3" json:"metadata_json,omitempty"`
 	PaymentSystem string                 `protobuf:"bytes,7,opt,name=payment_system,json=paymentSystem,proto3" json:"payment_system,omitempty"`
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -72,9 +74,9 @@ func (x *CreateOrderRequest) GetMerchantId() string {
 	return ""
 }
 
-func (x *CreateOrderRequest) GetAmount() float64 {
+func (x *CreateOrderRequest) GetAmountFiat() float64 {
 	if x != nil {
-		return x.Amount
+		return x.AmountFiat
 	}
 	return 0
 }
@@ -112,6 +114,13 @@ func (x *CreateOrderRequest) GetPaymentSystem() string {
 		return x.PaymentSystem
 	}
 	return ""
+}
+
+func (x *CreateOrderRequest) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
 }
 
 type CreateOrderResponse struct {
@@ -543,7 +552,9 @@ type Order struct {
 	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
 	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
 	BankDetail    *BankDetail            `protobuf:"bytes,3,opt,name=bank_detail,json=bankDetail,proto3" json:"bank_detail,omitempty"`
-	Amount        float64                `protobuf:"fixed64,4,opt,name=amount,proto3" json:"amount,omitempty"`
+	AmountFiat    float64                `protobuf:"fixed64,4,opt,name=amount_fiat,json=amountFiat,proto3" json:"amount_fiat,omitempty"`
+	AmountCrypto  float64                `protobuf:"fixed64,5,opt,name=amount_crypto,json=amountCrypto,proto3" json:"amount_crypto,omitempty"`
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -599,11 +610,25 @@ func (x *Order) GetBankDetail() *BankDetail {
 	return nil
 }
 
-func (x *Order) GetAmount() float64 {
+func (x *Order) GetAmountFiat() float64 {
 	if x != nil {
-		return x.Amount
+		return x.AmountFiat
 	}
 	return 0
+}
+
+func (x *Order) GetAmountCrypto() float64 {
+	if x != nil {
+		return x.AmountCrypto
+	}
+	return 0
+}
+
+func (x *Order) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
 }
 
 type GetOrdersByTraderIDRequest struct {
@@ -698,16 +723,19 @@ var File_order_proto protoreflect.FileDescriptor
 
 const file_order_proto_rawDesc = "" +
 	"\n" +
-	"\vorder.proto\x12\x05order\x1a\x1egoogle/protobuf/duration.proto\"\xf2\x01\n" +
+	"\vorder.proto\x12\x05order\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb6\x02\n" +
 	"\x12CreateOrderRequest\x12\x1f\n" +
 	"\vmerchant_id\x18\x01 \x01(\tR\n" +
-	"merchantId\x12\x16\n" +
-	"\x06amount\x18\x02 \x01(\x01R\x06amount\x12\x1a\n" +
+	"merchantId\x12\x1f\n" +
+	"\vamount_fiat\x18\x02 \x01(\x01R\n" +
+	"amountFiat\x12\x1a\n" +
 	"\bcurrency\x18\x03 \x01(\tR\bcurrency\x12\x18\n" +
 	"\acountry\x18\x04 \x01(\tR\acountry\x12!\n" +
 	"\fclient_email\x18\x05 \x01(\tR\vclientEmail\x12#\n" +
 	"\rmetadata_json\x18\x06 \x01(\tR\fmetadataJson\x12%\n" +
-	"\x0epayment_system\x18\a \x01(\tR\rpaymentSystem\"9\n" +
+	"\x0epayment_system\x18\a \x01(\tR\rpaymentSystem\x129\n" +
+	"\n" +
+	"expires_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"9\n" +
 	"\x13CreateOrderResponse\x12\"\n" +
 	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\xd2\x02\n" +
 	"\n" +
@@ -736,13 +764,17 @@ const file_order_proto_rawDesc = "" +
 	"\x13GetOrderByIDRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\":\n" +
 	"\x14GetOrderByIDResponse\x12\"\n" +
-	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\x86\x01\n" +
+	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\xef\x01\n" +
 	"\x05Order\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x122\n" +
 	"\vbank_detail\x18\x03 \x01(\v2\x11.order.BankDetailR\n" +
-	"bankDetail\x12\x16\n" +
-	"\x06amount\x18\x04 \x01(\x01R\x06amount\"9\n" +
+	"bankDetail\x12\x1f\n" +
+	"\vamount_fiat\x18\x04 \x01(\x01R\n" +
+	"amountFiat\x12#\n" +
+	"\ramount_crypto\x18\x05 \x01(\x01R\famountCrypto\x129\n" +
+	"\n" +
+	"expires_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"9\n" +
 	"\x1aGetOrdersByTraderIDRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\"C\n" +
 	"\x1bGetOrdersByTraderIDResponse\x12$\n" +
@@ -780,29 +812,32 @@ var file_order_proto_goTypes = []any{
 	(*Order)(nil),                       // 9: order.Order
 	(*GetOrdersByTraderIDRequest)(nil),  // 10: order.GetOrdersByTraderIDRequest
 	(*GetOrdersByTraderIDResponse)(nil), // 11: order.GetOrdersByTraderIDResponse
-	(*durationpb.Duration)(nil),         // 12: google.protobuf.Duration
+	(*timestamppb.Timestamp)(nil),       // 12: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),         // 13: google.protobuf.Duration
 }
 var file_order_proto_depIdxs = []int32{
-	9,  // 0: order.CreateOrderResponse.order:type_name -> order.Order
-	12, // 1: order.BankDetail.delay:type_name -> google.protobuf.Duration
-	9,  // 2: order.GetOrderByIDResponse.order:type_name -> order.Order
-	2,  // 3: order.Order.bank_detail:type_name -> order.BankDetail
-	9,  // 4: order.GetOrdersByTraderIDResponse.orders:type_name -> order.Order
-	0,  // 5: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
-	3,  // 6: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
-	5,  // 7: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
-	7,  // 8: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
-	10, // 9: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
-	1,  // 10: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
-	4,  // 11: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
-	6,  // 12: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
-	8,  // 13: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
-	11, // 14: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
-	10, // [10:15] is the sub-list for method output_type
-	5,  // [5:10] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	12, // 0: order.CreateOrderRequest.expires_at:type_name -> google.protobuf.Timestamp
+	9,  // 1: order.CreateOrderResponse.order:type_name -> order.Order
+	13, // 2: order.BankDetail.delay:type_name -> google.protobuf.Duration
+	9,  // 3: order.GetOrderByIDResponse.order:type_name -> order.Order
+	2,  // 4: order.Order.bank_detail:type_name -> order.BankDetail
+	12, // 5: order.Order.expires_at:type_name -> google.protobuf.Timestamp
+	9,  // 6: order.GetOrdersByTraderIDResponse.orders:type_name -> order.Order
+	0,  // 7: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
+	3,  // 8: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
+	5,  // 9: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
+	7,  // 10: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
+	10, // 11: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
+	1,  // 12: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
+	4,  // 13: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
+	6,  // 14: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
+	8,  // 15: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
+	11, // 16: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
+	12, // [12:17] is the sub-list for method output_type
+	7,  // [7:12] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_order_proto_init() }

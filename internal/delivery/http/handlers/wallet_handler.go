@@ -1,4 +1,4 @@
-package usecase
+package handlers
 
 import (
 	"bytes"
@@ -11,15 +11,15 @@ import (
 	walletResponse "github.com/LavaJover/shvark-order-service/internal/delivery/http/dto/wallet/response"
 )
 
-type HTTPWalletUsecase struct {
+type HTTPWalletHandler struct {
 
 }
 
-func NewHTTPWalletUsecase() (*HTTPWalletUsecase, error) {
-	return &HTTPWalletUsecase{}, nil
+func NewHTTPWalletHandler() (*HTTPWalletHandler, error) {
+	return &HTTPWalletHandler{}, nil
 }
 
-func (uc *HTTPWalletUsecase) Freeze(traderID, orderID string, amount float64) error {
+func (uc *HTTPWalletHandler) Freeze(traderID, orderID string, amount float64) error {
 	requestBodyBytes, err := json.Marshal(walletRequest.FreezeRequest{
 		TraderID: traderID,
 		OrderID: orderID,
@@ -50,7 +50,7 @@ func (uc *HTTPWalletUsecase) Freeze(traderID, orderID string, amount float64) er
 	}
 }
 
-func (uc *HTTPWalletUsecase) Release(traderID, orderID string, rewardPercent float64) error {
+func (uc *HTTPWalletHandler) Release(traderID, orderID string, rewardPercent float64) error {
 	requestBodyBytes, err := json.Marshal(walletRequest.ReleaseRequest{
 		TraderID: traderID,
 		OrderID: orderID,
