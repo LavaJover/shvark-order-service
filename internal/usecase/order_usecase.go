@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -157,7 +158,7 @@ func (uc *DefaultOrderUsecase) FindExpiredOrders() ([]*domain.Order, error) {
 	return uc.OrderRepo.FindExpiredOrders()
 }
 
-func (uc *DefaultOrderUsecase) CancelExpiredOrders() error {
+func (uc *DefaultOrderUsecase) CancelExpiredOrders(ctx context.Context) error {
 	orders, err := uc.FindExpiredOrders()
 	if err != nil {
 		return nil

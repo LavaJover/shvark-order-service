@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/client"
 	"github.com/LavaJover/shvark-order-service/internal/config"
@@ -53,6 +55,17 @@ func main() {
 	if err != nil{
 		log.Fatalf("failed to listen: %v", err)
 	}
+
+	go func() {
+		ticker := time.NewTicker(1 * time.Minute)
+		for {
+			<-ticker.C
+			err := uc.CancelExpiredOrders(context.Background())
+			if err != nil {
+				log.Printf("Auto-cancel error: %v\n", err)
+			}
+		}
+	}()
 
 	fmt.Printf("gRPC server started on %s:%s\n", cfg.Host, cfg.Port)
 	if err := grpcServer.Serve(lis); err != nil{
