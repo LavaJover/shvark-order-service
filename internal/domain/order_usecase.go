@@ -11,4 +11,5 @@ type OrderUsecase interface {
 	OpenOrderDispute(orderID string) error
 	ResolveOrderDispute(orderID string) error
 	ApproveOrder(orderID string) error
+	CancelOrder(orderID string) error
 }

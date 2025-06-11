@@ -258,3 +258,26 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 
 	return nil
 }
+
+func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
+	// Find exact order
+	order, err := uc.GetOrderByID(orderID)
+	if err != nil {
+		return err
+	}
+
+	if order.Status != domain.StatusCreated && order.Status != domain.StatusDisputeCreated{
+		return domain.ErrCancelOrder
+	}
+
+	// Set order status to DISPUTE_CREATED
+	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusCanceled); err != nil {
+		return err
+	}
+
+	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, 0); err != nil {
+		return err
+	}
+
+	return nil
+}

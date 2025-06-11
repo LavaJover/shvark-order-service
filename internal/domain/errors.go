@@ -8,4 +8,5 @@ var (
 	ErrReleaseFailed = errors.New("release failed")
 	ErrOpenDisputeFailed = errors.New("failed to open dispute")
 	ErrResolveDisputeFailed = errors.New("failed to resolve dispute")
+	ErrCancelOrder = errors.New("failed to cancel order")
 )

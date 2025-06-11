@@ -166,3 +166,16 @@ func (h *OrderHandler) ResolveOrderDispute(ctx context.Context, r *orderpb.Resol
 		}, nil
 	}
 }
+
+func (h *OrderHandler) CancelOrder(ctx context.Context, r *orderpb.CancelOrderRequest) (*orderpb.CancelOrderResponse, error) {
+	orderID := r.OrderId
+	if err := h.uc.CancelOrder(orderID); err != nil {
+		return &orderpb.CancelOrderResponse{
+			Message: "Failed to cancel order",
+		}, err
+	}
+
+	return &orderpb.CancelOrderResponse{
+		Message: "Order successfully canceled",
+	}, nil
+}
