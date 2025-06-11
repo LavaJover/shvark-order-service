@@ -24,7 +24,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 
 	orderRequest := domain.Order{
 		MerchantID: r.MerchantId,
-		AmountFiat: float32(r.AmountFiat),
+		AmountFiat: r.AmountFiat,
 		Currency: r.Currency,
 		Country: r.Country,
 		ClientEmail: r.ClientEmail,

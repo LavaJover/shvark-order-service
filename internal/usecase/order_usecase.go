@@ -70,7 +70,7 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(query *domain.BankDetailQ
 func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, error) {
 	// find eligible bank details
 	query := domain.BankDetailQuery{
-		Amount: order.AmountFiat,
+		Amount: float32(order.AmountFiat),
 		Currency: order.Currency,
 		PaymentSystem: order.PaymentSystem,
 		Country: order.Country,
@@ -96,16 +96,16 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		return nil, err
 	}
 
+		// BTC RATE
+	// IMPROVE THIS !!!
+	amountCrypto := float64(order.AmountFiat / 8599022)
+	order.AmountCrypto = amountCrypto
+	////////////////////////////////////////////////
+
 	orderID, err := uc.OrderRepo.CreateOrder(order)
 	if err != nil {
 		return nil, err
 	}
-
-	// BTC RATE
-	// IMPROVE THIS !!!
-	amountCrypto := float64(order.AmountFiat / 8599022)
-	order.AmountCrypto = float32(amountCrypto)
-	////////////////////////////////////////////////
 
 	fmt.Println(chosenBankDetail.TraderID, order.ID, amountCrypto)
 
@@ -167,7 +167,7 @@ func (uc *DefaultOrderUsecase) CancelExpiredOrders(ctx context.Context) error {
 	}
 
 	for _, order := range orders {
-		if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, float64(1.)); err != nil {
+		if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, float64(0.)); err != nil {
 			log.Printf("Unfreeze failed for order %s: %v", order.ID, err)
 			return status.Error(codes.Internal, err.Error())
 		}
@@ -200,7 +200,9 @@ func (uc *DefaultOrderUsecase) OpenOrderDispute(orderID string) error {
 	}
 
 	// Freeze crypto
-	if err := uc.WalletHandler.Freeze(order.BankDetail.TraderID, order.ID, float64(order.AmountCrypto)); err != nil {
+	fmt.Println("Freezing crypto!")
+	fmt.Println(order.AmountCrypto)
+	if err := uc.WalletHandler.Freeze(order.BankDetail.TraderID, order.ID, order.AmountCrypto); err != nil {
 		return err
 	}
 

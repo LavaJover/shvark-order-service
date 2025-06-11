@@ -15,8 +15,8 @@ const (
 type Order struct {
 	ID 			  string
 	MerchantID 	  string
-	AmountFiat 	  float32
-	AmountCrypto  float32
+	AmountFiat 	  float64
+	AmountCrypto  float64
 	Currency 	  string
 	Country 	  string
 	ClientEmail   string

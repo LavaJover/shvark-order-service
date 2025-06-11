@@ -9,8 +9,8 @@ import (
 type OrderModel struct {
 	ID 			  string  			`gorm:"primaryKey;type:uuid"`
 	MerchantID 	  string  			`gorm:"type:uuid"`
-	AmountFiat 	  float32
-	AmountCrypto  float32	
+	AmountFiat 	  float64
+	AmountCrypto  float64	
 	Currency 	  string		
 	Country 	  string
 	ClientEmail   string
