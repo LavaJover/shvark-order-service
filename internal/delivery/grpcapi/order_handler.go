@@ -111,7 +111,6 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 	if err != nil {
 		return nil, err
 	}
-
 	orders := make([]*orderpb.Order, len(ordersResponse))
 	for i, order := range ordersResponse {
 		orders[i] = &orderpb.Order{

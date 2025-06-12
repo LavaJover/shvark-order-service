@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
@@ -96,9 +97,12 @@ func (r *DefaultOrderRepository) UpdateOrderStatus(orderID string, newStatus dom
 func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string) ([]*domain.Order, error) {
 	var orderModels []OrderModel
 
-	if err := r.DB.Preload("BankDetail").Where("trader_id = ?", traderID).Find(&orderModels).Error; err != nil {
-		return nil, err
-	}
+	if err := r.DB.
+		Joins("JOIN bank_detail_models ON order_models.bank_details_id = bank_detail_models.id").
+		Where("bank_detail_models.trader_id = ?", traderID).
+		Find(&orderModels).Error; err != nil {
+			return nil, err
+		}
 
 	orders := make([]*domain.Order, len(orderModels))
 	for i, orderModel := range orderModels {
@@ -114,6 +118,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string) ([]*domain
 			Status: orderModel.Status,
 			PaymentSystem: orderModel.PaymentSystem,
 			ExpiresAt: orderModel.ExpiresAt,
+			BankDetailsID: orderModel.BankDetailsID,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
