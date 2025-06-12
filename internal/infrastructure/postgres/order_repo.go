@@ -1,7 +1,6 @@
 package postgres
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
