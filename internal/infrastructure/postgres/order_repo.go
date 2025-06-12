@@ -97,6 +97,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string) ([]*domain
 	var orderModels []OrderModel
 
 	if err := r.DB.
+		Preload("BankDetail").
 		Joins("JOIN bank_detail_models ON order_models.bank_details_id = bank_detail_models.id").
 		Where("bank_detail_models.trader_id = ?", traderID).
 		Find(&orderModels).Error; err != nil {
