@@ -42,7 +42,10 @@ message BankDetail {
     string bank_name = 7;
     string payment_system = 8;
     bool enabled = 9;
-    google.protobuf.Duration delay = 10; 
+    google.protobuf.Duration delay = 10;
+    string owner = 11;
+    string card_number = 12;
+    string phone = 13;
 }
 
 message ApproveOrderRequest {

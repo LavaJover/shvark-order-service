@@ -179,6 +179,9 @@ type BankDetail struct {
 	PaymentSystem string                 `protobuf:"bytes,8,opt,name=payment_system,json=paymentSystem,proto3" json:"payment_system,omitempty"`
 	Enabled       bool                   `protobuf:"varint,9,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	Delay         *durationpb.Duration   `protobuf:"bytes,10,opt,name=delay,proto3" json:"delay,omitempty"`
+	Owner         string                 `protobuf:"bytes,11,opt,name=owner,proto3" json:"owner,omitempty"`
+	CardNumber    string                 `protobuf:"bytes,12,opt,name=card_number,json=cardNumber,proto3" json:"card_number,omitempty"`
+	Phone         string                 `protobuf:"bytes,13,opt,name=phone,proto3" json:"phone,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -281,6 +284,27 @@ func (x *BankDetail) GetDelay() *durationpb.Duration {
 		return x.Delay
 	}
 	return nil
+}
+
+func (x *BankDetail) GetOwner() string {
+	if x != nil {
+		return x.Owner
+	}
+	return ""
+}
+
+func (x *BankDetail) GetCardNumber() string {
+	if x != nil {
+		return x.CardNumber
+	}
+	return ""
+}
+
+func (x *BankDetail) GetPhone() string {
+	if x != nil {
+		return x.Phone
+	}
+	return ""
 }
 
 type ApproveOrderRequest struct {
@@ -913,7 +937,7 @@ const file_order_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"9\n" +
 	"\x13CreateOrderResponse\x12\"\n" +
-	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\xd2\x02\n" +
+	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\x9f\x03\n" +
 	"\n" +
 	"BankDetail\x12$\n" +
 	"\x0ebank_detail_id\x18\x01 \x01(\tR\fbankDetailId\x12\x1b\n" +
@@ -928,7 +952,11 @@ const file_order_proto_rawDesc = "" +
 	"\x0epayment_system\x18\b \x01(\tR\rpaymentSystem\x12\x18\n" +
 	"\aenabled\x18\t \x01(\bR\aenabled\x12/\n" +
 	"\x05delay\x18\n" +
-	" \x01(\v2\x19.google.protobuf.DurationR\x05delay\"0\n" +
+	" \x01(\v2\x19.google.protobuf.DurationR\x05delay\x12\x14\n" +
+	"\x05owner\x18\v \x01(\tR\x05owner\x12\x1f\n" +
+	"\vcard_number\x18\f \x01(\tR\n" +
+	"cardNumber\x12\x14\n" +
+	"\x05phone\x18\r \x01(\tR\x05phone\"0\n" +
 	"\x13ApproveOrderRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\"0\n" +
 	"\x14ApproveOrderResponse\x12\x18\n" +
