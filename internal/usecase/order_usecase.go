@@ -60,6 +60,12 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(query *domain.BankDetailQ
 			PaymentSystem: bankDetail.PaymentSystem,
 			Delay: bankDetail.Delay.AsDuration(),
 			Enabled: bankDetail.Enabled,
+			CardNumber: bankDetail.CardNumber,
+			Phone: bankDetail.Phone,
+			Owner: bankDetail.Owner,
+			MaxOrdersSimultaneosly: bankDetail.MaxOrdersSimultaneosly,
+			MaxAmountDay: int32(bankDetail.MaxAmountDay),
+			MaxAmountMonth: int32(bankDetail.MaxAmountMonth),
 		}
 	}
 
