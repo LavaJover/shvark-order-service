@@ -94,6 +94,8 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		return nil, status.Error(codes.Internal, "failed to pick best bank detail")
 	}
 
+	fmt.Println(chosenBankDetail)
+
 	// relate found bank detail and order
 	order.BankDetailsID = chosenBankDetail.ID
 
