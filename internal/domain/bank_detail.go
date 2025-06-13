@@ -19,6 +19,8 @@ type BankDetail struct {
 	MaxOrdersSimultaneosly  int32
 	MaxAmountDay			int32
 	MaxAmountMonth  		int32
+	MaxQuantityDay			int32
+	MaxQuantityMonth		int32
 
 	CreatedAt 	  time.Time
 	UpdatedAt 	  time.Time

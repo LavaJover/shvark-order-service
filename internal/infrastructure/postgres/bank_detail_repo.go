@@ -31,6 +31,8 @@ func (r *DefaultBankDetailRepo) SaveBankDetail(bankDetail *domain.BankDetail) er
 		MaxOrdersSimultaneosly: bankDetail.MaxOrdersSimultaneosly,
 		MaxAmountDay: bankDetail.MaxAmountDay,
 		MaxAmountMonth: bankDetail.MaxAmountMonth,
+		MaxQuantityDay: bankDetail.MaxQuantityDay,
+		MaxQuantityMonth: bankDetail.MaxQuantityMonth,
 	}
 
 	return r.DB.Save(&bankDetailModel).Error

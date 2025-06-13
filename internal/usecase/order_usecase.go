@@ -128,6 +128,36 @@ func (uc *DefaultOrderUsecase) FilterByDelay(bankDetails []*domain.BankDetail) (
 	return result, nil
 }
 
+func (uc *DefaultOrderUsecase) FilterByMaxQuantityDay(bankDetails []*domain.BankDetail) ([]*domain.BankDetail, error) {
+	result := make([]*domain.BankDetail, 0)
+	for _, bankDetail := range bankDetails {
+		orders, err := uc.OrderRepo.GetOrdersByBankDetailID(bankDetail.ID)
+		if err != nil {
+			return nil, err
+		}
+		ordersQuantityDay := 0 
+		for _, order := range orders {
+			if order.Status == domain.StatusCanceled {
+				continue
+			}
+			if order.Status == domain.StatusCreated && time.Since(order.CreatedAt) <= 24*time.Hour {
+				ordersQuantityDay++
+				continue
+			}
+			if time.Since(order.UpdatedAt) <= 24*time.Hour {
+				ordersQuantityDay++
+				continue
+			}
+		}
+		fmt.Printf("Max quantity a day: %d. Current daily quantity: %d\n", bankDetail.MaxQuantityDay, ordersQuantityDay)
+		if ordersQuantityDay + 1 <= int(bankDetail.MaxQuantityDay) {
+			result = append(result, bankDetail)
+		}
+	}
+
+	return result, nil
+}
+
 func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, query *domain.BankDetailQuery) ([]*domain.BankDetail, error) {
 	eligibleBankDetailsResponse, err := uc.BankingClient.GetEligibleBankDetails(query)
 	if err != nil {
@@ -157,6 +187,8 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 			MaxOrdersSimultaneosly: bankDetail.MaxOrdersSimultaneosly,
 			MaxAmountDay: int32(bankDetail.MaxAmountDay),
 			MaxAmountMonth: int32(bankDetail.MaxAmountMonth),
+			MaxQuantityDay: int32(bankDetail.MaxQuantityDay),
+			MaxQuantityMonth: int32(bankDetail.MaxQuantityMonth),
 		}
 	}
 
@@ -177,6 +209,11 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 	}
 	// 4) Filter by delay
 	bankDetails, err = uc.FilterByDelay(bankDetails)
+	if err != nil {
+		return nil, err
+	}
+	// 5) Filter by MaxQuantityDay
+	bankDetails, err = uc.FilterByMaxQuantityDay(bankDetails)
 	if err != nil {
 		return nil, err
 	}
@@ -267,6 +304,8 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 			MaxOrdersSimultaneosly: chosenBankDetail.MaxOrdersSimultaneosly,
 			MaxAmountDay: chosenBankDetail.MaxAmountDay,
 			MaxAmountMonth: chosenBankDetail.MaxAmountMonth,
+			MaxQuantityDay: chosenBankDetail.MaxQuantityDay,
+			MaxQuantityMonth: chosenBankDetail.MaxQuantityMonth,
 		},
 	}, nil
 }
