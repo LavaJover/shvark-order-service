@@ -26,4 +26,7 @@ type Order struct {
 	BankDetailsID string
 	BankDetail    *BankDetail
 	ExpiresAt	  time.Time
+
+	CreatedAt 	  time.Time
+	UpdatedAt 	  time.Time
 }

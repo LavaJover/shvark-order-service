@@ -59,6 +59,24 @@ func (uc *DefaultOrderUsecase) FilterByMaxOrdersSimulateosly(bankDetails []*doma
 	return result, nil
 }
 
+// func (uc *DefaultOrderUsecase) FilterByMaxAmountDay(bankDetails []*domain.BankDetail, amountFiat float64) ([]*domain.BankDetail, error) {
+// 	result := make([]*domain.BankDetail, 0)
+// 	for _, bankDetail := range bankDetails {
+// 		orders, err := uc.OrderRepo.GetOrdersByBankDetailID(bankDetail.ID)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		ordersSucceed := make([]*domain.Order, 0)
+// 		ordersSucceedSummary := float64(0.)
+// 		for _, order := range orders {
+// 			if order.Status == domain.StatusSucceed && order.UpdatedAt {
+// 				ordersSucceed = append(ordersSucceed, order)
+// 				ordersSucceedSummary += order.AmountFiat
+// 			}
+// 		}
+// 	}
+// }
+
 func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, query *domain.BankDetailQuery) ([]*domain.BankDetail, error) {
 	eligibleBankDetailsResponse, err := uc.BankingClient.GetEligibleBankDetails(query)
 	if err != nil {

@@ -59,6 +59,8 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 		PaymentSystem: order.PaymentSystem,
 		BankDetailsID: order.BankDetailsID,
 		ExpiresAt: order.ExpiresAt,
+		CreatedAt: order.CreatedAt,
+		UpdatedAt: order.UpdatedAt,
 		BankDetail: &domain.BankDetail{
 			ID: order.BankDetail.ID,
 			TraderID: order.BankDetail.TraderID,
@@ -119,6 +121,8 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string) ([]*domain
 			PaymentSystem: orderModel.PaymentSystem,
 			ExpiresAt: orderModel.ExpiresAt,
 			BankDetailsID: orderModel.BankDetailsID,
+			CreatedAt: orderModel.CreatedAt,
+			UpdatedAt: orderModel.UpdatedAt,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -164,6 +168,8 @@ func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
 			Status: orderModel.Status,
 			PaymentSystem: orderModel.PaymentSystem,
 			BankDetailsID: orderModel.BankDetailsID,
+			CreatedAt: orderModel.CreatedAt,
+			UpdatedAt: orderModel.UpdatedAt,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -213,6 +219,8 @@ func (r *DefaultOrderRepository) GetOrdersByBankDetailID(bankDetailID string) ([
 			Status: orderModel.Status,
 			PaymentSystem: orderModel.PaymentSystem,
 			BankDetailsID: orderModel.BankDetailsID,
+			CreatedAt: orderModel.CreatedAt,
+			UpdatedAt: orderModel.UpdatedAt,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,

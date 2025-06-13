@@ -20,4 +20,6 @@ type OrderModel struct {
 	BankDetailsID string  			`gorm:"type:uuid"`	
 	BankDetail 	  BankDetailModel   `gorm:"foreignKey:BankDetailsID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 	ExpiresAt  	  time.Time
+	CreatedAt 	  time.Time
+	UpdatedAt 	  time.Time
 }
