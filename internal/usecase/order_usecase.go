@@ -37,7 +37,29 @@ func (uc *DefaultOrderUsecase) PickBestBankDetail(bankDetails []*domain.BankDeta
 	return bankDetails[0], nil
 }
 
-func (uc *DefaultOrderUsecase) FindEligibleBankDetails(query *domain.BankDetailQuery) ([]*domain.BankDetail, error) {
+func (uc *DefaultOrderUsecase) FilterByMaxOrdersSimulateosly(bankDetails []*domain.BankDetail) ([]*domain.BankDetail, error) {
+	result := make([]*domain.BankDetail, 0)
+	for _, bankDetail := range bankDetails {
+		orders, err := uc.OrderRepo.GetOrdersByBankDetailID(bankDetail.ID)
+		if err != nil {
+			return nil, err
+		}
+		ordersCreated := make([]*domain.Order, 0)
+		for _, order := range orders {
+			if order.Status == domain.StatusCreated {
+				ordersCreated = append(ordersCreated, order)
+			}
+		}
+		fmt.Printf("Orders created: %d. Orders max simultaneosly: %d\n", len(ordersCreated), bankDetail.MaxOrdersSimultaneosly)
+		if len(ordersCreated) < int(bankDetail.MaxOrdersSimultaneosly) {
+			result = append(result, bankDetail)
+		}
+	}
+
+	return result, nil
+}
+
+func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, query *domain.BankDetailQuery) ([]*domain.BankDetail, error) {
 	eligibleBankDetailsResponse, err := uc.BankingClient.GetEligibleBankDetails(query)
 	if err != nil {
 		return nil, err
@@ -69,6 +91,21 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(query *domain.BankDetailQ
 		}
 	}
 
+	// 1) Filter by MaxOrdersSimultaneosly
+	bankDetails, err = uc.FilterByMaxOrdersSimulateosly(bankDetails)
+	if err != nil {
+		return nil, err
+	}
+	// 2) Filter by MaxAmountDay
+
+	// 3) Filter by MaxAmountMonth
+
+	// 4) Filter by delay
+
+	if len(bankDetails) == 0 {
+		return nil, domain.ErrNoAvailableBankDetails
+	}
+
 	return bankDetails, nil
 	
 }
@@ -83,7 +120,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	}
 
 	// searching for eligible bank details due to order query parameters
-	bankDetails, err := uc.FindEligibleBankDetails(&query)
+	bankDetails, err := uc.FindEligibleBankDetails(order, &query)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "no eligible bank detail")
 	}

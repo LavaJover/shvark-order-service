@@ -188,3 +188,52 @@ func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
 
 	return orders, nil
 }
+
+func (r *DefaultOrderRepository) GetOrdersByBankDetailID(bankDetailID string) ([]*domain.Order, error) {
+	var orderModels []OrderModel
+	if err := r.DB.
+		Preload("BankDetail").
+		Where("bank_details_id = ?", bankDetailID).
+		Find(&orderModels).Error; 
+		err != nil {
+			return nil, err
+		}
+
+	orders := make([]*domain.Order, len(orderModels))
+	for i, orderModel := range orderModels {
+		orders[i] = &domain.Order{
+			ID: orderModel.ID,
+			MerchantID: orderModel.MerchantID,
+			AmountFiat: orderModel.AmountFiat,
+			AmountCrypto: orderModel.AmountCrypto,
+			Currency: orderModel.Currency,
+			Country: orderModel.Country,
+			ClientEmail: orderModel.ClientEmail,
+			MetadataJSON: orderModel.MetadataJSON,
+			Status: orderModel.Status,
+			PaymentSystem: orderModel.PaymentSystem,
+			BankDetailsID: orderModel.BankDetailsID,
+			BankDetail: &domain.BankDetail{
+				ID: orderModel.BankDetail.ID,
+				TraderID: orderModel.BankDetail.TraderID,
+				Country: orderModel.BankDetail.Country,
+				Currency: orderModel.BankDetail.Currency,
+				MinAmount: orderModel.BankDetail.MinAmount,
+				MaxAmount: orderModel.BankDetail.MaxAmount,
+				BankName: orderModel.BankDetail.BankName,
+				PaymentSystem: orderModel.BankDetail.PaymentSystem,
+				Delay: orderModel.BankDetail.Delay,
+				Enabled: orderModel.BankDetail.Enabled,
+				CardNumber: orderModel.BankDetail.CardNumber,
+				Phone: orderModel.BankDetail.Phone,
+				Owner: orderModel.BankDetail.Owner,
+				MaxOrdersSimultaneosly: orderModel.BankDetail.MaxOrdersSimultaneosly,
+				MaxAmountDay: orderModel.BankDetail.MaxAmountDay,
+				MaxAmountMonth: orderModel.BankDetail.MaxAmountMonth,
+			},
+			ExpiresAt: orderModel.ExpiresAt,
+		}
+	}
+
+	return orders, nil
+}
