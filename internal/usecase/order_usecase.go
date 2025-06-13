@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/client"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
@@ -59,23 +60,73 @@ func (uc *DefaultOrderUsecase) FilterByMaxOrdersSimulateosly(bankDetails []*doma
 	return result, nil
 }
 
-// func (uc *DefaultOrderUsecase) FilterByMaxAmountDay(bankDetails []*domain.BankDetail, amountFiat float64) ([]*domain.BankDetail, error) {
-// 	result := make([]*domain.BankDetail, 0)
-// 	for _, bankDetail := range bankDetails {
-// 		orders, err := uc.OrderRepo.GetOrdersByBankDetailID(bankDetail.ID)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		ordersSucceed := make([]*domain.Order, 0)
-// 		ordersSucceedSummary := float64(0.)
-// 		for _, order := range orders {
-// 			if order.Status == domain.StatusSucceed && order.UpdatedAt {
-// 				ordersSucceed = append(ordersSucceed, order)
-// 				ordersSucceedSummary += order.AmountFiat
-// 			}
-// 		}
-// 	}
-// }
+func (uc *DefaultOrderUsecase) FilterByMaxAmountDay(bankDetails []*domain.BankDetail, amountFiat float64) ([]*domain.BankDetail, error) {
+	result := make([]*domain.BankDetail, 0)
+	for _, bankDetail := range bankDetails {
+		orders, err := uc.OrderRepo.GetOrdersByBankDetailID(bankDetail.ID)
+		if err != nil {
+			return nil, err
+		}
+		ordersSucceedSummary := float64(0.)
+		for _, order := range orders {
+			if order.Status == domain.StatusSucceed && time.Since(order.UpdatedAt) <= 24*time.Hour {
+				ordersSucceedSummary += order.AmountFiat
+			}
+		}
+		fmt.Printf("Max amount a day: %d. Current summary amount: %f\n", bankDetail.MaxAmountDay, ordersSucceedSummary)
+		if ordersSucceedSummary + amountFiat <= float64(bankDetail.MaxAmountDay) {
+			result = append(result, bankDetail)
+		}
+	}
+
+	return result, nil
+}
+
+func (uc *DefaultOrderUsecase) FilterByMaxAmountMonth(bankDetails []*domain.BankDetail, amountFiat float64) ([]*domain.BankDetail, error) {
+	result := make([]*domain.BankDetail, 0)
+	for _, bankDetail := range bankDetails {
+		orders, err := uc.OrderRepo.GetOrdersByBankDetailID(bankDetail.ID)
+		if err != nil {
+			return nil, err
+		}
+		ordersSucceedSummary := float64(0.)
+		for _, order := range orders {
+			if order.Status == domain.StatusSucceed && time.Since(order.UpdatedAt) <= 30*24*time.Hour {
+				ordersSucceedSummary += order.AmountFiat
+			}
+		}
+		fmt.Printf("Max amount a month: %d. Current summary month: %f\n", bankDetail.MaxAmountDay, ordersSucceedSummary)
+		if ordersSucceedSummary + amountFiat <= float64(bankDetail.MaxAmountDay) {
+			result = append(result, bankDetail)
+		}
+	}
+
+	return result, nil	
+}
+
+func (uc *DefaultOrderUsecase) FilterByDelay(bankDetails []*domain.BankDetail) ([]*domain.BankDetail, error) {
+	result := make([]*domain.BankDetail, 0)
+	for _, bankDetail := range bankDetails {
+		var latestOrder *domain.Order
+		orders, err := uc.OrderRepo.GetOrdersByBankDetailID(bankDetail.ID)
+		if err != nil {
+			return nil, err
+		}
+		for _, order := range orders {
+			if order.Status != domain.StatusSucceed {
+				continue
+			}
+
+			if latestOrder == nil || order.UpdatedAt.After(latestOrder.UpdatedAt) {
+				latestOrder = order
+			}
+		}
+		if latestOrder == nil || time.Since(latestOrder.UpdatedAt)>=bankDetail.Delay{
+			result = append(result, bankDetail)
+		}
+	}
+	return result, nil
+}
 
 func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, query *domain.BankDetailQuery) ([]*domain.BankDetail, error) {
 	eligibleBankDetailsResponse, err := uc.BankingClient.GetEligibleBankDetails(query)
@@ -115,17 +166,26 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 		return nil, err
 	}
 	// 2) Filter by MaxAmountDay
-
+	bankDetails, err = uc.FilterByMaxAmountDay(bankDetails, order.AmountFiat)
+	if err != nil {
+		return nil, err
+	}
 	// 3) Filter by MaxAmountMonth
-
+	bankDetails, err = uc.FilterByMaxAmountMonth(bankDetails, order.AmountFiat)
+	if err != nil {
+		return nil, err
+	}
 	// 4) Filter by delay
+	bankDetails, err = uc.FilterByDelay(bankDetails)
+	if err != nil {
+		return nil, err
+	}
 
 	if len(bankDetails) == 0 {
 		return nil, domain.ErrNoAvailableBankDetails
 	}
 
 	return bankDetails, nil
-	
 }
 
 func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, error) {
