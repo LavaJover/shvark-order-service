@@ -298,17 +298,17 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	order.AmountCrypto = amountCrypto
 	////////////////////////////////////////////////
 
+	// Freeze crypto
+	if err := uc.WalletHandler.Freeze(chosenBankDetail.TraderID, order.ID, amountCrypto); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	orderID, err := uc.OrderRepo.CreateOrder(order)
 	if err != nil {
 		return nil, err
 	}
 
 	fmt.Println(chosenBankDetail.TraderID, order.ID, amountCrypto)
-
-	// Freeze crypto
-	if err := uc.WalletHandler.Freeze(chosenBankDetail.TraderID, order.ID, amountCrypto); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
 
 	return &domain.Order{
 		ID: orderID,
