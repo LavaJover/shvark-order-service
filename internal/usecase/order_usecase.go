@@ -382,6 +382,19 @@ func (uc *DefaultOrderUsecase) CancelExpiredOrders(ctx context.Context) error {
 		}
 
 		log.Printf("Order %s canceled due to timeout!\n", order.ID)
+		// Вызов callback мерчанта
+		if(order.CallbackURL != ""){
+			notifier.SendCallback(order.CallbackURL, notifier.CallbackPayload{
+				OrderID: order.ID,
+				MerchantOrderID: order.MerchantOrderID,
+				Status: string(domain.StatusCanceled),
+				AmountFiat: order.AmountFiat,
+				AmountCrypto: order.AmountCrypto,
+				Currency: order.Currency,
+				ConfirmedAt: order.UpdatedAt,
+				ClientID: order.ClientID,
+			})
+		} 
 	}
 
 	return nil
@@ -411,6 +424,19 @@ func (uc *DefaultOrderUsecase) OpenOrderDispute(orderID string) error {
 		return err
 	}
 
+	if(order.CallbackURL != ""){
+		notifier.SendCallback(order.CallbackURL, notifier.CallbackPayload{
+			OrderID: order.ID,
+			MerchantOrderID: order.MerchantOrderID,
+			Status: string(domain.StatusDisputeCreated),
+			AmountFiat: order.AmountFiat,
+			AmountCrypto: order.AmountCrypto,
+			Currency: order.Currency,
+			ConfirmedAt: order.UpdatedAt,
+			ClientID: order.ClientID,
+		})
+	} 
+
 	return nil
 }
 
@@ -435,6 +461,19 @@ func (uc *DefaultOrderUsecase) ResolveOrderDispute(orderID string) error {
 	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, rewardPercent); err != nil {
 		return err
 	}
+
+	if(order.CallbackURL != ""){
+		notifier.SendCallback(order.CallbackURL, notifier.CallbackPayload{
+			OrderID: order.ID,
+			MerchantOrderID: order.MerchantOrderID,
+			Status: string(domain.StatusDisputeResolved),
+			AmountFiat: order.AmountFiat,
+			AmountCrypto: order.AmountCrypto,
+			Currency: order.Currency,
+			ConfirmedAt: order.UpdatedAt,
+			ClientID: order.ClientID,
+		})
+	} 
 
 	return nil
 }
@@ -462,20 +501,18 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 	}
 
 	// Вызов callback мерчанта
-	if order.CallbackURL == "" {
-		return nil
-	}
-
-	notifier.SendCallback(order.CallbackURL, notifier.CallbackPayload{
-		OrderID: order.ID,
-		MerchantOrderID: order.MerchantOrderID,
-		Status: string(order.Status),
-		AmountFiat: order.AmountFiat,
-		AmountCrypto: order.AmountCrypto,
-		Currency: order.Currency,
-		ConfirmedAt: order.UpdatedAt,
-		ClientID: order.ClientID,
-	})
+	if(order.CallbackURL != ""){
+		notifier.SendCallback(order.CallbackURL, notifier.CallbackPayload{
+			OrderID: order.ID,
+			MerchantOrderID: order.MerchantOrderID,
+			Status: string(domain.StatusSucceed),
+			AmountFiat: order.AmountFiat,
+			AmountCrypto: order.AmountCrypto,
+			Currency: order.Currency,
+			ConfirmedAt: order.UpdatedAt,
+			ClientID: order.ClientID,
+		})
+	} 
 
 	return nil
 }
@@ -491,7 +528,7 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		return domain.ErrCancelOrder
 	}
 
-	// Set order status to DISPUTE_CREATED
+	// Set order status to CANCELED
 	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusCanceled); err != nil {
 		return err
 	}
@@ -499,6 +536,20 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, 0); err != nil {
 		return err
 	}
+
+	// Вызов callback мерчанта
+	if(order.CallbackURL != ""){
+		notifier.SendCallback(order.CallbackURL, notifier.CallbackPayload{
+			OrderID: order.ID,
+			MerchantOrderID: order.MerchantOrderID,
+			Status: string(domain.StatusCanceled),
+			AmountFiat: order.AmountFiat,
+			AmountCrypto: order.AmountCrypto,
+			Currency: order.Currency,
+			ConfirmedAt: order.UpdatedAt,
+			ClientID: order.ClientID,
+		})
+	} 
 
 	return nil
 }
