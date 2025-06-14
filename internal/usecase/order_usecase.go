@@ -242,6 +242,9 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 	if err != nil {
 		return nil, err
 	}
+	if len(bankDetails) == 0 {
+		fmt.Println("Отсеились по времени")
+	}
 	// 5) Filter by MaxQuantityDay
 	bankDetails, err = uc.FilterByMaxQuantityDay(bankDetails)
 	if err != nil {
