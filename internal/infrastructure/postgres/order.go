@@ -17,10 +17,11 @@ type OrderModel struct {
 	Status 		  	domain.OrderStatus
 	PaymentSystem 	string
 	BankDetailsID 	string  			`gorm:"type:uuid"`	
-	BankDetail 	  	BankDetailModel   `gorm:"foreignKey:BankDetailsID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	BankDetail 	  	BankDetailModel   	`gorm:"foreignKey:BankDetailsID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 	ExpiresAt  	  	time.Time
 	CreatedAt 	  	time.Time
 	UpdatedAt 	  	time.Time
 	MerchantOrderID string
 	Shuffle 		int32
+	CallbackURL 	string
 }

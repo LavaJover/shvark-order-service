@@ -9,6 +9,7 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/client"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/notifier"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -328,6 +329,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		ExpiresAt: order.ExpiresAt,
 		MerchantOrderID: order.MerchantOrderID,
 		Shuffle: order.Shuffle,
+		CallbackURL: order.CallbackURL,
 		BankDetail: &domain.BankDetail{
 			ID: chosenBankDetail.ID,
 			TraderID: chosenBankDetail.TraderID,
@@ -448,7 +450,7 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		return domain.ErrResolveDisputeFailed
 	}
 
-	// Set order status to DISPUTE_CREATED
+	// Set order status to SUCCEED
 	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusSucceed); err != nil {
 		return err
 	}
@@ -458,6 +460,22 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, rewardPercent); err != nil {
 		return err
 	}
+
+	// Вызов callback мерчанта
+	if order.CallbackURL == "" {
+		return nil
+	}
+
+	notifier.SendCallback(order.CallbackURL, notifier.CallbackPayload{
+		OrderID: order.ID,
+		MerchantOrderID: order.MerchantOrderID,
+		Status: string(order.Status),
+		AmountFiat: order.AmountFiat,
+		AmountCrypto: order.AmountCrypto,
+		Currency: order.Currency,
+		ConfirmedAt: order.UpdatedAt,
+		ClientID: order.ClientID,
+	})
 
 	return nil
 }

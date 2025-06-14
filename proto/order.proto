@@ -27,6 +27,7 @@ message CreateOrderRequest {
     google.protobuf.Timestamp expires_at = 7;
     string merchant_order_id = 8;
     int32 shuffle = 9;
+    string callback_url = 10;
 }
 
 message CreateOrderResponse {
@@ -84,6 +85,7 @@ message Order {
     string merchant_order_id = 7;
     int32 shuffle = 8;
     string client_id = 9;
+    string callback_url = 10;
 }
 
 message GetOrdersByTraderIDRequest {

@@ -34,6 +34,7 @@ type CreateOrderRequest struct {
 	ExpiresAt       *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	MerchantOrderId string                 `protobuf:"bytes,8,opt,name=merchant_order_id,json=merchantOrderId,proto3" json:"merchant_order_id,omitempty"`
 	Shuffle         int32                  `protobuf:"varint,9,opt,name=shuffle,proto3" json:"shuffle,omitempty"`
+	CallbackUrl     string                 `protobuf:"bytes,10,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -129,6 +130,13 @@ func (x *CreateOrderRequest) GetShuffle() int32 {
 		return x.Shuffle
 	}
 	return 0
+}
+
+func (x *CreateOrderRequest) GetCallbackUrl() string {
+	if x != nil {
+		return x.CallbackUrl
+	}
+	return ""
 }
 
 type CreateOrderResponse struct {
@@ -590,6 +598,7 @@ type Order struct {
 	MerchantOrderId string                 `protobuf:"bytes,7,opt,name=merchant_order_id,json=merchantOrderId,proto3" json:"merchant_order_id,omitempty"`
 	Shuffle         int32                  `protobuf:"varint,8,opt,name=shuffle,proto3" json:"shuffle,omitempty"`
 	ClientId        string                 `protobuf:"bytes,9,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	CallbackUrl     string                 `protobuf:"bytes,10,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -683,6 +692,13 @@ func (x *Order) GetShuffle() int32 {
 func (x *Order) GetClientId() string {
 	if x != nil {
 		return x.ClientId
+	}
+	return ""
+}
+
+func (x *Order) GetCallbackUrl() string {
+	if x != nil {
+		return x.CallbackUrl
 	}
 	return ""
 }
@@ -955,7 +971,7 @@ var File_order_proto protoreflect.FileDescriptor
 
 const file_order_proto_rawDesc = "" +
 	"\n" +
-	"\vorder.proto\x12\x05order\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd1\x02\n" +
+	"\vorder.proto\x12\x05order\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf4\x02\n" +
 	"\x12CreateOrderRequest\x12\x1f\n" +
 	"\vmerchant_id\x18\x01 \x01(\tR\n" +
 	"merchantId\x12\x1f\n" +
@@ -968,7 +984,9 @@ const file_order_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12*\n" +
 	"\x11merchant_order_id\x18\b \x01(\tR\x0fmerchantOrderId\x12\x18\n" +
-	"\ashuffle\x18\t \x01(\x05R\ashuffle\"9\n" +
+	"\ashuffle\x18\t \x01(\x05R\ashuffle\x12!\n" +
+	"\fcallback_url\x18\n" +
+	" \x01(\tR\vcallbackUrl\"9\n" +
 	"\x13CreateOrderResponse\x12\"\n" +
 	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\x9f\x03\n" +
 	"\n" +
@@ -1001,7 +1019,7 @@ const file_order_proto_rawDesc = "" +
 	"\x13GetOrderByIDRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\":\n" +
 	"\x14GetOrderByIDResponse\x12\"\n" +
-	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\xd2\x02\n" +
+	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\xf5\x02\n" +
 	"\x05Order\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x122\n" +
@@ -1014,7 +1032,9 @@ const file_order_proto_rawDesc = "" +
 	"expires_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12*\n" +
 	"\x11merchant_order_id\x18\a \x01(\tR\x0fmerchantOrderId\x12\x18\n" +
 	"\ashuffle\x18\b \x01(\x05R\ashuffle\x12\x1b\n" +
-	"\tclient_id\x18\t \x01(\tR\bclientId\"9\n" +
+	"\tclient_id\x18\t \x01(\tR\bclientId\x12!\n" +
+	"\fcallback_url\x18\n" +
+	" \x01(\tR\vcallbackUrl\"9\n" +
 	"\x1aGetOrdersByTraderIDRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\"C\n" +
 	"\x1bGetOrdersByTraderIDResponse\x12$\n" +

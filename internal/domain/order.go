@@ -29,4 +29,5 @@ type Order struct {
 	UpdatedAt 	  	time.Time
 	MerchantOrderID string
 	Shuffle 		int32
+	CallbackURL 	string
 }
