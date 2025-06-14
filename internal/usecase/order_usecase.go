@@ -284,28 +284,29 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 
 	fmt.Println(chosenBankDetail)
 
-	// relate found bank detail and order
-	order.BankDetailsID = chosenBankDetail.ID
-
-	//Save bank detail relevant to order
-	if err := uc.BankDetailRepo.SaveBankDetail(chosenBankDetail); err != nil {
-		return nil, err
-	}
-
-		// BTC RATE
+	// BTC RATE
 	// IMPROVE THIS !!!
 	amountCrypto := float64(order.AmountFiat / 8599022)
 	order.AmountCrypto = amountCrypto
 	////////////////////////////////////////////////
 
-	// Freeze crypto
-	if err := uc.WalletHandler.Freeze(chosenBankDetail.TraderID, order.ID, amountCrypto); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+	// Check crypto-balance before freezing crypto!!!
+
+	// relate found bank detail and order
+	order.BankDetailsID = chosenBankDetail.ID
+	//Save bank detail relevant to order
+	if err := uc.BankDetailRepo.SaveBankDetail(chosenBankDetail); err != nil {
+		return nil, err
 	}
 
 	orderID, err := uc.OrderRepo.CreateOrder(order)
 	if err != nil {
 		return nil, err
+	}
+
+	// Freeze crypto
+	if err := uc.WalletHandler.Freeze(chosenBankDetail.TraderID, order.ID, amountCrypto); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	fmt.Println(chosenBankDetail.TraderID, order.ID, amountCrypto)
@@ -317,12 +318,13 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		AmountCrypto: order.AmountCrypto,
 		Currency: order.Currency,
 		Country: order.Country,
-		ClientEmail: order.ClientEmail,
-		MetadataJSON: order.MetadataJSON,
+		ClientID: order.ClientID,
 		Status: order.Status,
 		PaymentSystem: order.PaymentSystem,
 		BankDetailsID: order.BankDetailsID,
 		ExpiresAt: order.ExpiresAt,
+		MerchantOrderID: order.MerchantOrderID,
+		Shuffle: order.Shuffle,
 		BankDetail: &domain.BankDetail{
 			ID: chosenBankDetail.ID,
 			TraderID: chosenBankDetail.TraderID,

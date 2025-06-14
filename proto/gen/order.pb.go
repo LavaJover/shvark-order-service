@@ -24,17 +24,18 @@ const (
 )
 
 type CreateOrderRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MerchantId    string                 `protobuf:"bytes,1,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
-	AmountFiat    float64                `protobuf:"fixed64,2,opt,name=amount_fiat,json=amountFiat,proto3" json:"amount_fiat,omitempty"`
-	Currency      string                 `protobuf:"bytes,3,opt,name=currency,proto3" json:"currency,omitempty"`
-	Country       string                 `protobuf:"bytes,4,opt,name=country,proto3" json:"country,omitempty"`
-	ClientEmail   string                 `protobuf:"bytes,5,opt,name=client_email,json=clientEmail,proto3" json:"client_email,omitempty"`
-	MetadataJson  string                 `protobuf:"bytes,6,opt,name=metadata_json,json=metadataJson,proto3" json:"metadata_json,omitempty"`
-	PaymentSystem string                 `protobuf:"bytes,7,opt,name=payment_system,json=paymentSystem,proto3" json:"payment_system,omitempty"`
-	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	MerchantId      string                 `protobuf:"bytes,1,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
+	AmountFiat      float64                `protobuf:"fixed64,2,opt,name=amount_fiat,json=amountFiat,proto3" json:"amount_fiat,omitempty"`
+	Currency        string                 `protobuf:"bytes,3,opt,name=currency,proto3" json:"currency,omitempty"`
+	Country         string                 `protobuf:"bytes,4,opt,name=country,proto3" json:"country,omitempty"`
+	ClientId        string                 `protobuf:"bytes,5,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	PaymentSystem   string                 `protobuf:"bytes,6,opt,name=payment_system,json=paymentSystem,proto3" json:"payment_system,omitempty"`
+	ExpiresAt       *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	MerchantOrderId string                 `protobuf:"bytes,8,opt,name=merchant_order_id,json=merchantOrderId,proto3" json:"merchant_order_id,omitempty"`
+	Shuffle         int32                  `protobuf:"varint,9,opt,name=shuffle,proto3" json:"shuffle,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CreateOrderRequest) Reset() {
@@ -95,16 +96,9 @@ func (x *CreateOrderRequest) GetCountry() string {
 	return ""
 }
 
-func (x *CreateOrderRequest) GetClientEmail() string {
+func (x *CreateOrderRequest) GetClientId() string {
 	if x != nil {
-		return x.ClientEmail
-	}
-	return ""
-}
-
-func (x *CreateOrderRequest) GetMetadataJson() string {
-	if x != nil {
-		return x.MetadataJson
+		return x.ClientId
 	}
 	return ""
 }
@@ -121,6 +115,20 @@ func (x *CreateOrderRequest) GetExpiresAt() *timestamppb.Timestamp {
 		return x.ExpiresAt
 	}
 	return nil
+}
+
+func (x *CreateOrderRequest) GetMerchantOrderId() string {
+	if x != nil {
+		return x.MerchantOrderId
+	}
+	return ""
+}
+
+func (x *CreateOrderRequest) GetShuffle() int32 {
+	if x != nil {
+		return x.Shuffle
+	}
+	return 0
 }
 
 type CreateOrderResponse struct {
@@ -572,15 +580,18 @@ func (x *GetOrderByIDResponse) GetOrder() *Order {
 }
 
 type Order struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	BankDetail    *BankDetail            `protobuf:"bytes,3,opt,name=bank_detail,json=bankDetail,proto3" json:"bank_detail,omitempty"`
-	AmountFiat    float64                `protobuf:"fixed64,4,opt,name=amount_fiat,json=amountFiat,proto3" json:"amount_fiat,omitempty"`
-	AmountCrypto  float64                `protobuf:"fixed64,5,opt,name=amount_crypto,json=amountCrypto,proto3" json:"amount_crypto,omitempty"`
-	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	OrderId         string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	Status          string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	BankDetail      *BankDetail            `protobuf:"bytes,3,opt,name=bank_detail,json=bankDetail,proto3" json:"bank_detail,omitempty"`
+	AmountFiat      float64                `protobuf:"fixed64,4,opt,name=amount_fiat,json=amountFiat,proto3" json:"amount_fiat,omitempty"`
+	AmountCrypto    float64                `protobuf:"fixed64,5,opt,name=amount_crypto,json=amountCrypto,proto3" json:"amount_crypto,omitempty"`
+	ExpiresAt       *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	MerchantOrderId string                 `protobuf:"bytes,7,opt,name=merchant_order_id,json=merchantOrderId,proto3" json:"merchant_order_id,omitempty"`
+	Shuffle         int32                  `protobuf:"varint,8,opt,name=shuffle,proto3" json:"shuffle,omitempty"`
+	ClientId        string                 `protobuf:"bytes,9,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Order) Reset() {
@@ -653,6 +664,27 @@ func (x *Order) GetExpiresAt() *timestamppb.Timestamp {
 		return x.ExpiresAt
 	}
 	return nil
+}
+
+func (x *Order) GetMerchantOrderId() string {
+	if x != nil {
+		return x.MerchantOrderId
+	}
+	return ""
+}
+
+func (x *Order) GetShuffle() int32 {
+	if x != nil {
+		return x.Shuffle
+	}
+	return 0
+}
+
+func (x *Order) GetClientId() string {
+	if x != nil {
+		return x.ClientId
+	}
+	return ""
 }
 
 type GetOrdersByTraderIDRequest struct {
@@ -923,19 +955,20 @@ var File_order_proto protoreflect.FileDescriptor
 
 const file_order_proto_rawDesc = "" +
 	"\n" +
-	"\vorder.proto\x12\x05order\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb6\x02\n" +
+	"\vorder.proto\x12\x05order\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd1\x02\n" +
 	"\x12CreateOrderRequest\x12\x1f\n" +
 	"\vmerchant_id\x18\x01 \x01(\tR\n" +
 	"merchantId\x12\x1f\n" +
 	"\vamount_fiat\x18\x02 \x01(\x01R\n" +
 	"amountFiat\x12\x1a\n" +
 	"\bcurrency\x18\x03 \x01(\tR\bcurrency\x12\x18\n" +
-	"\acountry\x18\x04 \x01(\tR\acountry\x12!\n" +
-	"\fclient_email\x18\x05 \x01(\tR\vclientEmail\x12#\n" +
-	"\rmetadata_json\x18\x06 \x01(\tR\fmetadataJson\x12%\n" +
-	"\x0epayment_system\x18\a \x01(\tR\rpaymentSystem\x129\n" +
+	"\acountry\x18\x04 \x01(\tR\acountry\x12\x1b\n" +
+	"\tclient_id\x18\x05 \x01(\tR\bclientId\x12%\n" +
+	"\x0epayment_system\x18\x06 \x01(\tR\rpaymentSystem\x129\n" +
 	"\n" +
-	"expires_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"9\n" +
+	"expires_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12*\n" +
+	"\x11merchant_order_id\x18\b \x01(\tR\x0fmerchantOrderId\x12\x18\n" +
+	"\ashuffle\x18\t \x01(\x05R\ashuffle\"9\n" +
 	"\x13CreateOrderResponse\x12\"\n" +
 	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\x9f\x03\n" +
 	"\n" +
@@ -968,7 +1001,7 @@ const file_order_proto_rawDesc = "" +
 	"\x13GetOrderByIDRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\":\n" +
 	"\x14GetOrderByIDResponse\x12\"\n" +
-	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\xef\x01\n" +
+	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\xd2\x02\n" +
 	"\x05Order\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x122\n" +
@@ -978,7 +1011,10 @@ const file_order_proto_rawDesc = "" +
 	"amountFiat\x12#\n" +
 	"\ramount_crypto\x18\x05 \x01(\x01R\famountCrypto\x129\n" +
 	"\n" +
-	"expires_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"9\n" +
+	"expires_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12*\n" +
+	"\x11merchant_order_id\x18\a \x01(\tR\x0fmerchantOrderId\x12\x18\n" +
+	"\ashuffle\x18\b \x01(\x05R\ashuffle\x12\x1b\n" +
+	"\tclient_id\x18\t \x01(\tR\bclientId\"9\n" +
 	"\x1aGetOrdersByTraderIDRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\"C\n" +
 	"\x1bGetOrdersByTraderIDResponse\x12$\n" +

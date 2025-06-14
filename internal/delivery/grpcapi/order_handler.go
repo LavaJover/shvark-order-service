@@ -27,10 +27,11 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 		AmountFiat: r.AmountFiat,
 		Currency: r.Currency,
 		Country: r.Country,
-		ClientEmail: r.ClientEmail,
-		MetadataJSON: r.MetadataJson,
+		ClientID: r.ClientId,
 		Status: domain.StatusCreated,
 		PaymentSystem: r.PaymentSystem,
+		MerchantOrderID: r.MerchantOrderId,
+		Shuffle: r.Shuffle,
 		ExpiresAt: r.ExpiresAt.AsTime(),
 	}
 	
@@ -61,6 +62,9 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 			AmountFiat: float64(savedOrder.AmountFiat),
 			AmountCrypto: float64(savedOrder.AmountCrypto),
 			ExpiresAt: timestamppb.New(savedOrder.ExpiresAt),
+			Shuffle: savedOrder.Shuffle,
+			MerchantOrderId: savedOrder.MerchantOrderID,
+			ClientId: savedOrder.ClientID,
 		},
 	}, nil
 }
@@ -107,6 +111,9 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 			AmountFiat: float64(orderResponse.AmountFiat),
 			AmountCrypto: float64(orderResponse.AmountCrypto),
 			ExpiresAt: timestamppb.New(orderResponse.ExpiresAt),
+			MerchantOrderId: orderResponse.MerchantOrderID,
+			Shuffle: orderResponse.Shuffle,
+			ClientId: orderResponse.ClientID,
 		},
 	}, nil
 }
@@ -140,6 +147,9 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 			AmountFiat: float64(order.AmountFiat),
 			AmountCrypto: float64(order.AmountCrypto),
 			ExpiresAt: timestamppb.New(order.ExpiresAt),
+			MerchantOrderId: order.MerchantOrderID,
+			Shuffle: order.Shuffle,
+			ClientId: order.ClientID,
 		}
 	}
 

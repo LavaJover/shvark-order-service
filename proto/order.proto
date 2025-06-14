@@ -22,10 +22,11 @@ message CreateOrderRequest {
     double amount_fiat = 2;
     string currency = 3;
     string country = 4;
-    string client_email = 5;
-    string metadata_json = 6;
-    string payment_system = 7;
-    google.protobuf.Timestamp expires_at = 8;
+    string client_id = 5;
+    string payment_system = 6;
+    google.protobuf.Timestamp expires_at = 7;
+    string merchant_order_id = 8;
+    int32 shuffle = 9;
 }
 
 message CreateOrderResponse {
@@ -80,6 +81,9 @@ message Order {
     double amount_fiat = 4;
     double amount_crypto = 5;
     google.protobuf.Timestamp expires_at = 6;
+    string merchant_order_id = 7;
+    int32 shuffle = 8;
+    string client_id = 9;
 }
 
 message GetOrdersByTraderIDRequest {

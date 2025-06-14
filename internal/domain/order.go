@@ -13,20 +13,20 @@ const (
 )
 
 type Order struct {
-	ID 			  string
-	MerchantID 	  string
-	AmountFiat 	  float64
-	AmountCrypto  float64
-	Currency 	  string
-	Country 	  string
-	ClientEmail   string
-	MetadataJSON  string
-	Status 		  OrderStatus
-	PaymentSystem string
-	BankDetailsID string
-	BankDetail    *BankDetail
-	ExpiresAt	  time.Time
-
-	CreatedAt 	  time.Time
-	UpdatedAt 	  time.Time
+	ID 			  	string
+	MerchantID 	  	string
+	AmountFiat 	  	float64
+	AmountCrypto  	float64
+	Currency 	  	string
+	Country 	  	string
+	ClientID   		string
+	Status 		  	OrderStatus
+	PaymentSystem 	string
+	BankDetailsID 	string
+	BankDetail    	*BankDetail
+	ExpiresAt	  	time.Time
+	CreatedAt 	  	time.Time
+	UpdatedAt 	  	time.Time
+	MerchantOrderID string
+	Shuffle 		int32
 }
