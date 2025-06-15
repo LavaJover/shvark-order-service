@@ -189,6 +189,21 @@ func (uc *DefaultOrderUsecase) FilterByMaxQuantityMonth(bankDetails []*domain.Ba
 	return result, nil	
 }
 
+func (uc *DefaultOrderUsecase)FilterByTraderBalance(bankDetails []*domain.BankDetail, amountCrypto float64) ([]*domain.BankDetail, error) {
+	result := make([]*domain.BankDetail, 0)
+	for _, bankDetail := range bankDetails {
+		traderBalance, err := uc.WalletHandler.GetTraderBalance(bankDetail.TraderID)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Printf("Trader %s balance: %f\n. Order: %f\n", bankDetail.TraderID, traderBalance, amountCrypto)
+		if traderBalance >= amountCrypto {
+			result = append(result, bankDetail)
+		}
+	}
+	return result, nil
+}
+
 func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, query *domain.BankDetailQuery) ([]*domain.BankDetail, error) {
 	eligibleBankDetailsResponse, err := uc.BankingClient.GetEligibleBankDetails(query)
 	if err != nil {
@@ -223,22 +238,28 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 		}
 	}
 
-	// 1) Filter by MaxOrdersSimultaneosly
+	// 1) Filter by Trader Available balances
+	bankDetails, err = uc.FilterByTraderBalance(bankDetails, order.AmountCrypto)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2) Filter by MaxOrdersSimultaneosly
 	bankDetails, err = uc.FilterByMaxOrdersSimulateosly(bankDetails)
 	if err != nil {
 		return nil, err
 	}
-	// 2) Filter by MaxAmountDay
+	// 3) Filter by MaxAmountDay
 	bankDetails, err = uc.FilterByMaxAmountDay(bankDetails, order.AmountFiat)
 	if err != nil {
 		return nil, err
 	}
-	// 3) Filter by MaxAmountMonth
+	// 4) Filter by MaxAmountMonth
 	bankDetails, err = uc.FilterByMaxAmountMonth(bankDetails, order.AmountFiat)
 	if err != nil {
 		return nil, err
 	}
-	// 4) Filter by delay
+	// 5) Filter by delay
 	bankDetails, err = uc.FilterByDelay(bankDetails)
 	if err != nil {
 		return nil, err
@@ -246,13 +267,13 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 	if len(bankDetails) == 0 {
 		fmt.Println("Отсеились по времени")
 	}
-	// 5) Filter by MaxQuantityDay
+	// 6) Filter by MaxQuantityDay
 	bankDetails, err = uc.FilterByMaxQuantityDay(bankDetails)
 	if err != nil {
 		return nil, err
 	}
 
-	// 6) Filter by MaxQuantityMonth
+	// 7) Filter by MaxQuantityMonth
 	bankDetails, err = uc.FilterByMaxQuantityMonth(bankDetails)
 	if err != nil {
 		return nil, err
@@ -274,6 +295,11 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		Country: order.Country,
 	}
 
+		// BTC RATE
+	// IMPROVE THIS !!!
+	amountCrypto := float64(order.AmountFiat / 8599022)
+	order.AmountCrypto = amountCrypto
+
 	// searching for eligible bank details due to order query parameters
 	bankDetails, err := uc.FindEligibleBankDetails(order, &query)
 	if err != nil {
@@ -285,16 +311,6 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to pick best bank detail")
 	}
-
-	fmt.Println(chosenBankDetail)
-
-	// BTC RATE
-	// IMPROVE THIS !!!
-	amountCrypto := float64(order.AmountFiat / 8599022)
-	order.AmountCrypto = amountCrypto
-	////////////////////////////////////////////////
-
-	// Check crypto-balance before freezing crypto!!!
 
 	// relate found bank detail and order
 	order.BankDetailsID = chosenBankDetail.ID

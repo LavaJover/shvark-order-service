@@ -80,3 +80,27 @@ func (uc *HTTPWalletHandler) Release(traderID, orderID string, rewardPercent flo
 		return errors.New(errorResponse.Error)
 	}
 }
+
+func (h *HTTPWalletHandler) GetTraderBalance(traderID string) (float64, error) {
+	response, err := http.Get("http://localhost:3000/wallets/"+traderID+"/balance")
+	if err != nil {
+		return 0, err
+	}
+	defer response.Body.Close()
+	responseBodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return 0, err
+	}
+	if response.StatusCode >= 200 && response.StatusCode < 300 {
+		var balanceResponse walletResponse.BalanceResponse
+		if err := json.Unmarshal(responseBodyBytes, &balanceResponse); err != nil {
+			return 0, err
+		}
+		return balanceResponse.Balance, nil
+	}
+	var errorResponse walletResponse.ErrorResponse
+	if err := json.Unmarshal(responseBodyBytes, &errorResponse); err != nil {
+		return 0, err
+	}
+	return 0, errors.New(errorResponse.Error)
+}
