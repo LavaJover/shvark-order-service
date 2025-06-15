@@ -14,11 +14,11 @@ type OrderModel struct {
 	Currency 	  	string		
 	Country 	  	string
 	ClientID   	  	string
-	Status 		  	domain.OrderStatus
+	Status 		  	domain.OrderStatus	`gorm:"index:idx_status_expires"`
 	PaymentSystem 	string
 	BankDetailsID 	string  			`gorm:"type:uuid"`	
 	BankDetail 	  	BankDetailModel   	`gorm:"foreignKey:BankDetailsID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
-	ExpiresAt  	  	time.Time
+	ExpiresAt  	  	time.Time			`gorm:"index:idx_status_expires"`
 	CreatedAt 	  	time.Time
 	UpdatedAt 	  	time.Time
 	MerchantOrderID string
