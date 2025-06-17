@@ -122,3 +122,8 @@ func (r *DefaultTrafficRepository) GetTrafficByTraderMerchant(traderID, merchant
 		Enabled: trafficModel.Enabled,
 	}, nil
 }
+
+func (r *DefaultTrafficRepository) DisableTraderTraffic(traderID string) error {
+	err := r.DB.Model(&TrafficModel{}).Where("trader_id = ?", traderID).Update("enabled", false).Error
+	return err
+}

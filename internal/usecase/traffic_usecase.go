@@ -35,8 +35,5 @@ func (uc *DefaultTrafficUsecase) GetTrafficByTraderMerchant(traderID, merchantID
 }
 
 func (uc *DefaultTrafficUsecase) DisableTraderTraffic(traderID string) error {
-	return uc.TrafficRepo.UpdateTraffic(&domain.Traffic{
-		ID: traderID,
-		Enabled: false,
-	})
+	return uc.TrafficRepo.DisableTraderTraffic(traderID)
 }
