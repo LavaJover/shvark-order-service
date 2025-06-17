@@ -43,10 +43,10 @@ func main() {
 		log.Fatalf("failed to init wallet usecase")
 	}
 
-	// Init order usecase
-	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient, httpWalletHandler)
 	// Init traffic usecase
 	trafficUsecase := usecase.NewDefaultTrafficUsecase(trafficRepo)
+	// Init order usecase
+	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient, httpWalletHandler, trafficUsecase)
 
 	// Creating gRPC server
 	grpcServer := grpc.NewServer()

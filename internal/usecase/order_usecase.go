@@ -19,24 +19,42 @@ type DefaultOrderUsecase struct {
 	BankDetailRepo 	domain.BankDetailRepository
 	BankingClient   *client.BankingClient
 	WalletHandler   *handlers.HTTPWalletHandler
+	TrafficUsecase  domain.TrafficUsecase
 }
 
 func NewDefaultOrderUsecase(
 	orderRepo domain.OrderRepository, 
 	bankDetailRepo domain.BankDetailRepository, 
 	bankingClient *client.BankingClient,
-	walletHandler *handlers.HTTPWalletHandler) *DefaultOrderUsecase {
+	walletHandler *handlers.HTTPWalletHandler,
+	trafficUsecase domain.TrafficUsecase) *DefaultOrderUsecase {
 
 	return &DefaultOrderUsecase{
 		OrderRepo: orderRepo,
 		BankDetailRepo: bankDetailRepo,
 		BankingClient: bankingClient,
 		WalletHandler: walletHandler,
+		TrafficUsecase: trafficUsecase,
 	}
 }
 
 func (uc *DefaultOrderUsecase) PickBestBankDetail(bankDetails []*domain.BankDetail) (*domain.BankDetail, error) {
 	return bankDetails[0], nil
+}
+
+func (uc *DefaultOrderUsecase) FilterByTraffic(bankDetails []*domain.BankDetail, merchantID string) ([]*domain.BankDetail, error) {
+	result := make([]*domain.BankDetail, 0)
+	for _, bankDetail := range bankDetails {
+		traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(bankDetail.TraderID, merchantID)
+		if err != nil {
+			return nil, err
+		}
+		if traffic.Enabled {
+			result = append(result, bankDetail)
+		}
+	}
+
+	return result, nil
 }
 
 func (uc *DefaultOrderUsecase) FilterByMaxOrdersSimulateosly(bankDetails []*domain.BankDetail) ([]*domain.BankDetail, error) {
@@ -236,6 +254,12 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 			MaxQuantityDay: int32(bankDetail.MaxQuantityDay),
 			MaxQuantityMonth: int32(bankDetail.MaxQuantityMonth),
 		}
+	}
+
+	// 0) Filter by Traffic
+	bankDetails, err = uc.FilterByTraffic(bankDetails, order.MerchantID)
+	if err != nil {
+		return nil, err
 	}
 
 	// 1) Filter by Trader Available balances
