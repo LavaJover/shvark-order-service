@@ -27,6 +27,8 @@ func main() {
 	orderRepo := postgres.NewDefaultOrderRepository(db)
 	// Init bank detail repo
 	bankDetailRepo := postgres.NewDefaultBankDetailRepo(db)
+	// Init traffic repo
+	trafficRepo := postgres.NewDefaultTrafficRepository(db)
 
 	// Init banking client
 	bankingAddr := "localhost:50057"
@@ -43,12 +45,16 @@ func main() {
 
 	// Init order usecase
 	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient, httpWalletHandler)
+	// Init traffic usecase
+	trafficUsecase := usecase.NewDefaultTrafficUsecase(trafficRepo)
 
 	// Creating gRPC server
 	grpcServer := grpc.NewServer()
 	orderHandler := grpcapi.NewOrderHandler(uc)
+	trafficHandler := grpcapi.NewTrafficHandler(trafficUsecase)
 
 	orderpb.RegisterOrderServiceServer(grpcServer, orderHandler)
+	orderpb.RegisterTrafficServiceServer(grpcServer, trafficHandler)
 
 	// Start
 	lis, err := net.Listen("tcp", ":"+cfg.Port)

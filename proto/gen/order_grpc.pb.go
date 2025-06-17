@@ -347,3 +347,219 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "order.proto",
 }
+
+const (
+	TrafficService_AddTraffic_FullMethodName        = "/order.TrafficService/AddTraffic"
+	TrafficService_EditTraffic_FullMethodName       = "/order.TrafficService/EditTraffic"
+	TrafficService_DeleteTraffic_FullMethodName     = "/order.TrafficService/DeleteTraffic"
+	TrafficService_GetTrafficRecords_FullMethodName = "/order.TrafficService/GetTrafficRecords"
+)
+
+// TrafficServiceClient is the client API for TrafficService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type TrafficServiceClient interface {
+	AddTraffic(ctx context.Context, in *AddTrafficRequest, opts ...grpc.CallOption) (*AddTrafficResponse, error)
+	EditTraffic(ctx context.Context, in *EditTrafficRequest, opts ...grpc.CallOption) (*EditTrafficResponse, error)
+	DeleteTraffic(ctx context.Context, in *DeleteTrafficRequest, opts ...grpc.CallOption) (*DeleteTrafficResponse, error)
+	GetTrafficRecords(ctx context.Context, in *GetTrafficRecordsRequest, opts ...grpc.CallOption) (*GetTrafficRecordsResponse, error)
+}
+
+type trafficServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewTrafficServiceClient(cc grpc.ClientConnInterface) TrafficServiceClient {
+	return &trafficServiceClient{cc}
+}
+
+func (c *trafficServiceClient) AddTraffic(ctx context.Context, in *AddTrafficRequest, opts ...grpc.CallOption) (*AddTrafficResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddTrafficResponse)
+	err := c.cc.Invoke(ctx, TrafficService_AddTraffic_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trafficServiceClient) EditTraffic(ctx context.Context, in *EditTrafficRequest, opts ...grpc.CallOption) (*EditTrafficResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EditTrafficResponse)
+	err := c.cc.Invoke(ctx, TrafficService_EditTraffic_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trafficServiceClient) DeleteTraffic(ctx context.Context, in *DeleteTrafficRequest, opts ...grpc.CallOption) (*DeleteTrafficResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteTrafficResponse)
+	err := c.cc.Invoke(ctx, TrafficService_DeleteTraffic_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trafficServiceClient) GetTrafficRecords(ctx context.Context, in *GetTrafficRecordsRequest, opts ...grpc.CallOption) (*GetTrafficRecordsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTrafficRecordsResponse)
+	err := c.cc.Invoke(ctx, TrafficService_GetTrafficRecords_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// TrafficServiceServer is the server API for TrafficService service.
+// All implementations must embed UnimplementedTrafficServiceServer
+// for forward compatibility.
+type TrafficServiceServer interface {
+	AddTraffic(context.Context, *AddTrafficRequest) (*AddTrafficResponse, error)
+	EditTraffic(context.Context, *EditTrafficRequest) (*EditTrafficResponse, error)
+	DeleteTraffic(context.Context, *DeleteTrafficRequest) (*DeleteTrafficResponse, error)
+	GetTrafficRecords(context.Context, *GetTrafficRecordsRequest) (*GetTrafficRecordsResponse, error)
+	mustEmbedUnimplementedTrafficServiceServer()
+}
+
+// UnimplementedTrafficServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedTrafficServiceServer struct{}
+
+func (UnimplementedTrafficServiceServer) AddTraffic(context.Context, *AddTrafficRequest) (*AddTrafficResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddTraffic not implemented")
+}
+func (UnimplementedTrafficServiceServer) EditTraffic(context.Context, *EditTrafficRequest) (*EditTrafficResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EditTraffic not implemented")
+}
+func (UnimplementedTrafficServiceServer) DeleteTraffic(context.Context, *DeleteTrafficRequest) (*DeleteTrafficResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteTraffic not implemented")
+}
+func (UnimplementedTrafficServiceServer) GetTrafficRecords(context.Context, *GetTrafficRecordsRequest) (*GetTrafficRecordsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTrafficRecords not implemented")
+}
+func (UnimplementedTrafficServiceServer) mustEmbedUnimplementedTrafficServiceServer() {}
+func (UnimplementedTrafficServiceServer) testEmbeddedByValue()                        {}
+
+// UnsafeTrafficServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to TrafficServiceServer will
+// result in compilation errors.
+type UnsafeTrafficServiceServer interface {
+	mustEmbedUnimplementedTrafficServiceServer()
+}
+
+func RegisterTrafficServiceServer(s grpc.ServiceRegistrar, srv TrafficServiceServer) {
+	// If the following call pancis, it indicates UnimplementedTrafficServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&TrafficService_ServiceDesc, srv)
+}
+
+func _TrafficService_AddTraffic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddTrafficRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).AddTraffic(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_AddTraffic_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).AddTraffic(ctx, req.(*AddTrafficRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrafficService_EditTraffic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EditTrafficRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).EditTraffic(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_EditTraffic_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).EditTraffic(ctx, req.(*EditTrafficRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrafficService_DeleteTraffic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTrafficRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).DeleteTraffic(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_DeleteTraffic_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).DeleteTraffic(ctx, req.(*DeleteTrafficRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrafficService_GetTrafficRecords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTrafficRecordsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).GetTrafficRecords(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_GetTrafficRecords_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).GetTrafficRecords(ctx, req.(*GetTrafficRecordsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// TrafficService_ServiceDesc is the grpc.ServiceDesc for TrafficService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var TrafficService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "order.TrafficService",
+	HandlerType: (*TrafficServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "AddTraffic",
+			Handler:    _TrafficService_AddTraffic_Handler,
+		},
+		{
+			MethodName: "EditTraffic",
+			Handler:    _TrafficService_EditTraffic_Handler,
+		},
+		{
+			MethodName: "DeleteTraffic",
+			Handler:    _TrafficService_DeleteTraffic_Handler,
+		},
+		{
+			MethodName: "GetTrafficRecords",
+			Handler:    _TrafficService_GetTrafficRecords_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "order.proto",
+}

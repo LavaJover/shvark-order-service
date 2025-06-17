@@ -111,3 +111,57 @@ message ResolveOrderDisputeRequest {
 message ResolveOrderDisputeResponse {
     string message = 1;
 }
+
+service TrafficService {
+    rpc AddTraffic (AddTrafficRequest) returns (AddTrafficResponse);
+    rpc EditTraffic (EditTrafficRequest) returns (EditTrafficResponse);
+    rpc DeleteTraffic (DeleteTrafficRequest) returns (DeleteTrafficResponse);
+    rpc GetTrafficRecords (GetTrafficRecordsRequest) returns (GetTrafficRecordsResponse);
+}
+
+message AddTrafficRequest {
+    string merchant_id = 1;
+    string trader_id = 2;
+    double trader_reward_percent = 3;
+    double trader_priority = 4;
+    bool enabled = 5;
+}
+
+message Traffic {
+    string id = 1;
+    string merchant_id = 2;
+    string trader_id = 3;
+    double trader_reward_percent = 4;
+    double trader_priority = 5;
+    bool enabled = 6;
+}
+
+message AddTrafficResponse {
+    string message = 1;
+}
+
+message EditTrafficRequest {
+    Traffic traffic = 1;
+}
+
+message EditTrafficResponse {
+    string message = 1;
+}
+
+message DeleteTrafficRequest {
+    string traffic_id = 1;
+}
+
+message DeleteTrafficResponse {
+    string message = 1;
+}
+
+// Добавить пагинацию!!!
+message GetTrafficRecordsRequest {
+    int32 page = 1;
+    int32 limit = 2; 
+}
+
+message GetTrafficRecordsResponse {
+    repeated Traffic traffic_records = 1;
+}

@@ -1,0 +1,95 @@
+package grpcapi
+
+import (
+	"context"
+
+	"github.com/LavaJover/shvark-order-service/internal/domain"
+	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
+)
+
+type TrafficHandler struct {
+	orderpb.UnimplementedTrafficServiceServer
+	trafficUsecase domain.TrafficUsecase
+}
+
+func NewTrafficHandler(trafficUsecase domain.TrafficUsecase) *TrafficHandler {
+	return &TrafficHandler{trafficUsecase: trafficUsecase}
+}
+
+func (h *TrafficHandler) AddTraffic(ctx context.Context, r *orderpb.AddTrafficRequest) (*orderpb.AddTrafficResponse, error) {
+	traffic := &domain.Traffic{
+		MerchantID: r.MerchantId,
+		TraderID: r.TraderId,
+		TraderRewardPercent: r.TraderRewardPercent,
+		TraderPriority: r.TraderPriority,
+		Enabled: r.Enabled,
+	}
+
+	if err := h.trafficUsecase.AddTraffic(traffic); err != nil {
+		return &orderpb.AddTrafficResponse{
+			Message: "failed to add new traffic",
+		}, err
+	}
+
+	return &orderpb.AddTrafficResponse{
+		Message: "Successfully added new traffic",
+	}, nil
+}
+
+func (h *TrafficHandler) EditTraffic(ctx context.Context, r *orderpb.EditTrafficRequest) (*orderpb.EditTrafficResponse, error) {
+	traffic := &domain.Traffic{
+		ID: r.Traffic.Id,
+		MerchantID: r.Traffic.MerchantId,
+		TraderID: r.Traffic.TraderId,
+		TraderRewardPercent: r.Traffic.TraderRewardPercent,
+		TraderPriority: r.Traffic.TraderPriority,
+		Enabled: r.Traffic.Enabled,
+	}
+
+	if err := h.trafficUsecase.EditTraffic(traffic); err != nil {
+		return &orderpb.EditTrafficResponse{
+			Message: "failed to update traffic",
+		}, nil
+	}
+
+	return &orderpb.EditTrafficResponse{
+		Message: "traffic updated successfully",
+	}, nil
+}
+
+func (h *TrafficHandler) DeleteTraffic(ctx context.Context, r *orderpb.DeleteTrafficRequest) (*orderpb.DeleteTrafficResponse, error) {
+	trafficID := r.TrafficId
+	if err := h.trafficUsecase.DeleteTraffic(trafficID); err != nil {
+		return &orderpb.DeleteTrafficResponse{
+			Message: "Failed to delete traffic",
+		}, err
+	}
+
+	return &orderpb.DeleteTrafficResponse{
+		Message: "Deleted traffic successfully",
+	}, nil
+}
+
+func (h *TrafficHandler) GetTrafficRecords(ctx context.Context, r *orderpb.GetTrafficRecordsRequest) (*orderpb.GetTrafficRecordsResponse, error) {
+	page, limit := r.Page, r.Limit
+	trafficRecords, err := h.trafficUsecase.GetTrafficRecords(page, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	trafficResponse := make([]*orderpb.Traffic, len(trafficRecords))
+	for i, trafficRecord := range trafficRecords {
+		trafficResponse[i] = &orderpb.Traffic{
+			Id: trafficRecord.ID,
+			MerchantId: trafficRecord.MerchantID,
+			TraderId: trafficRecord.TraderID,
+			TraderRewardPercent: trafficRecord.TraderRewardPercent,
+			TraderPriority: trafficRecord.TraderPriority,
+			Enabled: trafficRecord.Enabled,
+		}
+	}
+
+	return &orderpb.GetTrafficRecordsResponse{
+		TrafficRecords: trafficResponse,
+	}, nil
+}

@@ -967,6 +967,483 @@ func (x *ResolveOrderDisputeResponse) GetMessage() string {
 	return ""
 }
 
+type AddTrafficRequest struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	MerchantId          string                 `protobuf:"bytes,1,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
+	TraderId            string                 `protobuf:"bytes,2,opt,name=trader_id,json=traderId,proto3" json:"trader_id,omitempty"`
+	TraderRewardPercent float64                `protobuf:"fixed64,3,opt,name=trader_reward_percent,json=traderRewardPercent,proto3" json:"trader_reward_percent,omitempty"`
+	TraderPriority      float64                `protobuf:"fixed64,4,opt,name=trader_priority,json=traderPriority,proto3" json:"trader_priority,omitempty"`
+	Enabled             bool                   `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *AddTrafficRequest) Reset() {
+	*x = AddTrafficRequest{}
+	mi := &file_order_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddTrafficRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddTrafficRequest) ProtoMessage() {}
+
+func (x *AddTrafficRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddTrafficRequest.ProtoReflect.Descriptor instead.
+func (*AddTrafficRequest) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *AddTrafficRequest) GetMerchantId() string {
+	if x != nil {
+		return x.MerchantId
+	}
+	return ""
+}
+
+func (x *AddTrafficRequest) GetTraderId() string {
+	if x != nil {
+		return x.TraderId
+	}
+	return ""
+}
+
+func (x *AddTrafficRequest) GetTraderRewardPercent() float64 {
+	if x != nil {
+		return x.TraderRewardPercent
+	}
+	return 0
+}
+
+func (x *AddTrafficRequest) GetTraderPriority() float64 {
+	if x != nil {
+		return x.TraderPriority
+	}
+	return 0
+}
+
+func (x *AddTrafficRequest) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type Traffic struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Id                  string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	MerchantId          string                 `protobuf:"bytes,2,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
+	TraderId            string                 `protobuf:"bytes,3,opt,name=trader_id,json=traderId,proto3" json:"trader_id,omitempty"`
+	TraderRewardPercent float64                `protobuf:"fixed64,4,opt,name=trader_reward_percent,json=traderRewardPercent,proto3" json:"trader_reward_percent,omitempty"`
+	TraderPriority      float64                `protobuf:"fixed64,5,opt,name=trader_priority,json=traderPriority,proto3" json:"trader_priority,omitempty"`
+	Enabled             bool                   `protobuf:"varint,6,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *Traffic) Reset() {
+	*x = Traffic{}
+	mi := &file_order_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Traffic) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Traffic) ProtoMessage() {}
+
+func (x *Traffic) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Traffic.ProtoReflect.Descriptor instead.
+func (*Traffic) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *Traffic) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Traffic) GetMerchantId() string {
+	if x != nil {
+		return x.MerchantId
+	}
+	return ""
+}
+
+func (x *Traffic) GetTraderId() string {
+	if x != nil {
+		return x.TraderId
+	}
+	return ""
+}
+
+func (x *Traffic) GetTraderRewardPercent() float64 {
+	if x != nil {
+		return x.TraderRewardPercent
+	}
+	return 0
+}
+
+func (x *Traffic) GetTraderPriority() float64 {
+	if x != nil {
+		return x.TraderPriority
+	}
+	return 0
+}
+
+func (x *Traffic) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type AddTrafficResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddTrafficResponse) Reset() {
+	*x = AddTrafficResponse{}
+	mi := &file_order_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddTrafficResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddTrafficResponse) ProtoMessage() {}
+
+func (x *AddTrafficResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddTrafficResponse.ProtoReflect.Descriptor instead.
+func (*AddTrafficResponse) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *AddTrafficResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type EditTrafficRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Traffic       *Traffic               `protobuf:"bytes,1,opt,name=traffic,proto3" json:"traffic,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EditTrafficRequest) Reset() {
+	*x = EditTrafficRequest{}
+	mi := &file_order_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EditTrafficRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EditTrafficRequest) ProtoMessage() {}
+
+func (x *EditTrafficRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EditTrafficRequest.ProtoReflect.Descriptor instead.
+func (*EditTrafficRequest) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *EditTrafficRequest) GetTraffic() *Traffic {
+	if x != nil {
+		return x.Traffic
+	}
+	return nil
+}
+
+type EditTrafficResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EditTrafficResponse) Reset() {
+	*x = EditTrafficResponse{}
+	mi := &file_order_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EditTrafficResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EditTrafficResponse) ProtoMessage() {}
+
+func (x *EditTrafficResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EditTrafficResponse.ProtoReflect.Descriptor instead.
+func (*EditTrafficResponse) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *EditTrafficResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type DeleteTrafficRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TrafficId     string                 `protobuf:"bytes,1,opt,name=traffic_id,json=trafficId,proto3" json:"traffic_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteTrafficRequest) Reset() {
+	*x = DeleteTrafficRequest{}
+	mi := &file_order_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteTrafficRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteTrafficRequest) ProtoMessage() {}
+
+func (x *DeleteTrafficRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteTrafficRequest.ProtoReflect.Descriptor instead.
+func (*DeleteTrafficRequest) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *DeleteTrafficRequest) GetTrafficId() string {
+	if x != nil {
+		return x.TrafficId
+	}
+	return ""
+}
+
+type DeleteTrafficResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteTrafficResponse) Reset() {
+	*x = DeleteTrafficResponse{}
+	mi := &file_order_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteTrafficResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteTrafficResponse) ProtoMessage() {}
+
+func (x *DeleteTrafficResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteTrafficResponse.ProtoReflect.Descriptor instead.
+func (*DeleteTrafficResponse) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *DeleteTrafficResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+// Добавить пагинацию!!!
+type GetTrafficRecordsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTrafficRecordsRequest) Reset() {
+	*x = GetTrafficRecordsRequest{}
+	mi := &file_order_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTrafficRecordsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTrafficRecordsRequest) ProtoMessage() {}
+
+func (x *GetTrafficRecordsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTrafficRecordsRequest.ProtoReflect.Descriptor instead.
+func (*GetTrafficRecordsRequest) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *GetTrafficRecordsRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *GetTrafficRecordsRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type GetTrafficRecordsResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TrafficRecords []*Traffic             `protobuf:"bytes,1,rep,name=traffic_records,json=trafficRecords,proto3" json:"traffic_records,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetTrafficRecordsResponse) Reset() {
+	*x = GetTrafficRecordsResponse{}
+	mi := &file_order_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTrafficRecordsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTrafficRecordsResponse) ProtoMessage() {}
+
+func (x *GetTrafficRecordsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTrafficRecordsResponse.ProtoReflect.Descriptor instead.
+func (*GetTrafficRecordsResponse) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *GetTrafficRecordsResponse) GetTrafficRecords() []*Traffic {
+	if x != nil {
+		return x.TrafficRecords
+	}
+	return nil
+}
+
 var File_order_proto protoreflect.FileDescriptor
 
 const file_order_proto_rawDesc = "" +
@@ -1046,7 +1523,38 @@ const file_order_proto_rawDesc = "" +
 	"\x1aResolveOrderDisputeRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\"7\n" +
 	"\x1bResolveOrderDisputeResponse\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage2\xbd\x04\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"\xc8\x01\n" +
+	"\x11AddTrafficRequest\x12\x1f\n" +
+	"\vmerchant_id\x18\x01 \x01(\tR\n" +
+	"merchantId\x12\x1b\n" +
+	"\ttrader_id\x18\x02 \x01(\tR\btraderId\x122\n" +
+	"\x15trader_reward_percent\x18\x03 \x01(\x01R\x13traderRewardPercent\x12'\n" +
+	"\x0ftrader_priority\x18\x04 \x01(\x01R\x0etraderPriority\x12\x18\n" +
+	"\aenabled\x18\x05 \x01(\bR\aenabled\"\xce\x01\n" +
+	"\aTraffic\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\vmerchant_id\x18\x02 \x01(\tR\n" +
+	"merchantId\x12\x1b\n" +
+	"\ttrader_id\x18\x03 \x01(\tR\btraderId\x122\n" +
+	"\x15trader_reward_percent\x18\x04 \x01(\x01R\x13traderRewardPercent\x12'\n" +
+	"\x0ftrader_priority\x18\x05 \x01(\x01R\x0etraderPriority\x12\x18\n" +
+	"\aenabled\x18\x06 \x01(\bR\aenabled\".\n" +
+	"\x12AddTrafficResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\">\n" +
+	"\x12EditTrafficRequest\x12(\n" +
+	"\atraffic\x18\x01 \x01(\v2\x0e.order.TrafficR\atraffic\"/\n" +
+	"\x13EditTrafficResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"5\n" +
+	"\x14DeleteTrafficRequest\x12\x1d\n" +
+	"\n" +
+	"traffic_id\x18\x01 \x01(\tR\ttrafficId\"1\n" +
+	"\x15DeleteTrafficResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"D\n" +
+	"\x18GetTrafficRecordsRequest\x12\x12\n" +
+	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\"T\n" +
+	"\x19GetTrafficRecordsResponse\x127\n" +
+	"\x0ftraffic_records\x18\x01 \x03(\v2\x0e.order.TrafficR\x0etrafficRecords2\xbd\x04\n" +
 	"\fOrderService\x12D\n" +
 	"\vCreateOrder\x12\x19.order.CreateOrderRequest\x1a\x1a.order.CreateOrderResponse\x12G\n" +
 	"\fApproveOrder\x12\x1a.order.ApproveOrderRequest\x1a\x1b.order.ApproveOrderResponse\x12D\n" +
@@ -1054,7 +1562,13 @@ const file_order_proto_rawDesc = "" +
 	"\x10OpenOrderDispute\x12\x1e.order.OpenOrderDisputeRequest\x1a\x1f.order.OpenOrderDisputeResponse\x12\\\n" +
 	"\x13ResolveOrderDispute\x12!.order.ResolveOrderDisputeRequest\x1a\".order.ResolveOrderDisputeResponse\x12G\n" +
 	"\fGetOrderByID\x12\x1a.order.GetOrderByIDRequest\x1a\x1b.order.GetOrderByIDResponse\x12\\\n" +
-	"\x13GetOrdersByTraderID\x12!.order.GetOrdersByTraderIDRequest\x1a\".order.GetOrdersByTraderIDResponseB=Z;github.com/LavaJover/shvark-order-service/proto/gen;orderpbb\x06proto3"
+	"\x13GetOrdersByTraderID\x12!.order.GetOrdersByTraderIDRequest\x1a\".order.GetOrdersByTraderIDResponse2\xbd\x02\n" +
+	"\x0eTrafficService\x12A\n" +
+	"\n" +
+	"AddTraffic\x12\x18.order.AddTrafficRequest\x1a\x19.order.AddTrafficResponse\x12D\n" +
+	"\vEditTraffic\x12\x19.order.EditTrafficRequest\x1a\x1a.order.EditTrafficResponse\x12J\n" +
+	"\rDeleteTraffic\x12\x1b.order.DeleteTrafficRequest\x1a\x1c.order.DeleteTrafficResponse\x12V\n" +
+	"\x11GetTrafficRecords\x12\x1f.order.GetTrafficRecordsRequest\x1a .order.GetTrafficRecordsResponseB=Z;github.com/LavaJover/shvark-order-service/proto/gen;orderpbb\x06proto3"
 
 var (
 	file_order_proto_rawDescOnce sync.Once
@@ -1068,7 +1582,7 @@ func file_order_proto_rawDescGZIP() []byte {
 	return file_order_proto_rawDescData
 }
 
-var file_order_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_order_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_order_proto_goTypes = []any{
 	(*CreateOrderRequest)(nil),          // 0: order.CreateOrderRequest
 	(*CreateOrderResponse)(nil),         // 1: order.CreateOrderResponse
@@ -1086,36 +1600,55 @@ var file_order_proto_goTypes = []any{
 	(*OpenOrderDisputeResponse)(nil),    // 13: order.OpenOrderDisputeResponse
 	(*ResolveOrderDisputeRequest)(nil),  // 14: order.ResolveOrderDisputeRequest
 	(*ResolveOrderDisputeResponse)(nil), // 15: order.ResolveOrderDisputeResponse
-	(*timestamppb.Timestamp)(nil),       // 16: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),         // 17: google.protobuf.Duration
+	(*AddTrafficRequest)(nil),           // 16: order.AddTrafficRequest
+	(*Traffic)(nil),                     // 17: order.Traffic
+	(*AddTrafficResponse)(nil),          // 18: order.AddTrafficResponse
+	(*EditTrafficRequest)(nil),          // 19: order.EditTrafficRequest
+	(*EditTrafficResponse)(nil),         // 20: order.EditTrafficResponse
+	(*DeleteTrafficRequest)(nil),        // 21: order.DeleteTrafficRequest
+	(*DeleteTrafficResponse)(nil),       // 22: order.DeleteTrafficResponse
+	(*GetTrafficRecordsRequest)(nil),    // 23: order.GetTrafficRecordsRequest
+	(*GetTrafficRecordsResponse)(nil),   // 24: order.GetTrafficRecordsResponse
+	(*timestamppb.Timestamp)(nil),       // 25: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),         // 26: google.protobuf.Duration
 }
 var file_order_proto_depIdxs = []int32{
-	16, // 0: order.CreateOrderRequest.expires_at:type_name -> google.protobuf.Timestamp
+	25, // 0: order.CreateOrderRequest.expires_at:type_name -> google.protobuf.Timestamp
 	9,  // 1: order.CreateOrderResponse.order:type_name -> order.Order
-	17, // 2: order.BankDetail.delay:type_name -> google.protobuf.Duration
+	26, // 2: order.BankDetail.delay:type_name -> google.protobuf.Duration
 	9,  // 3: order.GetOrderByIDResponse.order:type_name -> order.Order
 	2,  // 4: order.Order.bank_detail:type_name -> order.BankDetail
-	16, // 5: order.Order.expires_at:type_name -> google.protobuf.Timestamp
+	25, // 5: order.Order.expires_at:type_name -> google.protobuf.Timestamp
 	9,  // 6: order.GetOrdersByTraderIDResponse.orders:type_name -> order.Order
-	0,  // 7: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
-	3,  // 8: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
-	5,  // 9: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
-	12, // 10: order.OrderService.OpenOrderDispute:input_type -> order.OpenOrderDisputeRequest
-	14, // 11: order.OrderService.ResolveOrderDispute:input_type -> order.ResolveOrderDisputeRequest
-	7,  // 12: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
-	10, // 13: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
-	1,  // 14: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
-	4,  // 15: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
-	6,  // 16: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
-	13, // 17: order.OrderService.OpenOrderDispute:output_type -> order.OpenOrderDisputeResponse
-	15, // 18: order.OrderService.ResolveOrderDispute:output_type -> order.ResolveOrderDisputeResponse
-	8,  // 19: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
-	11, // 20: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
-	14, // [14:21] is the sub-list for method output_type
-	7,  // [7:14] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	17, // 7: order.EditTrafficRequest.traffic:type_name -> order.Traffic
+	17, // 8: order.GetTrafficRecordsResponse.traffic_records:type_name -> order.Traffic
+	0,  // 9: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
+	3,  // 10: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
+	5,  // 11: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
+	12, // 12: order.OrderService.OpenOrderDispute:input_type -> order.OpenOrderDisputeRequest
+	14, // 13: order.OrderService.ResolveOrderDispute:input_type -> order.ResolveOrderDisputeRequest
+	7,  // 14: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
+	10, // 15: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
+	16, // 16: order.TrafficService.AddTraffic:input_type -> order.AddTrafficRequest
+	19, // 17: order.TrafficService.EditTraffic:input_type -> order.EditTrafficRequest
+	21, // 18: order.TrafficService.DeleteTraffic:input_type -> order.DeleteTrafficRequest
+	23, // 19: order.TrafficService.GetTrafficRecords:input_type -> order.GetTrafficRecordsRequest
+	1,  // 20: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
+	4,  // 21: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
+	6,  // 22: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
+	13, // 23: order.OrderService.OpenOrderDispute:output_type -> order.OpenOrderDisputeResponse
+	15, // 24: order.OrderService.ResolveOrderDispute:output_type -> order.ResolveOrderDisputeResponse
+	8,  // 25: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
+	11, // 26: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
+	18, // 27: order.TrafficService.AddTraffic:output_type -> order.AddTrafficResponse
+	20, // 28: order.TrafficService.EditTraffic:output_type -> order.EditTrafficResponse
+	22, // 29: order.TrafficService.DeleteTraffic:output_type -> order.DeleteTrafficResponse
+	24, // 30: order.TrafficService.GetTrafficRecords:output_type -> order.GetTrafficRecordsResponse
+	20, // [20:31] is the sub-list for method output_type
+	9,  // [9:20] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_order_proto_init() }
@@ -1129,9 +1662,9 @@ func file_order_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_order_proto_rawDesc), len(file_order_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   25,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   2,
 		},
 		GoTypes:           file_order_proto_goTypes,
 		DependencyIndexes: file_order_proto_depIdxs,
