@@ -119,6 +119,7 @@ service TrafficService {
     rpc GetTrafficRecords (GetTrafficRecordsRequest) returns (GetTrafficRecordsResponse);
     rpc DisableTraderTraffic (DisableTraderTrafficRequest) returns (DisableTraderTrafficResponse);
     rpc EnableTraderTraffic (EnableTraderTrafficRequest) returns (EnableTraderTrafficResponse);
+    rpc GetTraderTrafficStatus (GetTraderTrafficStatusRequest) returns (GetTraderTrafficStatusResponse);
 }
 
 message AddTrafficRequest {
@@ -179,3 +180,11 @@ message EnableTraderTrafficRequest {
 }
 
 message EnableTraderTrafficResponse {}
+
+message GetTraderTrafficStatusRequest {
+    string trader_id = 1;
+}
+
+message GetTraderTrafficStatusResponse {
+    bool status = 1;
+}

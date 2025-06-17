@@ -41,3 +41,7 @@ func (uc *DefaultTrafficUsecase) DisableTraderTraffic(traderID string) error {
 func (uc *DefaultTrafficUsecase) EnableTraderTraffic(traderID string) error {
 	return uc.TrafficRepo.EnableTraderTraffic(traderID)
 }
+
+func (uc *DefaultTrafficUsecase) GetTraderTrafficStatus(traderID string) (bool, error) {
+	return uc.TrafficRepo.GetTraderTrafficStatus(traderID)
+}

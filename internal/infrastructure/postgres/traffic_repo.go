@@ -132,3 +132,12 @@ func (r *DefaultTrafficRepository) EnableTraderTraffic(traderID string) error {
 	err := r.DB.Model(&TrafficModel{}).Where("trader_id = ?", traderID).Update("enabled", true).Error
 	return err
 }
+
+func (r *DefaultTrafficRepository) GetTraderTrafficStatus(traderID string) (bool, error) {
+	var count int64
+	if err := r.DB.Model(&TrafficModel{}).Where("trader_id = ? AND enabled = ?", traderID, true).Count(&count).Error; err != nil {
+		return false, nil
+	}
+
+	return count > 0, nil
+}

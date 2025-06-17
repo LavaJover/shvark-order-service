@@ -111,3 +111,15 @@ func (h *TrafficHandler) EnableTraderTraffic(ctx context.Context, r *orderpb.Ena
 
 	return &orderpb.EnableTraderTrafficResponse{}, nil
 }
+
+func (h *TrafficHandler) GetTraderTrafficStatus(ctx context.Context, r *orderpb.GetTraderTrafficStatusRequest) (*orderpb.GetTraderTrafficStatusResponse, error) {
+	traderID := r.TraderId
+	status, err := h.trafficUsecase.GetTraderTrafficStatus(traderID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &orderpb.GetTraderTrafficStatusResponse{
+		Status: status,
+	}, nil
+}
