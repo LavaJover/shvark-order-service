@@ -117,6 +117,7 @@ service TrafficService {
     rpc EditTraffic (EditTrafficRequest) returns (EditTrafficResponse);
     rpc DeleteTraffic (DeleteTrafficRequest) returns (DeleteTrafficResponse);
     rpc GetTrafficRecords (GetTrafficRecordsRequest) returns (GetTrafficRecordsResponse);
+    rpc DisableTraderTraffic (DisableTraderTrafficRequest) returns (DisableTraderTrafficResponse);
 }
 
 message AddTrafficRequest {
@@ -165,3 +166,9 @@ message GetTrafficRecordsRequest {
 message GetTrafficRecordsResponse {
     repeated Traffic traffic_records = 1;
 }
+
+message DisableTraderTrafficRequest {
+    string trader_id = 1;
+}
+
+message DisableTraderTrafficResponse {}

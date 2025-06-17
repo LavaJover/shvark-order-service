@@ -33,3 +33,10 @@ func (uc *DefaultTrafficUsecase) GetTrafficRecords(page, limit int32) ([]*domain
 func (uc *DefaultTrafficUsecase) GetTrafficByTraderMerchant(traderID, merchantID string) (*domain.Traffic, error) {
 	return uc.TrafficRepo.GetTrafficByTraderMerchant(traderID, merchantID)
 }
+
+func (uc *DefaultTrafficUsecase) DisableTraderTraffic(traderID string) error {
+	return uc.TrafficRepo.UpdateTraffic(&domain.Traffic{
+		ID: traderID,
+		Enabled: false,
+	})
+}

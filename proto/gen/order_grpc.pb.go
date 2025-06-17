@@ -349,10 +349,11 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	TrafficService_AddTraffic_FullMethodName        = "/order.TrafficService/AddTraffic"
-	TrafficService_EditTraffic_FullMethodName       = "/order.TrafficService/EditTraffic"
-	TrafficService_DeleteTraffic_FullMethodName     = "/order.TrafficService/DeleteTraffic"
-	TrafficService_GetTrafficRecords_FullMethodName = "/order.TrafficService/GetTrafficRecords"
+	TrafficService_AddTraffic_FullMethodName           = "/order.TrafficService/AddTraffic"
+	TrafficService_EditTraffic_FullMethodName          = "/order.TrafficService/EditTraffic"
+	TrafficService_DeleteTraffic_FullMethodName        = "/order.TrafficService/DeleteTraffic"
+	TrafficService_GetTrafficRecords_FullMethodName    = "/order.TrafficService/GetTrafficRecords"
+	TrafficService_DisableTraderTraffic_FullMethodName = "/order.TrafficService/DisableTraderTraffic"
 )
 
 // TrafficServiceClient is the client API for TrafficService service.
@@ -363,6 +364,7 @@ type TrafficServiceClient interface {
 	EditTraffic(ctx context.Context, in *EditTrafficRequest, opts ...grpc.CallOption) (*EditTrafficResponse, error)
 	DeleteTraffic(ctx context.Context, in *DeleteTrafficRequest, opts ...grpc.CallOption) (*DeleteTrafficResponse, error)
 	GetTrafficRecords(ctx context.Context, in *GetTrafficRecordsRequest, opts ...grpc.CallOption) (*GetTrafficRecordsResponse, error)
+	DisableTraderTraffic(ctx context.Context, in *DisableTraderTrafficRequest, opts ...grpc.CallOption) (*DisableTraderTrafficResponse, error)
 }
 
 type trafficServiceClient struct {
@@ -413,6 +415,16 @@ func (c *trafficServiceClient) GetTrafficRecords(ctx context.Context, in *GetTra
 	return out, nil
 }
 
+func (c *trafficServiceClient) DisableTraderTraffic(ctx context.Context, in *DisableTraderTrafficRequest, opts ...grpc.CallOption) (*DisableTraderTrafficResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DisableTraderTrafficResponse)
+	err := c.cc.Invoke(ctx, TrafficService_DisableTraderTraffic_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TrafficServiceServer is the server API for TrafficService service.
 // All implementations must embed UnimplementedTrafficServiceServer
 // for forward compatibility.
@@ -421,6 +433,7 @@ type TrafficServiceServer interface {
 	EditTraffic(context.Context, *EditTrafficRequest) (*EditTrafficResponse, error)
 	DeleteTraffic(context.Context, *DeleteTrafficRequest) (*DeleteTrafficResponse, error)
 	GetTrafficRecords(context.Context, *GetTrafficRecordsRequest) (*GetTrafficRecordsResponse, error)
+	DisableTraderTraffic(context.Context, *DisableTraderTrafficRequest) (*DisableTraderTrafficResponse, error)
 	mustEmbedUnimplementedTrafficServiceServer()
 }
 
@@ -442,6 +455,9 @@ func (UnimplementedTrafficServiceServer) DeleteTraffic(context.Context, *DeleteT
 }
 func (UnimplementedTrafficServiceServer) GetTrafficRecords(context.Context, *GetTrafficRecordsRequest) (*GetTrafficRecordsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTrafficRecords not implemented")
+}
+func (UnimplementedTrafficServiceServer) DisableTraderTraffic(context.Context, *DisableTraderTrafficRequest) (*DisableTraderTrafficResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DisableTraderTraffic not implemented")
 }
 func (UnimplementedTrafficServiceServer) mustEmbedUnimplementedTrafficServiceServer() {}
 func (UnimplementedTrafficServiceServer) testEmbeddedByValue()                        {}
@@ -536,6 +552,24 @@ func _TrafficService_GetTrafficRecords_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TrafficService_DisableTraderTraffic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DisableTraderTrafficRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).DisableTraderTraffic(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_DisableTraderTraffic_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).DisableTraderTraffic(ctx, req.(*DisableTraderTrafficRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TrafficService_ServiceDesc is the grpc.ServiceDesc for TrafficService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -558,6 +592,10 @@ var TrafficService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTrafficRecords",
 			Handler:    _TrafficService_GetTrafficRecords_Handler,
+		},
+		{
+			MethodName: "DisableTraderTraffic",
+			Handler:    _TrafficService_DisableTraderTraffic_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

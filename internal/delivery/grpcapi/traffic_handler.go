@@ -93,3 +93,12 @@ func (h *TrafficHandler) GetTrafficRecords(ctx context.Context, r *orderpb.GetTr
 		TrafficRecords: trafficResponse,
 	}, nil
 }
+
+func (h *TrafficHandler) DisableTraderTraffic(ctx context.Context, r *orderpb.DisableTraderTrafficRequest) (*orderpb.DisableTraderTrafficResponse, error) {
+	traderID := r.TraderId
+	if err := h.trafficUsecase.DisableTraderTraffic(traderID); err != nil {
+		return nil, err
+	}
+
+	return &orderpb.DisableTraderTrafficResponse{}, nil
+}
