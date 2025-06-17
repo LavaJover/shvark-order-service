@@ -491,14 +491,20 @@ func (uc *DefaultOrderUsecase) ResolveOrderDispute(orderID string) error {
 		return domain.ErrResolveDisputeFailed
 	}
 
-	// Set order status to DISPUTE_CREATED
-	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusDisputeResolved); err != nil {
+
+	// Improve
+	traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(order.BankDetail.TraderID, order.MerchantID)
+	if err != nil {
 		return err
 	}
 
-	// Improve
-	rewardPercent := float64(0.09)
+	rewardPercent := traffic.TraderRewardPercent
 	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, rewardPercent); err != nil {
+		return err
+	}
+
+	// Set order status to DISPUTE_CREATED
+	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusDisputeResolved); err != nil {
 		return err
 	}
 
@@ -529,14 +535,17 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		return domain.ErrResolveDisputeFailed
 	}
 
-	// Set order status to SUCCEED
-	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusSucceed); err != nil {
+	traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(order.BankDetail.TraderID, order.MerchantID)
+	if err != nil {
+		return err
+	}
+	rewardPercent := traffic.TraderRewardPercent
+	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, rewardPercent); err != nil {
 		return err
 	}
 
-	// Improve
-	rewardPercent := float64(0.09)
-	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, rewardPercent); err != nil {
+	// Set order status to SUCCEED
+	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusSucceed); err != nil {
 		return err
 	}
 
