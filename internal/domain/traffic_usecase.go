@@ -8,4 +8,5 @@ type TrafficUsecase interface {
 	DeleteTraffic(trafficID string) error
 	GetTrafficByTraderMerchant(traderID, merchantID string) (*Traffic, error)
 	DisableTraderTraffic(traderID string) error
+	EnableTraderTraffic(traderID string) error
 }

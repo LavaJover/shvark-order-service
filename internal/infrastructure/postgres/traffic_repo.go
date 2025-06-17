@@ -127,3 +127,8 @@ func (r *DefaultTrafficRepository) DisableTraderTraffic(traderID string) error {
 	err := r.DB.Model(&TrafficModel{}).Where("trader_id = ?", traderID).Update("enabled", false).Error
 	return err
 }
+
+func (r *DefaultTrafficRepository) EnableTraderTraffic(traderID string) error {
+	err := r.DB.Model(&TrafficModel{}).Where("trader_id = ?", traderID).Update("enabled", true).Error
+	return err
+}

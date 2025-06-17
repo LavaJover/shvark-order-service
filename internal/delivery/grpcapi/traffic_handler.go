@@ -102,3 +102,12 @@ func (h *TrafficHandler) DisableTraderTraffic(ctx context.Context, r *orderpb.Di
 
 	return &orderpb.DisableTraderTrafficResponse{}, nil
 }
+
+func (h *TrafficHandler) EnableTraderTraffic(ctx context.Context, r *orderpb.EnableTraderTrafficRequest) (*orderpb.EnableTraderTrafficResponse, error) {
+	traderID := r.TraderId
+	if err := h.trafficUsecase.EnableTraderTraffic(traderID); err != nil {
+		return nil, err
+	}
+
+	return &orderpb.EnableTraderTrafficResponse{}, nil
+}
