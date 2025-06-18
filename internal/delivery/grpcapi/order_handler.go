@@ -3,6 +3,7 @@ package grpcapi
 import (
 	"context"
 	"math"
+	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
@@ -134,14 +135,36 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 	if !validSortFields[r.GetSortBy()] {
 		r.SortBy = "created_at"
 	}
-
 	// sort_order validation
 	if r.GetSortOrder() != "asc" && r.GetSortOrder() != "desc" {
 		r.SortOrder = "desc"
 	}
 
+	var dateFrom, dateTo time.Time
+	if r.Filters.DateFrom != nil {
+		dateFrom = r.Filters.DateFrom.AsTime()
+	}
+	if r.Filters.DateFrom != nil {
+		dateTo = r.Filters.DateTo.AsTime()
+	}
+	filters := domain.OrderFilters{
+		Statuses: r.Filters.Statuses,
+		MinAmountFiat: r.Filters.MinAmountFiat,
+		MaxAmountFiat: r.Filters.MaxAmountFiat,
+		DateFrom: dateFrom,
+		DateTo: dateTo,
+		Currency: r.Filters.Currency,
+	} 
+
 	traderID := r.TraderId
-	ordersResponse, total, err := h.uc.GetOrdersByTraderID(traderID, r.GetPage(), r.GetLimit(), r.GetSortBy(), r.GetSortOrder())
+	ordersResponse, total, err := h.uc.GetOrdersByTraderID(
+		traderID, 
+		r.GetPage(), 
+		r.GetLimit(), 
+		r.GetSortBy(), 
+		r.GetSortOrder(),
+		filters,
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -32,3 +32,12 @@ type Order struct {
 	CallbackURL 		string
 	TraderRewardPercent float64
 }
+
+type OrderFilters struct {
+	Statuses 		[]string  `form:"status"`
+	MinAmountFiat 	float64   `form:"min_amount"`
+	MaxAmountFiat 	float64	  `form:"max_amount"`
+	DateFrom 		time.Time `form:"date_from"`
+	DateTo 			time.Time `form:"date_to"`
+	Currency 		string 	  `form:"currency"`
+}

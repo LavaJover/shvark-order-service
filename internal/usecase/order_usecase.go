@@ -443,8 +443,35 @@ func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*domain.Order, erro
 	return uc.OrderRepo.GetOrderByID(orderID)
 }
 
-func (uc *DefaultOrderUsecase) GetOrdersByTraderID(traderID string, page, limit int64, sortBy, sortOrder string) ([]*domain.Order, int64, error) {
-	return uc.OrderRepo.GetOrdersByTraderID(traderID, page, limit, sortBy, sortOrder)
+func (uc *DefaultOrderUsecase) GetOrdersByTraderID(
+	traderID string, page, 
+	limit int64, sortBy, 
+	sortOrder string,
+	filters domain.OrderFilters,
+) ([]*domain.Order, int64, error) {
+
+	validStatuses := map[string]bool{
+		"SUCCEED": true,
+		"CANCELED": true,
+		"CREATED": true,
+		"DISPUTE_CREATED": true,
+		"DISPUTE_RESOLVED": true,
+	}
+
+	for _, status := range filters.Statuses {
+		if !validStatuses[status] {
+			return nil, 0, fmt.Errorf("invalid status in filters")
+		}
+	}
+
+	return uc.OrderRepo.GetOrdersByTraderID(
+		traderID, 
+		page, 
+		limit, 
+		sortBy, 
+		sortOrder,
+		filters,
+	)
 }
 
 func (uc *DefaultOrderUsecase) FindExpiredOrders() ([]*domain.Order, error) {

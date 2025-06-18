@@ -9,7 +9,7 @@ import (
 type OrderModel struct {
 	ID 			  		string  			`gorm:"primaryKey;type:uuid"`
 	MerchantID 	  		string  			
-	AmountFiat 	  		float64
+	AmountFiat 	  		float64				`gorm:"index:idx_amount"`
 	AmountCrypto  		float64	
 	Currency 	  		string		
 	Country 	  		string
@@ -19,7 +19,7 @@ type OrderModel struct {
 	BankDetailsID 		string  			`gorm:"type:uuid"`	
 	BankDetail 	  		BankDetailModel   	`gorm:"foreignKey:BankDetailsID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 	ExpiresAt  	  		time.Time			`gorm:"index:idx_status_expires"`
-	CreatedAt 	  		time.Time
+	CreatedAt 	  		time.Time			`gorm:"index:idx_created_at"`
 	UpdatedAt 	  		time.Time
 	MerchantOrderID 	string
 	Shuffle 			int32

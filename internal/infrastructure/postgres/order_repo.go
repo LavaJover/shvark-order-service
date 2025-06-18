@@ -103,7 +103,12 @@ func (r *DefaultOrderRepository) UpdateOrderStatus(orderID string, newStatus dom
 	return nil
 }
 
-func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string, page, limit int64, sortBy, sortOrder string) ([]*domain.Order, int64, error) {
+func (r *DefaultOrderRepository) GetOrdersByTraderID(
+	traderID string, 
+	page, limit int64, 
+	sortBy, sortOrder string,
+	filters domain.OrderFilters,
+) ([]*domain.Order, int64, error) {
 	var orderModels []OrderModel
 	var total int64
 	
@@ -122,28 +127,49 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string, page, limi
 		safeSortOrder = "ASC"
 	}
 
-	// count total order records
-	countQuery := r.DB.Model(&OrderModel{}).
-		Joins("JOIN bank_detail_models ON order_models.bank_details_id = bank_detail_models.id").
-		Where("bank_detail_models.trader_id = ?", traderID)
+    // Базовый запрос с JOIN
+    baseQuery := r.DB.Model(&OrderModel{}).
+        Preload("BankDetail").
+        Joins("JOIN bank_detail_models ON order_models.bank_details_id = bank_detail_models.id").
+        Where("bank_detail_models.trader_id = ?", traderID)
 
-	if err := countQuery.Count(&total).Error; err != nil {
-		return nil, 0, fmt.Errorf("failed to count orders: %w", err)
-	}
+    // Применяем фильтры
+    if len(filters.Statuses) > 0 {
+        baseQuery = baseQuery.Where("order_models.status IN (?)", filters.Statuses)
+    }
+    
+    if filters.MinAmountFiat > 0 {
+        baseQuery = baseQuery.Where("order_models.amount_fiat >= ?", filters.MinAmountFiat)
+    }
+    
+    if filters.MaxAmountFiat > 0 {
+        baseQuery = baseQuery.Where("order_models.amount_fiat <= ?", filters.MaxAmountFiat)
+    }
+    
+    if !filters.DateFrom.IsZero() {
+        baseQuery = baseQuery.Where("order_models.created_at >= ?", filters.DateFrom)
+    }
+    
+    if !filters.DateTo.IsZero() {
+        baseQuery = baseQuery.Where("order_models.created_at <= ?", filters.DateTo)
+    }
 
-	// Основной запрос с пагинацией и сортировкой
-	offset := (page - 1) * limit
-	query := r.DB.
-		Preload("BankDetail").
-		Joins("JOIN bank_detail_models ON order_models.bank_details_id = bank_detail_models.id").
-		Where("bank_detail_models.trader_id = ?", traderID).
-		Order(fmt.Sprintf("%s %s", safeSortBy, safeSortOrder)).
-		Offset(int(offset)).
-		Limit(int(limit))
+    // Подсчет общего количества с учетом фильтров
+    if err := baseQuery.Count(&total).Error; err != nil {
+        return nil, 0, fmt.Errorf("failed to count orders: %w", err)
+    }
 
-	if err := query.Find(&orderModels).Error; err != nil {
-		return nil, 0, fmt.Errorf("failed to find orders: %w", err)
-	}
+    // Основной запрос с сортировкой и пагинацией
+    offset := (page - 1) * limit
+    err := baseQuery.
+        Order(fmt.Sprintf("%s %s", safeSortBy, safeSortOrder)).
+        Offset(int(offset)).
+        Limit(int(limit)).
+        Find(&orderModels).Error
+
+    if err != nil {
+        return nil, 0, fmt.Errorf("failed to find orders: %w", err)
+    }
 
 	orders := make([]*domain.Order, len(orderModels))
 	for i, orderModel := range orderModels {
