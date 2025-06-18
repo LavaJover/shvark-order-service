@@ -144,7 +144,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string, page, limi
 	if err := query.Find(&orderModels).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to find orders: %w", err)
 	}
-	
+
 	orders := make([]*domain.Order, len(orderModels))
 	for i, orderModel := range orderModels {
 		orders[i] = &domain.Order{
@@ -186,7 +186,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string, page, limi
 		}
 	}
 
-	return orders, 0, nil
+	return orders, total, nil
 }
 
 func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
