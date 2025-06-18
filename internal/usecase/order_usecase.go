@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"math/rand"
 	"fmt"
 	"log"
 	"time"
@@ -38,8 +39,43 @@ func NewDefaultOrderUsecase(
 	}
 }
 
-func (uc *DefaultOrderUsecase) PickBestBankDetail(bankDetails []*domain.BankDetail) (*domain.BankDetail, error) {
-	return bankDetails[0], nil
+func (uc *DefaultOrderUsecase) PickBestBankDetail(bankDetails []*domain.BankDetail, merchantID string) (*domain.BankDetail, error) {
+	type Trader struct {
+		TraderID 		string
+		Priority 		float64
+		BankDetailIndex int
+	}
+	var traders []*Trader
+	totalPriority := 0.0
+
+	for i, bankDetail := range bankDetails {
+		traderID := bankDetail.TraderID
+		traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(traderID, merchantID)
+		if err != nil {
+			return nil, err
+		}
+		traders = append(traders, &Trader{
+			TraderID: traffic.TraderID,
+			Priority: traffic.TraderPriority,
+			BankDetailIndex: i,
+		})
+		totalPriority += traffic.TraderPriority
+	}
+
+	// [0, totalPriority]
+	rand.Seed(time.Now().UnixNano())
+	r := rand.Float64() * totalPriority
+
+	// pick trader regarding weight
+	accumulated := 0.0
+	for _, trader := range traders {
+		accumulated += trader.Priority
+		if r <= accumulated {
+			return bankDetails[trader.BankDetailIndex], nil
+		}
+	}
+
+	return bankDetails[traders[len(traders)-1].BankDetailIndex], nil
 }
 
 func (uc *DefaultOrderUsecase) FilterByTraffic(bankDetails []*domain.BankDetail, merchantID string) ([]*domain.BankDetail, error) {
@@ -331,7 +367,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	}
 
 	// business logic to pick best bank detail
-	chosenBankDetail, err := uc.PickBestBankDetail(bankDetails)
+	chosenBankDetail, err := uc.PickBestBankDetail(bankDetails, order.MerchantID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to pick best bank detail")
 	}
