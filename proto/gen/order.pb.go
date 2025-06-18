@@ -752,6 +752,8 @@ type Order struct {
 	ClientId            string                 `protobuf:"bytes,9,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
 	CallbackUrl         string                 `protobuf:"bytes,10,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
 	TraderRewardPercent float64                `protobuf:"fixed64,11,opt,name=trader_reward_percent,json=traderRewardPercent,proto3" json:"trader_reward_percent,omitempty"`
+	CreatedAt           *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt           *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -861,6 +863,20 @@ func (x *Order) GetTraderRewardPercent() float64 {
 		return x.TraderRewardPercent
 	}
 	return 0
+}
+
+func (x *Order) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *Order) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
 }
 
 type GetOrdersByTraderIDRequest struct {
@@ -1967,7 +1983,7 @@ const file_order_proto_rawDesc = "" +
 	"\x13GetOrderByIDRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\":\n" +
 	"\x14GetOrderByIDResponse\x12\"\n" +
-	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\xa9\x03\n" +
+	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\x9f\x04\n" +
 	"\x05Order\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x122\n" +
@@ -1983,7 +1999,11 @@ const file_order_proto_rawDesc = "" +
 	"\tclient_id\x18\t \x01(\tR\bclientId\x12!\n" +
 	"\fcallback_url\x18\n" +
 	" \x01(\tR\vcallbackUrl\x122\n" +
-	"\x15trader_reward_percent\x18\v \x01(\x01R\x13traderRewardPercent\"\xca\x01\n" +
+	"\x15trader_reward_percent\x18\v \x01(\x01R\x13traderRewardPercent\x129\n" +
+	"\n" +
+	"created_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xca\x01\n" +
 	"\x1aGetOrdersByTraderIDRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x03R\x04page\x12\x14\n" +
@@ -2123,44 +2143,46 @@ var file_order_proto_depIdxs = []int32{
 	11, // 5: order.GetOrderByIDResponse.order:type_name -> order.Order
 	4,  // 6: order.Order.bank_detail:type_name -> order.BankDetail
 	33, // 7: order.Order.expires_at:type_name -> google.protobuf.Timestamp
-	0,  // 8: order.GetOrdersByTraderIDRequest.filters:type_name -> order.OrderFilters
-	11, // 9: order.GetOrdersByTraderIDResponse.orders:type_name -> order.Order
-	1,  // 10: order.GetOrdersByTraderIDResponse.pagination:type_name -> order.Pagination
-	19, // 11: order.EditTrafficRequest.traffic:type_name -> order.Traffic
-	19, // 12: order.GetTrafficRecordsResponse.traffic_records:type_name -> order.Traffic
-	2,  // 13: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
-	5,  // 14: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
-	7,  // 15: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
-	14, // 16: order.OrderService.OpenOrderDispute:input_type -> order.OpenOrderDisputeRequest
-	16, // 17: order.OrderService.ResolveOrderDispute:input_type -> order.ResolveOrderDisputeRequest
-	9,  // 18: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
-	12, // 19: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
-	18, // 20: order.TrafficService.AddTraffic:input_type -> order.AddTrafficRequest
-	21, // 21: order.TrafficService.EditTraffic:input_type -> order.EditTrafficRequest
-	23, // 22: order.TrafficService.DeleteTraffic:input_type -> order.DeleteTrafficRequest
-	25, // 23: order.TrafficService.GetTrafficRecords:input_type -> order.GetTrafficRecordsRequest
-	27, // 24: order.TrafficService.DisableTraderTraffic:input_type -> order.DisableTraderTrafficRequest
-	29, // 25: order.TrafficService.EnableTraderTraffic:input_type -> order.EnableTraderTrafficRequest
-	31, // 26: order.TrafficService.GetTraderTrafficStatus:input_type -> order.GetTraderTrafficStatusRequest
-	3,  // 27: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
-	6,  // 28: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
-	8,  // 29: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
-	15, // 30: order.OrderService.OpenOrderDispute:output_type -> order.OpenOrderDisputeResponse
-	17, // 31: order.OrderService.ResolveOrderDispute:output_type -> order.ResolveOrderDisputeResponse
-	10, // 32: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
-	13, // 33: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
-	20, // 34: order.TrafficService.AddTraffic:output_type -> order.AddTrafficResponse
-	22, // 35: order.TrafficService.EditTraffic:output_type -> order.EditTrafficResponse
-	24, // 36: order.TrafficService.DeleteTraffic:output_type -> order.DeleteTrafficResponse
-	26, // 37: order.TrafficService.GetTrafficRecords:output_type -> order.GetTrafficRecordsResponse
-	28, // 38: order.TrafficService.DisableTraderTraffic:output_type -> order.DisableTraderTrafficResponse
-	30, // 39: order.TrafficService.EnableTraderTraffic:output_type -> order.EnableTraderTrafficResponse
-	32, // 40: order.TrafficService.GetTraderTrafficStatus:output_type -> order.GetTraderTrafficStatusResponse
-	27, // [27:41] is the sub-list for method output_type
-	13, // [13:27] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	33, // 8: order.Order.created_at:type_name -> google.protobuf.Timestamp
+	33, // 9: order.Order.updated_at:type_name -> google.protobuf.Timestamp
+	0,  // 10: order.GetOrdersByTraderIDRequest.filters:type_name -> order.OrderFilters
+	11, // 11: order.GetOrdersByTraderIDResponse.orders:type_name -> order.Order
+	1,  // 12: order.GetOrdersByTraderIDResponse.pagination:type_name -> order.Pagination
+	19, // 13: order.EditTrafficRequest.traffic:type_name -> order.Traffic
+	19, // 14: order.GetTrafficRecordsResponse.traffic_records:type_name -> order.Traffic
+	2,  // 15: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
+	5,  // 16: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
+	7,  // 17: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
+	14, // 18: order.OrderService.OpenOrderDispute:input_type -> order.OpenOrderDisputeRequest
+	16, // 19: order.OrderService.ResolveOrderDispute:input_type -> order.ResolveOrderDisputeRequest
+	9,  // 20: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
+	12, // 21: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
+	18, // 22: order.TrafficService.AddTraffic:input_type -> order.AddTrafficRequest
+	21, // 23: order.TrafficService.EditTraffic:input_type -> order.EditTrafficRequest
+	23, // 24: order.TrafficService.DeleteTraffic:input_type -> order.DeleteTrafficRequest
+	25, // 25: order.TrafficService.GetTrafficRecords:input_type -> order.GetTrafficRecordsRequest
+	27, // 26: order.TrafficService.DisableTraderTraffic:input_type -> order.DisableTraderTrafficRequest
+	29, // 27: order.TrafficService.EnableTraderTraffic:input_type -> order.EnableTraderTrafficRequest
+	31, // 28: order.TrafficService.GetTraderTrafficStatus:input_type -> order.GetTraderTrafficStatusRequest
+	3,  // 29: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
+	6,  // 30: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
+	8,  // 31: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
+	15, // 32: order.OrderService.OpenOrderDispute:output_type -> order.OpenOrderDisputeResponse
+	17, // 33: order.OrderService.ResolveOrderDispute:output_type -> order.ResolveOrderDisputeResponse
+	10, // 34: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
+	13, // 35: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
+	20, // 36: order.TrafficService.AddTraffic:output_type -> order.AddTrafficResponse
+	22, // 37: order.TrafficService.EditTraffic:output_type -> order.EditTrafficResponse
+	24, // 38: order.TrafficService.DeleteTraffic:output_type -> order.DeleteTrafficResponse
+	26, // 39: order.TrafficService.GetTrafficRecords:output_type -> order.GetTrafficRecordsResponse
+	28, // 40: order.TrafficService.DisableTraderTraffic:output_type -> order.DisableTraderTrafficResponse
+	30, // 41: order.TrafficService.EnableTraderTraffic:output_type -> order.EnableTraderTrafficResponse
+	32, // 42: order.TrafficService.GetTraderTrafficStatus:output_type -> order.GetTraderTrafficStatusResponse
+	29, // [29:43] is the sub-list for method output_type
+	15, // [15:29] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_order_proto_init() }

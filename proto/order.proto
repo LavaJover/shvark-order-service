@@ -103,6 +103,8 @@ message Order {
     string client_id = 9;
     string callback_url = 10;
     double trader_reward_percent = 11;
+    google.protobuf.Timestamp created_at = 12;
+    google.protobuf.Timestamp updated_at = 13;
 }
 
 message GetOrdersByTraderIDRequest {
