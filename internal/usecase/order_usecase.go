@@ -379,6 +379,13 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		return nil, err
 	}
 
+	// Get trader reward percent and save to order
+	traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(chosenBankDetail.TraderID, order.MerchantID)
+	if err != nil {
+		return nil, err
+	}
+	rewardPercent := traffic.TraderRewardPercent
+	order.TraderRewardPercent = rewardPercent
 	orderID, err := uc.OrderRepo.CreateOrder(order)
 	if err != nil {
 		return nil, err
@@ -406,6 +413,9 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		MerchantOrderID: order.MerchantOrderID,
 		Shuffle: order.Shuffle,
 		CallbackURL: order.CallbackURL,
+		TraderRewardPercent: order.TraderRewardPercent,
+		CreatedAt: order.CreatedAt,
+		UpdatedAt: order.UpdatedAt,
 		BankDetail: &domain.BankDetail{
 			ID: chosenBankDetail.ID,
 			TraderID: chosenBankDetail.TraderID,
@@ -529,12 +539,7 @@ func (uc *DefaultOrderUsecase) ResolveOrderDispute(orderID string) error {
 
 
 	// Improve
-	traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(order.BankDetail.TraderID, order.MerchantID)
-	if err != nil {
-		return err
-	}
-
-	rewardPercent := traffic.TraderRewardPercent
+	rewardPercent := order.TraderRewardPercent
 	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, rewardPercent); err != nil {
 		return err
 	}
@@ -571,11 +576,7 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		return domain.ErrResolveDisputeFailed
 	}
 
-	traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(order.BankDetail.TraderID, order.MerchantID)
-	if err != nil {
-		return err
-	}
-	rewardPercent := traffic.TraderRewardPercent
+	rewardPercent := order.TraderRewardPercent
 	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, rewardPercent); err != nil {
 		return err
 	}

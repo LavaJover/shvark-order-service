@@ -32,6 +32,7 @@ func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error
 		MerchantOrderID: order.MerchantOrderID,
 		Shuffle: order.Shuffle,
 		CallbackURL: order.CallbackURL,
+		TraderRewardPercent: order.TraderRewardPercent,
 	}
 
 	if err := r.DB.Create(&orderModel).Error; err != nil {
@@ -65,6 +66,7 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 		MerchantOrderID: order.MerchantOrderID,
 		Shuffle: order.Shuffle,
 		CallbackURL: order.CallbackURL,
+		TraderRewardPercent: order.TraderRewardPercent,
 		BankDetail: &domain.BankDetail{
 			ID: order.BankDetail.ID,
 			TraderID: order.BankDetail.TraderID,
@@ -129,6 +131,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string) ([]*domain
 			MerchantOrderID: orderModel.MerchantOrderID,
 			Shuffle: orderModel.Shuffle,
 			CallbackURL: orderModel.CallbackURL,
+			TraderRewardPercent: orderModel.TraderRewardPercent,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -178,6 +181,7 @@ func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
 			MerchantOrderID: orderModel.MerchantOrderID,
 			Shuffle: orderModel.Shuffle,
 			CallbackURL: orderModel.CallbackURL,
+			TraderRewardPercent: orderModel.TraderRewardPercent,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -231,6 +235,7 @@ func (r *DefaultOrderRepository) GetOrdersByBankDetailID(bankDetailID string) ([
 			MerchantOrderID: orderModel.MerchantOrderID,
 			Shuffle: orderModel.Shuffle,
 			CallbackURL: orderModel.CallbackURL,
+			TraderRewardPercent: orderModel.TraderRewardPercent,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,

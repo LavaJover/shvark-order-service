@@ -86,6 +86,7 @@ message Order {
     int32 shuffle = 8;
     string client_id = 9;
     string callback_url = 10;
+    double trader_reward_percent = 11;
 }
 
 message GetOrdersByTraderIDRequest {

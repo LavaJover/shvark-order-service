@@ -67,6 +67,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 			MerchantOrderId: savedOrder.MerchantOrderID,
 			ClientId: savedOrder.ClientID,
 			CallbackUrl: savedOrder.CallbackURL,
+			TraderRewardPercent: savedOrder.TraderRewardPercent,
 		},
 	}, nil
 }
@@ -117,6 +118,7 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 			Shuffle: orderResponse.Shuffle,
 			ClientId: orderResponse.ClientID,
 			CallbackUrl: orderResponse.CallbackURL,
+			TraderRewardPercent: orderResponse.TraderRewardPercent,
 		},
 	}, nil
 }
@@ -154,6 +156,7 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 			Shuffle: order.Shuffle,
 			ClientId: order.ClientID,
 			CallbackUrl: order.CallbackURL,
+			TraderRewardPercent: order.TraderRewardPercent,
 		}
 	}
 

@@ -588,19 +588,20 @@ func (x *GetOrderByIDResponse) GetOrder() *Order {
 }
 
 type Order struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	OrderId         string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	Status          string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	BankDetail      *BankDetail            `protobuf:"bytes,3,opt,name=bank_detail,json=bankDetail,proto3" json:"bank_detail,omitempty"`
-	AmountFiat      float64                `protobuf:"fixed64,4,opt,name=amount_fiat,json=amountFiat,proto3" json:"amount_fiat,omitempty"`
-	AmountCrypto    float64                `protobuf:"fixed64,5,opt,name=amount_crypto,json=amountCrypto,proto3" json:"amount_crypto,omitempty"`
-	ExpiresAt       *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	MerchantOrderId string                 `protobuf:"bytes,7,opt,name=merchant_order_id,json=merchantOrderId,proto3" json:"merchant_order_id,omitempty"`
-	Shuffle         int32                  `protobuf:"varint,8,opt,name=shuffle,proto3" json:"shuffle,omitempty"`
-	ClientId        string                 `protobuf:"bytes,9,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
-	CallbackUrl     string                 `protobuf:"bytes,10,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	OrderId             string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	Status              string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	BankDetail          *BankDetail            `protobuf:"bytes,3,opt,name=bank_detail,json=bankDetail,proto3" json:"bank_detail,omitempty"`
+	AmountFiat          float64                `protobuf:"fixed64,4,opt,name=amount_fiat,json=amountFiat,proto3" json:"amount_fiat,omitempty"`
+	AmountCrypto        float64                `protobuf:"fixed64,5,opt,name=amount_crypto,json=amountCrypto,proto3" json:"amount_crypto,omitempty"`
+	ExpiresAt           *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	MerchantOrderId     string                 `protobuf:"bytes,7,opt,name=merchant_order_id,json=merchantOrderId,proto3" json:"merchant_order_id,omitempty"`
+	Shuffle             int32                  `protobuf:"varint,8,opt,name=shuffle,proto3" json:"shuffle,omitempty"`
+	ClientId            string                 `protobuf:"bytes,9,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	CallbackUrl         string                 `protobuf:"bytes,10,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
+	TraderRewardPercent float64                `protobuf:"fixed64,11,opt,name=trader_reward_percent,json=traderRewardPercent,proto3" json:"trader_reward_percent,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *Order) Reset() {
@@ -701,6 +702,13 @@ func (x *Order) GetCallbackUrl() string {
 		return x.CallbackUrl
 	}
 	return ""
+}
+
+func (x *Order) GetTraderRewardPercent() float64 {
+	if x != nil {
+		return x.TraderRewardPercent
+	}
+	return 0
 }
 
 type GetOrdersByTraderIDRequest struct {
@@ -1744,7 +1752,7 @@ const file_order_proto_rawDesc = "" +
 	"\x13GetOrderByIDRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\":\n" +
 	"\x14GetOrderByIDResponse\x12\"\n" +
-	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\xf5\x02\n" +
+	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\xa9\x03\n" +
 	"\x05Order\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x122\n" +
@@ -1759,7 +1767,8 @@ const file_order_proto_rawDesc = "" +
 	"\ashuffle\x18\b \x01(\x05R\ashuffle\x12\x1b\n" +
 	"\tclient_id\x18\t \x01(\tR\bclientId\x12!\n" +
 	"\fcallback_url\x18\n" +
-	" \x01(\tR\vcallbackUrl\"9\n" +
+	" \x01(\tR\vcallbackUrl\x122\n" +
+	"\x15trader_reward_percent\x18\v \x01(\x01R\x13traderRewardPercent\"9\n" +
 	"\x1aGetOrdersByTraderIDRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\"C\n" +
 	"\x1bGetOrdersByTraderIDResponse\x12$\n" +
