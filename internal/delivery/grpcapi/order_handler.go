@@ -2,6 +2,7 @@ package grpcapi
 
 import (
 	"context"
+	"math"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
@@ -124,8 +125,23 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 }
 
 func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOrdersByTraderIDRequest) (*orderpb.GetOrdersByTraderIDResponse, error) {
+	// sort_by validation
+	validSortFields := map[string]bool{
+		"amount_fiat": true,
+		"expires_at": true,
+		"created_at": true,
+	}
+	if !validSortFields[r.GetSortBy()] {
+		r.SortBy = "created_at"
+	}
+
+	// sort_order validation
+	if r.GetSortOrder() != "asc" && r.GetSortOrder() != "desc" {
+		r.SortOrder = "desc"
+	}
+
 	traderID := r.TraderId
-	ordersResponse, err := h.uc.GetOrdersByTraderID(traderID)
+	ordersResponse, total, err := h.uc.GetOrdersByTraderID(traderID, r.GetPage(), r.GetLimit(), r.GetSortBy(), r.GetSortOrder())
 	if err != nil {
 		return nil, err
 	}
@@ -162,6 +178,12 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 
 	return &orderpb.GetOrdersByTraderIDResponse{
 		Orders: orders,
+		Pagination: &orderpb.Pagination{
+			CurrentPage: r.Page,
+			TotalPages:  int64(math.Ceil(float64(total) / float64(r.Limit))),
+			TotalItems: total,
+			ItemsPerPage: r.Limit,
+		},
 	}, nil
 
 }

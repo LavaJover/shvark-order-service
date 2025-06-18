@@ -443,8 +443,8 @@ func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*domain.Order, erro
 	return uc.OrderRepo.GetOrderByID(orderID)
 }
 
-func (uc *DefaultOrderUsecase) GetOrdersByTraderID(traderID string) ([]*domain.Order, error) {
-	return uc.OrderRepo.GetOrdersByTraderID(traderID)
+func (uc *DefaultOrderUsecase) GetOrdersByTraderID(traderID string, page, limit int64, sortBy, sortOrder string) ([]*domain.Order, int64, error) {
+	return uc.OrderRepo.GetOrdersByTraderID(traderID, page, limit, sortBy, sortOrder)
 }
 
 func (uc *DefaultOrderUsecase) FindExpiredOrders() ([]*domain.Order, error) {

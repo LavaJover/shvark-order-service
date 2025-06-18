@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
@@ -101,17 +103,48 @@ func (r *DefaultOrderRepository) UpdateOrderStatus(orderID string, newStatus dom
 	return nil
 }
 
-func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string) ([]*domain.Order, error) {
+func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string, page, limit int64, sortBy, sortOrder string) ([]*domain.Order, int64, error) {
 	var orderModels []OrderModel
+	var total int64
+	
+	safeSortBy := "order_models.created_at"
+	switch sortBy {
+	case "amount_fiat":
+		safeSortBy = "order_models.amount_fiat"
+	case "expires_at":
+		safeSortBy = "order_models.expires_at"
+	case "created_at":
+		safeSortBy = "order_models.created_at"
+	}
 
-	if err := r.DB.
+	safeSortOrder := "DESC"
+	if strings.ToUpper(sortOrder) == "ASC" {
+		safeSortOrder = "ASC"
+	}
+
+	// count total order records
+	countQuery := r.DB.Model(&OrderModel{}).
+		Joins("JOIN bank_detail_models ON order_models.bank_details_id = bank_detail_models.id").
+		Where("bank_detail_models.trader_id = ?", traderID)
+
+	if err := countQuery.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to count orders: %w", err)
+	}
+
+	// Основной запрос с пагинацией и сортировкой
+	offset := (page - 1) * limit
+	query := r.DB.
 		Preload("BankDetail").
 		Joins("JOIN bank_detail_models ON order_models.bank_details_id = bank_detail_models.id").
 		Where("bank_detail_models.trader_id = ?", traderID).
-		Find(&orderModels).Error; err != nil {
-			return nil, err
-		}
+		Order(fmt.Sprintf("%s %s", safeSortBy, safeSortOrder)).
+		Offset(int(offset)).
+		Limit(int(limit))
 
+	if err := query.Find(&orderModels).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to find orders: %w", err)
+	}
+	
 	orders := make([]*domain.Order, len(orderModels))
 	for i, orderModel := range orderModels {
 		orders[i] = &domain.Order{
@@ -153,7 +186,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(traderID string) ([]*domain
 		}
 	}
 
-	return orders, nil
+	return orders, 0, nil
 }
 
 func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
