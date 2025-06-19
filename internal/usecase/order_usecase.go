@@ -2,9 +2,9 @@ package usecase
 
 import (
 	"context"
-	"math/rand"
 	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/client"
@@ -258,6 +258,32 @@ func (uc *DefaultOrderUsecase)FilterByTraderBalance(bankDetails []*domain.BankDe
 	return result, nil
 }
 
+func (uc *DefaultOrderUsecase)FilterByEqualAmountFiat(bankDetails []*domain.BankDetail, amountFiat float64) ([]*domain.BankDetail, error) {
+	// Отбросить реквизиты, на которых уже есть созданная заявка на сумму anountFiat
+	result := make([]*domain.BankDetail, 0)
+	for _, bankDetail := range bankDetails {
+		fmt.Println("Проверка на одинаковую сумму!")
+		orders, err := uc.OrderRepo.GetOrdersByBankDetailID(bankDetail.ID)
+		if err != nil {
+			return nil, err
+		}
+		skipBankDetail := false
+		for _, order := range orders {
+			if order.Status == domain.StatusCreated && order.AmountFiat == amountFiat {
+				// Пропускаем данный рек, тк есть созданная заявка на такую сумму фиата
+				skipBankDetail = true
+				fmt.Println("Обнаружена активная заявка с такой же суммой!")
+				break
+			}
+		}
+		if !skipBankDetail {
+			result = append(result, bankDetail)
+		}
+	}
+
+	return result, nil
+}
+
 func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, query *domain.BankDetailQuery) ([]*domain.BankDetail, error) {
 	eligibleBankDetailsResponse, err := uc.BankingClient.GetEligibleBankDetails(query)
 	if err != nil {
@@ -324,9 +350,6 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 	if err != nil {
 		return nil, err
 	}
-	if len(bankDetails) == 0 {
-		fmt.Println("Отсеились по времени")
-	}
 	// 6) Filter by MaxQuantityDay
 	bankDetails, err = uc.FilterByMaxQuantityDay(bankDetails)
 	if err != nil {
@@ -339,6 +362,24 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 		return nil, err
 	}
 
+	// 8) Filter by active order with equal amount fiat
+	tempBankDetails := make([]*domain.BankDetail, len(bankDetails))
+	tempBankDetails, err = uc.FilterByEqualAmountFiat(bankDetails, order.AmountFiat)
+	if err != nil {
+		return nil, err
+	}
+	// Если shuffle не задан, то пропускаем сериб проверок с рекалькуляцией
+	for addFiat := range order.Shuffle {
+		tempBankDetails, err = uc.FilterByEqualAmountFiat(bankDetails, order.AmountFiat + float64(addFiat))
+		if err != nil {
+			return nil, err
+		}
+		if len(tempBankDetails) != 0 {
+			order.AmountFiat += float64(addFiat)
+			break
+		}
+	}
+	bankDetails = tempBankDetails
 	if len(bankDetails) == 0 {
 		return nil, domain.ErrNoAvailableBankDetails
 	}
