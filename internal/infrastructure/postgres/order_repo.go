@@ -36,6 +36,7 @@ func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error
 		CallbackURL: order.CallbackURL,
 		TraderRewardPercent: order.TraderRewardPercent,
 		Recalculated: order.Recalculated,
+		BtcRubRate: order.BtcRubRate,
 	}
 
 	if err := r.DB.Create(&orderModel).Error; err != nil {
@@ -71,6 +72,7 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 		CallbackURL: order.CallbackURL,
 		TraderRewardPercent: order.TraderRewardPercent,
 		Recalculated: order.Recalculated,
+		BtcRubRate: order.BtcRubRate,
 		BankDetail: &domain.BankDetail{
 			ID: order.BankDetail.ID,
 			TraderID: order.BankDetail.TraderID,
@@ -194,6 +196,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(
 			CallbackURL: orderModel.CallbackURL,
 			TraderRewardPercent: orderModel.TraderRewardPercent,
 			Recalculated: orderModel.Recalculated,
+			BtcRubRate: orderModel.BtcRubRate,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -245,6 +248,7 @@ func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
 			CallbackURL: orderModel.CallbackURL,
 			TraderRewardPercent: orderModel.TraderRewardPercent,
 			Recalculated: orderModel.Recalculated,
+			BtcRubRate: orderModel.BtcRubRate,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -300,6 +304,59 @@ func (r *DefaultOrderRepository) GetOrdersByBankDetailID(bankDetailID string) ([
 			CallbackURL: orderModel.CallbackURL,
 			TraderRewardPercent: orderModel.TraderRewardPercent,
 			Recalculated: orderModel.Recalculated,
+			BtcRubRate: orderModel.BtcRubRate,
+			BankDetail: &domain.BankDetail{
+				ID: orderModel.BankDetail.ID,
+				TraderID: orderModel.BankDetail.TraderID,
+				Country: orderModel.BankDetail.Country,
+				Currency: orderModel.BankDetail.Currency,
+				MinAmount: orderModel.BankDetail.MinAmount,
+				MaxAmount: orderModel.BankDetail.MaxAmount,
+				BankName: orderModel.BankDetail.BankName,
+				PaymentSystem: orderModel.BankDetail.PaymentSystem,
+				Delay: orderModel.BankDetail.Delay,
+				Enabled: orderModel.BankDetail.Enabled,
+				CardNumber: orderModel.BankDetail.CardNumber,
+				Phone: orderModel.BankDetail.Phone,
+				Owner: orderModel.BankDetail.Owner,
+				MaxOrdersSimultaneosly: orderModel.BankDetail.MaxOrdersSimultaneosly,
+				MaxAmountDay: orderModel.BankDetail.MaxAmountDay,
+				MaxAmountMonth: orderModel.BankDetail.MaxAmountMonth,
+			},
+			ExpiresAt: orderModel.ExpiresAt,
+		}
+	}
+
+	return orders, nil
+}
+
+func (r *DefaultOrderRepository) GetCreatedOrdersByClientID(clientID string) ([]*domain.Order, error) {
+	var orderModels []OrderModel
+	if err := r.DB.Model(&OrderModel{}).Preload("BankDetail").Where("client_id = ? AND status = ?", clientID, domain.StatusCreated).Find(&orderModels).Error; err != nil {
+		return nil, err
+	}
+
+	orders := make([]*domain.Order, len(orderModels))
+	for i, orderModel := range orderModels {
+		orders[i] = &domain.Order{
+			ID: orderModel.ID,
+			MerchantID: orderModel.MerchantID,
+			AmountFiat: orderModel.AmountFiat,
+			AmountCrypto: orderModel.AmountCrypto,
+			Currency: orderModel.Currency,
+			Country: orderModel.Country,
+			ClientID: orderModel.ClientID,
+			Status: orderModel.Status,
+			PaymentSystem: orderModel.PaymentSystem,
+			BankDetailsID: orderModel.BankDetailsID,
+			CreatedAt: orderModel.CreatedAt,
+			UpdatedAt: orderModel.UpdatedAt,
+			MerchantOrderID: orderModel.MerchantOrderID,
+			Shuffle: orderModel.Shuffle,
+			CallbackURL: orderModel.CallbackURL,
+			TraderRewardPercent: orderModel.TraderRewardPercent,
+			Recalculated: orderModel.Recalculated,
+			BtcRubRate: orderModel.BtcRubRate,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,

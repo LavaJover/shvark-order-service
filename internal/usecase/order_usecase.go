@@ -10,6 +10,7 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/client"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/btc"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/notifier"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -396,6 +397,15 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 	return bankDetails, nil
 }
 
+func (uc *DefaultOrderUsecase) CheckIdempotency(clientID string) error {
+	orders, err := uc.OrderRepo.GetCreatedOrdersByClientID(clientID)
+	if len(orders)!=0 || err != nil {
+		return status.Errorf(codes.FailedPrecondition, "payment order already exists for client: %s", clientID)
+	}
+
+	return nil
+}
+
 func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, error) {
 	// find eligible bank details
 	query := domain.BankDetailQuery{
@@ -406,9 +416,14 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	}
 
 		// BTC RATE
-	// IMPROVE THIS !!!
-	amountCrypto := float64(order.AmountFiat / 8599022)
+	amountCrypto := float64(order.AmountFiat / btc.BTC_RUB_RATE)
 	order.AmountCrypto = amountCrypto
+	order.BtcRubRate = btc.BTC_RUB_RATE
+
+	// check idempotency by client_id
+	if err := uc.CheckIdempotency(order.ClientID); err != nil {
+		return nil, err
+	}
 
 	// searching for eligible bank details due to order query parameters
 	bankDetails, err := uc.FindEligibleBankDetails(order, &query)
@@ -419,7 +434,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	// business logic to pick best bank detail
 	chosenBankDetail, err := uc.PickBestBankDetail(bankDetails, order.MerchantID)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to pick best bank detail")
+		return nil, status.Errorf(codes.NotFound, "failed to pick best bank detail gor order: %s", order.ID)
 	}
 
 	// relate found bank detail and order
@@ -467,6 +482,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		CreatedAt: order.CreatedAt,
 		UpdatedAt: order.UpdatedAt,
 		Recalculated: order.Recalculated,
+		BtcRubRate: order.BtcRubRate,
 		BankDetail: &domain.BankDetail{
 			ID: chosenBankDetail.ID,
 			TraderID: chosenBankDetail.TraderID,

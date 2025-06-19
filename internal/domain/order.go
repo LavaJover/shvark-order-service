@@ -32,6 +32,7 @@ type Order struct {
 	CallbackURL 		string
 	TraderRewardPercent float64
 	Recalculated 		bool
+	BtcRubRate			float64
 }
 
 type OrderFilters struct {

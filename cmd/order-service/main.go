@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/config"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/btc"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
@@ -62,6 +64,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	// order auto-cancel
 	go func() {
 		ticker := time.NewTicker(1 * time.Minute)
 		for {
@@ -70,6 +73,20 @@ func main() {
 			if err != nil {
 				log.Printf("Auto-cancel error: %v\n", err)
 			}
+		}
+	}()
+
+	// updating crypto-rates
+	go func() {
+		ticker := time.NewTicker(5*time.Second)
+		for {
+			btcRate, err := btc.GET_BTC_RUB_RATES(5)
+			if err != nil {
+				slog.Error("BTC/RUB rates update failed", "error", err.Error())
+				continue
+			}
+			slog.Info("BTC/RUB rates updated", "btc/rub", btcRate)
+			<-ticker.C
 		}
 	}()
 

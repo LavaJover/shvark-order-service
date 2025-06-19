@@ -12,4 +12,5 @@ type OrderRepository interface {
 		) ([]*Order, int64, error)
 	GetOrdersByBankDetailID(bankDetailID string) ([]*Order, error)
 	FindExpiredOrders() ([]*Order, error)
+	GetCreatedOrdersByClientID(clientID string) ([]*Order, error)
 }
