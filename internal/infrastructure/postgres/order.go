@@ -25,4 +25,5 @@ type OrderModel struct {
 	Shuffle 			int32
 	CallbackURL 		string
 	TraderRewardPercent float64
+	Recalculated   		bool
 }

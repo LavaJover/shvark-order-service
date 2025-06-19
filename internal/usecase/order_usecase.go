@@ -363,8 +363,7 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 	}
 
 	// 8) Filter by active order with equal amount fiat
-	tempBankDetails := make([]*domain.BankDetail, len(bankDetails))
-	tempBankDetails, err = uc.FilterByEqualAmountFiat(bankDetails, order.AmountFiat)
+	tempBankDetails, err := uc.FilterByEqualAmountFiat(bankDetails, order.AmountFiat)
 	if err != nil {
 		return nil, err
 	}
@@ -376,6 +375,11 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 		}
 		if len(tempBankDetails) != 0 {
 			order.AmountFiat += float64(addFiat)
+			if addFiat != 0 {
+				order.Recalculated = true
+			}else {
+				order.Recalculated = false
+			}
 			break
 		}
 	}
@@ -457,6 +461,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		TraderRewardPercent: order.TraderRewardPercent,
 		CreatedAt: order.CreatedAt,
 		UpdatedAt: order.UpdatedAt,
+		Recalculated: order.Recalculated,
 		BankDetail: &domain.BankDetail{
 			ID: chosenBankDetail.ID,
 			TraderID: chosenBankDetail.TraderID,

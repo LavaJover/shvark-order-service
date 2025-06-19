@@ -105,6 +105,7 @@ message Order {
     double trader_reward_percent = 11;
     google.protobuf.Timestamp created_at = 12;
     google.protobuf.Timestamp updated_at = 13;
+    bool recalculated = 14;
 }
 
 message GetOrdersByTraderIDRequest {
