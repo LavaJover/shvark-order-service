@@ -78,7 +78,7 @@ func main() {
 
 	// updating crypto-rates
 	go func() {
-		ticker := time.NewTicker(5*time.Second)
+		ticker := time.NewTicker(5*time.Minute)
 		for {
 			usdtRate, err := usdt.GET_USDT_RUB_RATES(5)
 			if err != nil {

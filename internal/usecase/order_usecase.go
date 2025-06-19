@@ -10,7 +10,6 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/client"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/btc"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/notifier"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
 	"google.golang.org/grpc/codes"
@@ -416,8 +415,8 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		Country: order.Country,
 	}
 
-		// BTC RATE
-	amountCrypto := float64(order.AmountFiat / btc.BTC_RUB_RATE)
+		// USD RATE
+	amountCrypto := float64(order.AmountFiat / usdt.UsdtRubRates)
 	order.AmountCrypto = amountCrypto
 	order.CryptoRubRate = usdt.UsdtRubRates
 
