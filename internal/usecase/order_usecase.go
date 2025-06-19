@@ -66,6 +66,11 @@ func (uc *DefaultOrderUsecase) PickBestBankDetail(bankDetails []*domain.BankDeta
 	rand.Seed(time.Now().UnixNano())
 	r := rand.Float64() * totalPriority
 
+	// random shuffle of array
+	rand.Shuffle(len(traders), func(i, j int) {
+		traders[i], traders[j] = traders[j], traders[i]
+	})
+
 	// pick trader regarding weight
 	accumulated := 0.0
 	for _, trader := range traders {
