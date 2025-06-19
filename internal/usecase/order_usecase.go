@@ -12,6 +12,7 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/btc"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/notifier"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -418,7 +419,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		// BTC RATE
 	amountCrypto := float64(order.AmountFiat / btc.BTC_RUB_RATE)
 	order.AmountCrypto = amountCrypto
-	order.BtcRubRate = btc.BTC_RUB_RATE
+	order.CryptoRubRate = usdt.UsdtRubRates
 
 	// check idempotency by client_id
 	if err := uc.CheckIdempotency(order.ClientID); err != nil {
@@ -482,7 +483,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		CreatedAt: order.CreatedAt,
 		UpdatedAt: order.UpdatedAt,
 		Recalculated: order.Recalculated,
-		BtcRubRate: order.BtcRubRate,
+		CryptoRubRate: order.CryptoRubRate,
 		BankDetail: &domain.BankDetail{
 			ID: chosenBankDetail.ID,
 			TraderID: chosenBankDetail.TraderID,

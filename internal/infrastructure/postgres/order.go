@@ -26,5 +26,5 @@ type OrderModel struct {
 	CallbackURL 		string
 	TraderRewardPercent float64
 	Recalculated   		bool
-	BtcRubRate			float64
+	CryptoRubRate		float64
 }

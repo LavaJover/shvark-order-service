@@ -73,7 +73,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 			CreatedAt: timestamppb.New(savedOrder.CreatedAt),
 			UpdatedAt: timestamppb.New(savedOrder.UpdatedAt),
 			Recalculated: savedOrder.Recalculated,
-			BtcRubRate: savedOrder.BtcRubRate,
+			CryptoRubRate: savedOrder.CryptoRubRate,
 		},
 	}, nil
 }
@@ -128,7 +128,7 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 			CreatedAt: timestamppb.New(orderResponse.CreatedAt),
 			UpdatedAt: timestamppb.New(orderResponse.UpdatedAt),
 			Recalculated: orderResponse.Recalculated,
-			BtcRubRate: orderResponse.BtcRubRate,
+			CryptoRubRate: orderResponse.CryptoRubRate,
 		},
 	}, nil
 }
@@ -207,7 +207,7 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 			CreatedAt: timestamppb.New(order.CreatedAt),
 			UpdatedAt: timestamppb.New(order.UpdatedAt),
 			Recalculated: order.Recalculated,
-			BtcRubRate: order.BtcRubRate,
+			CryptoRubRate: order.CryptoRubRate,
 		}
 	}
 

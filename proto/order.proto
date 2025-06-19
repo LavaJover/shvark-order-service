@@ -106,7 +106,7 @@ message Order {
     google.protobuf.Timestamp created_at = 12;
     google.protobuf.Timestamp updated_at = 13;
     bool recalculated = 14;
-    double btc_rub_rate = 15;
+    double crypto_rub_rate = 15;
 }
 
 message GetOrdersByTraderIDRequest {

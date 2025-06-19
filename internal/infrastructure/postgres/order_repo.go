@@ -36,7 +36,7 @@ func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error
 		CallbackURL: order.CallbackURL,
 		TraderRewardPercent: order.TraderRewardPercent,
 		Recalculated: order.Recalculated,
-		BtcRubRate: order.BtcRubRate,
+		CryptoRubRate: order.CryptoRubRate,
 	}
 
 	if err := r.DB.Create(&orderModel).Error; err != nil {
@@ -72,7 +72,7 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 		CallbackURL: order.CallbackURL,
 		TraderRewardPercent: order.TraderRewardPercent,
 		Recalculated: order.Recalculated,
-		BtcRubRate: order.BtcRubRate,
+		CryptoRubRate: order.CryptoRubRate,
 		BankDetail: &domain.BankDetail{
 			ID: order.BankDetail.ID,
 			TraderID: order.BankDetail.TraderID,
@@ -196,7 +196,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(
 			CallbackURL: orderModel.CallbackURL,
 			TraderRewardPercent: orderModel.TraderRewardPercent,
 			Recalculated: orderModel.Recalculated,
-			BtcRubRate: orderModel.BtcRubRate,
+			CryptoRubRate: orderModel.CryptoRubRate,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -248,7 +248,7 @@ func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
 			CallbackURL: orderModel.CallbackURL,
 			TraderRewardPercent: orderModel.TraderRewardPercent,
 			Recalculated: orderModel.Recalculated,
-			BtcRubRate: orderModel.BtcRubRate,
+			CryptoRubRate: orderModel.CryptoRubRate,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -304,7 +304,7 @@ func (r *DefaultOrderRepository) GetOrdersByBankDetailID(bankDetailID string) ([
 			CallbackURL: orderModel.CallbackURL,
 			TraderRewardPercent: orderModel.TraderRewardPercent,
 			Recalculated: orderModel.Recalculated,
-			BtcRubRate: orderModel.BtcRubRate,
+			CryptoRubRate: orderModel.CryptoRubRate,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -356,7 +356,7 @@ func (r *DefaultOrderRepository) GetCreatedOrdersByClientID(clientID string) ([]
 			CallbackURL: orderModel.CallbackURL,
 			TraderRewardPercent: orderModel.TraderRewardPercent,
 			Recalculated: orderModel.Recalculated,
-			BtcRubRate: orderModel.BtcRubRate,
+			CryptoRubRate: orderModel.CryptoRubRate,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,

@@ -12,8 +12,8 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/config"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/btc"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
 	"google.golang.org/grpc"
@@ -80,12 +80,12 @@ func main() {
 	go func() {
 		ticker := time.NewTicker(5*time.Second)
 		for {
-			btcRate, err := btc.GET_BTC_RUB_RATES(5)
+			usdtRate, err := usdt.GET_USDT_RUB_RATES(5)
 			if err != nil {
-				slog.Error("BTC/RUB rates update failed", "error", err.Error())
+				slog.Error("USD/RUB rates update failed", "error", err.Error())
 				continue
 			}
-			slog.Info("BTC/RUB rates updated", "btc/rub", btcRate)
+			slog.Info("USD/RUB rates updated", "usdt/rub", usdtRate)
 			<-ticker.C
 		}
 	}()
