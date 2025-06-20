@@ -261,3 +261,7 @@ func (h *OrderHandler) CancelOrder(ctx context.Context, r *orderpb.CancelOrderRe
 		Message: "Order successfully canceled",
 	}, nil
 }
+
+func (h *OrderHandler) CreateOrderDispute(ctx context.Context, r *orderpb.CreateOrderDisputeRequest) (*orderpb.CreateOrderDisputeResponse, error) {
+	return nil, nil
+}

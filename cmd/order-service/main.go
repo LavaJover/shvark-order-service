@@ -62,6 +62,15 @@ func main() {
 	orderpb.RegisterOrderServiceServer(grpcServer, orderHandler)
 	orderpb.RegisterTrafficServiceServer(grpcServer, trafficHandler)
 
+	// dispute
+	disputeRepo := postgres.NewDefaultDisputeRepository(db)
+	disputeUc := usecase.NewDefaultDisputeUsecase(
+		disputeRepo,
+		httpWalletHandler,
+		orderRepo,
+		trafficRepo,
+	)
+
 	// Start
 	lis, err := net.Listen("tcp", ":"+cfg.Port)
 	if err != nil{
@@ -91,6 +100,18 @@ func main() {
 			}
 			slog.Info("USD/RUB rates updated", "usdt/rub", usdtRate)
 			<-ticker.C
+		}
+	}()
+
+	// auto accept expired disputes
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		for {
+			<-ticker.C
+			err := disputeUc.AcceptExpiredDisputes()
+			if err != nil {
+				log.Printf("Auto-accept dispute error: %v\n", err)
+			}
 		}
 	}()
 

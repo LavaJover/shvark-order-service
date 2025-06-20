@@ -16,6 +16,53 @@ service OrderService {
     rpc GetOrderByID (GetOrderByIDRequest) returns (GetOrderByIDResponse);
     rpc GetOrdersByTraderID (GetOrdersByTraderIDRequest) returns (GetOrdersByTraderIDResponse);
 
+    rpc CreateOrderDispute (CreateOrderDisputeRequest) returns (CreateOrderDisputeResponse);
+    rpc AcceptOrderDispute (AcceptOrderDisputeRequest) returns (AcceptOrderDisputeResponse);
+    rpc RejectOrderDispute (RejectOrderDisputeRequest) returns (RejectOrderDisputeResponse);
+    rpc GetOrderDisputeInfo (GetOrderDisputeInfoRequest) returns (GetOrderDisputeInfoResponse);
+}
+
+message CreateOrderDisputeRequest {
+    string order_id = 1;
+    string proof_url = 2;
+    string dispute_reason = 3; // UNKNOWN, HAS_PAYMENT, NO_PAYMENT, INVALID_SUM
+    google.protobuf.Duration ttl = 4;
+}
+
+message CreateOrderDisputeResponse {
+    string dispute_id = 1;
+}
+
+message OrderDispute {
+    string dispute_id = 1;
+    string order_id = 2;
+    string proof_url = 3;
+    string dispute_reason = 4;
+    string dispute_status = 5; // open, accepted, rejected
+}
+
+message AcceptOrderDisputeRequest{
+    string dispute_id = 1;
+}
+
+message AcceptOrderDisputeResponse{
+    string message = 1;
+}
+
+message RejectOrderDisputeRequest {
+    string dispute_id = 1;
+}
+
+message RejectOrderDisputeResponse{
+    string message = 1;
+}
+
+message GetOrderDisputeInfoRequest {
+    string dispute_id = 1;
+}
+
+message GetOrderDisputeInfoResponse {
+    OrderDispute dispute = 1;
 }
 
 message OrderFilters {
