@@ -2,7 +2,9 @@ package grpcapi
 
 import (
 	"context"
+	"log"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
@@ -14,11 +16,48 @@ import (
 type OrderHandler struct {
 	uc domain.OrderUsecase
 	orderpb.UnimplementedOrderServiceServer
+
+	subscribers []chan *orderpb.OrderEvent
+	mu 			sync.Mutex
 }
 
 func NewOrderHandler(uc domain.OrderUsecase) *OrderHandler {
 	return &OrderHandler{
 		uc: uc,
+		subscribers: make([]chan *orderpb.OrderEvent, 0),
+	}
+}
+
+func (h *OrderHandler) SubscribeToOrderEvents(
+	r *orderpb.OrderEventFilter,
+	stream orderpb.OrderService_SubscribeToOrderEventsServer,
+) error {
+	ch := make(chan *orderpb.OrderEvent, 10)
+
+	h.mu.Lock()
+	h.subscribers = append(h.subscribers, ch)
+	h.mu.Unlock()
+
+	for event := range ch {
+		if err := stream.Send(event); err != nil {
+			log.Printf("Failed to send event: %v\n", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (h *OrderHandler) Notify(event *orderpb.OrderEvent) {
+	h.mu.Lock()
+	defer h.mu.Lock()
+
+	for _, ch := range h.subscribers {
+		select {
+		case ch <- event:
+		default:
+			// канал переполнен
+			log.Println("Пропущено уведомление")
+		}
 	}
 }
 
