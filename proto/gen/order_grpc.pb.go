@@ -19,13 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	OrderService_CreateOrder_FullMethodName         = "/order.OrderService/CreateOrder"
-	OrderService_ApproveOrder_FullMethodName        = "/order.OrderService/ApproveOrder"
-	OrderService_CancelOrder_FullMethodName         = "/order.OrderService/CancelOrder"
-	OrderService_OpenOrderDispute_FullMethodName    = "/order.OrderService/OpenOrderDispute"
-	OrderService_ResolveOrderDispute_FullMethodName = "/order.OrderService/ResolveOrderDispute"
-	OrderService_GetOrderByID_FullMethodName        = "/order.OrderService/GetOrderByID"
-	OrderService_GetOrdersByTraderID_FullMethodName = "/order.OrderService/GetOrdersByTraderID"
+	OrderService_CreateOrder_FullMethodName            = "/order.OrderService/CreateOrder"
+	OrderService_ApproveOrder_FullMethodName           = "/order.OrderService/ApproveOrder"
+	OrderService_CancelOrder_FullMethodName            = "/order.OrderService/CancelOrder"
+	OrderService_OpenOrderDispute_FullMethodName       = "/order.OrderService/OpenOrderDispute"
+	OrderService_ResolveOrderDispute_FullMethodName    = "/order.OrderService/ResolveOrderDispute"
+	OrderService_GetOrderByID_FullMethodName           = "/order.OrderService/GetOrderByID"
+	OrderService_GetOrdersByTraderID_FullMethodName    = "/order.OrderService/GetOrdersByTraderID"
+	OrderService_SubscribeToOrderEvents_FullMethodName = "/order.OrderService/SubscribeToOrderEvents"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -39,6 +40,7 @@ type OrderServiceClient interface {
 	ResolveOrderDispute(ctx context.Context, in *ResolveOrderDisputeRequest, opts ...grpc.CallOption) (*ResolveOrderDisputeResponse, error)
 	GetOrderByID(ctx context.Context, in *GetOrderByIDRequest, opts ...grpc.CallOption) (*GetOrderByIDResponse, error)
 	GetOrdersByTraderID(ctx context.Context, in *GetOrdersByTraderIDRequest, opts ...grpc.CallOption) (*GetOrdersByTraderIDResponse, error)
+	SubscribeToOrderEvents(ctx context.Context, in *OrderEventFilter, opts ...grpc.CallOption) (grpc.ServerStreamingClient[OrderEvent], error)
 }
 
 type orderServiceClient struct {
@@ -119,6 +121,25 @@ func (c *orderServiceClient) GetOrdersByTraderID(ctx context.Context, in *GetOrd
 	return out, nil
 }
 
+func (c *orderServiceClient) SubscribeToOrderEvents(ctx context.Context, in *OrderEventFilter, opts ...grpc.CallOption) (grpc.ServerStreamingClient[OrderEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &OrderService_ServiceDesc.Streams[0], OrderService_SubscribeToOrderEvents_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[OrderEventFilter, OrderEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type OrderService_SubscribeToOrderEventsClient = grpc.ServerStreamingClient[OrderEvent]
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
@@ -130,6 +151,7 @@ type OrderServiceServer interface {
 	ResolveOrderDispute(context.Context, *ResolveOrderDisputeRequest) (*ResolveOrderDisputeResponse, error)
 	GetOrderByID(context.Context, *GetOrderByIDRequest) (*GetOrderByIDResponse, error)
 	GetOrdersByTraderID(context.Context, *GetOrdersByTraderIDRequest) (*GetOrdersByTraderIDResponse, error)
+	SubscribeToOrderEvents(*OrderEventFilter, grpc.ServerStreamingServer[OrderEvent]) error
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -160,6 +182,9 @@ func (UnimplementedOrderServiceServer) GetOrderByID(context.Context, *GetOrderBy
 }
 func (UnimplementedOrderServiceServer) GetOrdersByTraderID(context.Context, *GetOrdersByTraderIDRequest) (*GetOrdersByTraderIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrdersByTraderID not implemented")
+}
+func (UnimplementedOrderServiceServer) SubscribeToOrderEvents(*OrderEventFilter, grpc.ServerStreamingServer[OrderEvent]) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeToOrderEvents not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
@@ -308,6 +333,17 @@ func _OrderService_GetOrdersByTraderID_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_SubscribeToOrderEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(OrderEventFilter)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(OrderServiceServer).SubscribeToOrderEvents(m, &grpc.GenericServerStream[OrderEventFilter, OrderEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type OrderService_SubscribeToOrderEventsServer = grpc.ServerStreamingServer[OrderEvent]
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -344,7 +380,13 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _OrderService_GetOrdersByTraderID_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SubscribeToOrderEvents",
+			Handler:       _OrderService_SubscribeToOrderEvents_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "order.proto",
 }
 
