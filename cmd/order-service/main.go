@@ -12,6 +12,7 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/config"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
@@ -24,6 +25,9 @@ func main() {
 	cfg := config.MustLoad()
 	// Init database
 	db := postgres.MustInitDB(cfg)
+
+	// Setup kafka
+	kafkaPublisher := kafka.NewKafkaPublisher([]string{"localhost:9092"}, "order-events")
 
 	// Init order repo
 	orderRepo := postgres.NewDefaultOrderRepository(db)
@@ -48,7 +52,7 @@ func main() {
 	// Init traffic usecase
 	trafficUsecase := usecase.NewDefaultTrafficUsecase(trafficRepo)
 	// Init order usecase
-	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient, httpWalletHandler, trafficUsecase)
+	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient, httpWalletHandler, trafficUsecase, kafkaPublisher)
 
 	// Creating gRPC server
 	grpcServer := grpc.NewServer()

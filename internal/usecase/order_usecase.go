@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"math/rand"
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/client"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/notifier"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
 	"google.golang.org/grpc/codes"
@@ -22,6 +24,8 @@ type DefaultOrderUsecase struct {
 	BankingClient   *client.BankingClient
 	WalletHandler   *handlers.HTTPWalletHandler
 	TrafficUsecase  domain.TrafficUsecase
+
+	Publisher 		*kafka.KafkaPublisher
 }
 
 func NewDefaultOrderUsecase(
@@ -29,7 +33,8 @@ func NewDefaultOrderUsecase(
 	bankDetailRepo domain.BankDetailRepository, 
 	bankingClient *client.BankingClient,
 	walletHandler *handlers.HTTPWalletHandler,
-	trafficUsecase domain.TrafficUsecase) *DefaultOrderUsecase {
+	trafficUsecase domain.TrafficUsecase,
+	kafkaPublisher *kafka.KafkaPublisher) *DefaultOrderUsecase {
 
 	return &DefaultOrderUsecase{
 		OrderRepo: orderRepo,
@@ -37,6 +42,7 @@ func NewDefaultOrderUsecase(
 		BankingClient: bankingClient,
 		WalletHandler: walletHandler,
 		TrafficUsecase: trafficUsecase,
+		Publisher: kafkaPublisher,
 	}
 }
 
@@ -461,6 +467,16 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	if err = uc.Publisher.Publish(kafka.OrderEvent{
+		OrderID: order.ID,
+		TraderID: chosenBankDetail.TraderID,
+		Status: "🔥"+string(order.Status),
+		AmountFiat: order.AmountFiat,
+		Currency: order.Currency,
+	}); err != nil {
+		slog.Error("failed to publish event", "error", err.Error())
+	}
+
 	return &domain.Order{
 		ID: orderID,
 		MerchantID: order.MerchantID,
@@ -678,6 +694,16 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		return err
 	}
 
+	if err = uc.Publisher.Publish(kafka.OrderEvent{
+		OrderID: order.ID,
+		TraderID: order.BankDetail.TraderID,
+		Status: "✅"+string(domain.StatusSucceed),
+		AmountFiat: order.AmountFiat,
+		Currency: order.Currency,
+	}); err != nil {
+		slog.Error("failed to publish event", "error", err.Error())
+	}
+
 	// Вызов callback мерчанта
 	if(order.CallbackURL != ""){
 		notifier.SendCallback(order.CallbackURL, notifier.CallbackPayload{
@@ -713,6 +739,16 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 
 	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, 0); err != nil {
 		return err
+	}
+
+	if err = uc.Publisher.Publish(kafka.OrderEvent{
+		OrderID: order.ID,
+		TraderID: order.BankDetail.TraderID,
+		Status: "⛔️"+string(domain.StatusCanceled),
+		AmountFiat: order.AmountFiat,
+		Currency: order.Currency,
+	}); err != nil {
+		slog.Error("failed to publish event", "error", err.Error())
 	}
 
 	// Вызов callback мерчанта
