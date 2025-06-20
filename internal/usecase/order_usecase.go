@@ -8,12 +8,10 @@ import (
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/client"
-	"github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/notifier"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
-	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -24,8 +22,6 @@ type DefaultOrderUsecase struct {
 	BankingClient   *client.BankingClient
 	WalletHandler   *handlers.HTTPWalletHandler
 	TrafficUsecase  domain.TrafficUsecase
-
-	OrderHandler 	*grpcapi.OrderHandler
 }
 
 func NewDefaultOrderUsecase(
@@ -464,14 +460,6 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	if err := uc.WalletHandler.Freeze(chosenBankDetail.TraderID, order.ID, amountCrypto); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-
-	uc.OrderHandler.Notify(&orderpb.OrderEvent{
-		OrderId: order.ID,
-		TraderId: chosenBankDetail.TraderID,
-		Status: string(order.Status),
-		Amount: order.AmountFiat,
-		Currency: chosenBankDetail.Currency,
-	})
 
 	return &domain.Order{
 		ID: orderID,

@@ -58,8 +58,6 @@ func main() {
 	orderpb.RegisterOrderServiceServer(grpcServer, orderHandler)
 	orderpb.RegisterTrafficServiceServer(grpcServer, trafficHandler)
 
-	uc.OrderHandler = orderHandler
-
 	// Start
 	lis, err := net.Listen("tcp", ":"+cfg.Port)
 	if err != nil{

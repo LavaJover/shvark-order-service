@@ -16,17 +16,6 @@ service OrderService {
     rpc GetOrderByID (GetOrderByIDRequest) returns (GetOrderByIDResponse);
     rpc GetOrdersByTraderID (GetOrdersByTraderIDRequest) returns (GetOrdersByTraderIDResponse);
 
-    rpc SubscribeToOrderEvents(OrderEventFilter) returns (stream OrderEvent);
-}
-
-message OrderEventFilter {}
-
-message OrderEvent {
-    string order_id = 1;
-    string trader_id = 2;
-    string status = 3;
-    double amount = 4;
-    string currency = 5;
 }
 
 message OrderFilters {
