@@ -22,6 +22,19 @@ func NewKafkaPublisher(brokers []string, topic string) *KafkaPublisher {
 	}
 }
 
+func (k *KafkaPublisher) PublishDispute(event DisputeEvent) error {
+	msg, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+
+	return k.writer.WriteMessages(context.Background(), kafka.Message{
+		Key:   []byte(event.TraderID),
+		Value: msg,
+		Time:  time.Now(),
+	})
+}
+
 func (k *KafkaPublisher) Publish(event OrderEvent) error {
 	msg, err := json.Marshal(event)
 	if err != nil {

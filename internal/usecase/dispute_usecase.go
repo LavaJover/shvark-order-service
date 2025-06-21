@@ -5,6 +5,7 @@ import (
 
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -14,6 +15,7 @@ type DefaultDisputeUsecase struct {
 	walletHandler *handlers.HTTPWalletHandler
 	orderRepo domain.OrderRepository
 	trafficRepo domain.TrafficRepository
+	kafkaPublisher *kafka.KafkaPublisher
 }
 
 func NewDefaultDisputeUsecase(
@@ -21,12 +23,14 @@ func NewDefaultDisputeUsecase(
 	walletHandler *handlers.HTTPWalletHandler,
 	orderRepo domain.OrderRepository,
 	trafficRepo domain.TrafficRepository,
+	kafkaPublisher *kafka.KafkaPublisher,
 	) *DefaultDisputeUsecase {
 	return &DefaultDisputeUsecase{
 		disputeRepo: disputeRepo,
 		walletHandler: walletHandler,
 		orderRepo: orderRepo,
 		trafficRepo: trafficRepo,
+		kafkaPublisher: kafkaPublisher,
 	}
 }
 
@@ -45,6 +49,15 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(dispute *domain.Dispute) e
 	if err != nil {
 		return err
 	}
+	disputeUc.kafkaPublisher.PublishDispute(kafka.DisputeEvent{
+		DisputeID: dispute.ID,
+		OrderID: dispute.OrderID,
+		TraderID: order.BankDetail.TraderID,
+		TraderName: "trader-name",
+		ProofUrl: dispute.ProofUrl,
+		Reason: dispute.Reason,
+		Status: string(dispute.Status),
+	})
 	err = disputeUc.walletHandler.Freeze(order.BankDetail.TraderID, dispute.OrderID, order.AmountCrypto)
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())

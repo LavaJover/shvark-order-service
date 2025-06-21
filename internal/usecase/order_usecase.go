@@ -162,8 +162,8 @@ func (uc *DefaultOrderUsecase) FilterByMaxAmountMonth(bankDetails []*domain.Bank
 				ordersSucceedSummary += order.AmountFiat
 			}
 		}
-		fmt.Printf("Max amount a month: %d. Current summary month: %f\n", bankDetail.MaxAmountDay, ordersSucceedSummary)
-		if ordersSucceedSummary + amountFiat <= float64(bankDetail.MaxAmountDay) {
+		fmt.Printf("Max amount a month: %d. Current summary month: %f\n", bankDetail.MaxAmountMonth, ordersSucceedSummary)
+		if ordersSucceedSummary + amountFiat <= float64(bankDetail.MaxAmountMonth) {
 			result = append(result, bankDetail)
 		}
 	}

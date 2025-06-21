@@ -27,7 +27,8 @@ func main() {
 	db := postgres.MustInitDB(cfg)
 
 	// Setup kafka
-	kafkaPublisher := kafka.NewKafkaPublisher([]string{"localhost:9092"}, "order-events")
+	orderKafkaPublisher := kafka.NewKafkaPublisher([]string{"localhost:9092"}, "order-events")
+	disputeKafkaPublisher := kafka.NewKafkaPublisher([]string{"localhost:9092"}, "dispute-events")
 
 	// Init order repo
 	orderRepo := postgres.NewDefaultOrderRepository(db)
@@ -52,7 +53,7 @@ func main() {
 	// Init traffic usecase
 	trafficUsecase := usecase.NewDefaultTrafficUsecase(trafficRepo)
 	// Init order usecase
-	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient, httpWalletHandler, trafficUsecase, kafkaPublisher)
+	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient, httpWalletHandler, trafficUsecase, orderKafkaPublisher)
 
 	// dispute
 	disputeRepo := postgres.NewDefaultDisputeRepository(db)
@@ -61,6 +62,7 @@ func main() {
 		httpWalletHandler,
 		orderRepo,
 		trafficRepo,
+		disputeKafkaPublisher,
 	)
 
 	// Creating gRPC server
