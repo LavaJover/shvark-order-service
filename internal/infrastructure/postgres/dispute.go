@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -29,6 +30,7 @@ func NewDefaultDisputeRepository(db *gorm.DB) *DefaultDisputeRepository {
 
 func (r *DefaultDisputeRepository) CreateDispute(dispute *domain.Dispute) error {
 	disputeModel := DisputeModel{
+		ID: uuid.New().String(),
 		OrderID: dispute.OrderID,
 		ProofUrl: dispute.ProofUrl,
 		Reason: dispute.Reason,

@@ -89,7 +89,7 @@ func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	err = disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.ID, 0)
+	err = disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.ID, 1.)
 	if err != nil {
 		return err
 	}
@@ -125,18 +125,18 @@ func (disputeUc *DefaultDisputeUsecase) AcceptExpiredDisputes() error {
 		return err
 	}
 	for _, dispute := range disputes {
-		order, err := disputeUc.orderRepo.GetOrderByID(dispute.OrderID)
-		if err != nil {
-			return err
-		}
-		traffic, err := disputeUc.trafficRepo.GetTrafficByTraderMerchant(order.BankDetail.TraderID, order.MerchantID)
-		if err != nil {
-			return err
-		}
-		if err := disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.ID, traffic.TraderRewardPercent); err != nil {
-			log.Printf("failed to release crypto for order %s\n", order.ID)
-			return status.Error(codes.Internal, err.Error())
-		}
+		// order, err := disputeUc.orderRepo.GetOrderByID(dispute.OrderID)
+		// if err != nil {
+		// 	return err
+		// }
+		// traffic, err := disputeUc.trafficRepo.GetTrafficByTraderMerchant(order.BankDetail.TraderID, order.MerchantID)
+		// if err != nil {
+		// 	return err
+		// }
+		// if err := disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.ID, traffic.TraderRewardPercent); err != nil {
+		// 	log.Printf("failed to release crypto for order %s\n", order.ID)
+		// 	return status.Error(codes.Internal, err.Error())
+		// }
 
 		if err := disputeUc.AcceptDispute(dispute.ID); err != nil {
 			log.Printf("failed to accept dispute %s\n", dispute.ID)

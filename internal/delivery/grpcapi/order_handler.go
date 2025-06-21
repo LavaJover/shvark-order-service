@@ -17,9 +17,13 @@ type OrderHandler struct {
 	orderpb.UnimplementedOrderServiceServer
 }
 
-func NewOrderHandler(uc domain.OrderUsecase) *OrderHandler {
+func NewOrderHandler(
+	uc domain.OrderUsecase,
+	disputeUc domain.DisputeUsecase,
+	) *OrderHandler {
 	return &OrderHandler{
 		uc: uc,
+		disputeUc: disputeUc,
 	}
 }
 

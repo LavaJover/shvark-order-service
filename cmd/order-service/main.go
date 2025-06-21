@@ -54,14 +54,6 @@ func main() {
 	// Init order usecase
 	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient, httpWalletHandler, trafficUsecase, kafkaPublisher)
 
-	// Creating gRPC server
-	grpcServer := grpc.NewServer()
-	orderHandler := grpcapi.NewOrderHandler(uc)
-	trafficHandler := grpcapi.NewTrafficHandler(trafficUsecase)
-
-	orderpb.RegisterOrderServiceServer(grpcServer, orderHandler)
-	orderpb.RegisterTrafficServiceServer(grpcServer, trafficHandler)
-
 	// dispute
 	disputeRepo := postgres.NewDefaultDisputeRepository(db)
 	disputeUc := usecase.NewDefaultDisputeUsecase(
@@ -70,6 +62,14 @@ func main() {
 		orderRepo,
 		trafficRepo,
 	)
+
+	// Creating gRPC server
+	grpcServer := grpc.NewServer()
+	orderHandler := grpcapi.NewOrderHandler(uc, disputeUc)
+	trafficHandler := grpcapi.NewTrafficHandler(trafficUsecase)
+
+	orderpb.RegisterOrderServiceServer(grpcServer, orderHandler)
+	orderpb.RegisterTrafficServiceServer(grpcServer, trafficHandler)
 
 	// Start
 	lis, err := net.Listen("tcp", ":"+cfg.Port)

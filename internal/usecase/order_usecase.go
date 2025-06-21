@@ -737,7 +737,7 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		return err
 	}
 
-	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, 0); err != nil {
+	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, 1.); err != nil {
 		return err
 	}
 
