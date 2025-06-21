@@ -18,9 +18,13 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
 	"google.golang.org/grpc"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("failed to load .env")
+	}
 	// Reading config
 	cfg := config.MustLoad()
 	// Init database
