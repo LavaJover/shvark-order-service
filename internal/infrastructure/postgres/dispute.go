@@ -32,7 +32,7 @@ func (r *DefaultDisputeRepository) CreateDispute(dispute *domain.Dispute) error 
 		OrderID: dispute.OrderID,
 		ProofUrl: dispute.ProofUrl,
 		Reason: dispute.Reason,
-		Status: string(dispute.Status),
+		Status: string(domain.DisputeOpened),
 		AutoAcceptAt: time.Now().Add(dispute.Ttl),
 	}
 	if err := r.db.Create(&disputeModel).Error; err != nil {

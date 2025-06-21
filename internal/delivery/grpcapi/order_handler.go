@@ -13,6 +13,7 @@ import (
 
 type OrderHandler struct {
 	uc domain.OrderUsecase
+	disputeUc domain.DisputeUsecase
 	orderpb.UnimplementedOrderServiceServer
 }
 
@@ -263,5 +264,56 @@ func (h *OrderHandler) CancelOrder(ctx context.Context, r *orderpb.CancelOrderRe
 }
 
 func (h *OrderHandler) CreateOrderDispute(ctx context.Context, r *orderpb.CreateOrderDisputeRequest) (*orderpb.CreateOrderDisputeResponse, error) {
-	return nil, nil
+	dispute := &domain.Dispute{
+		OrderID: r.OrderId,
+		ProofUrl: r.ProofUrl,
+		Reason: r.DisputeReason,
+		Ttl: r.Ttl.AsDuration(),
+	}
+	if err := h.disputeUc.CreateDispute(dispute); err != nil {
+		return nil, err
+	}
+	return &orderpb.CreateOrderDisputeResponse{
+		DisputeId: dispute.ID,
+	}, nil
+}
+
+func (h *OrderHandler) AcceptOrderDispute(ctx context.Context, r *orderpb.AcceptOrderDisputeRequest) (*orderpb.AcceptOrderDisputeResponse, error) {
+	disputeID := r.DisputeId
+	if err := h.disputeUc.AcceptDispute(disputeID); err != nil {
+		return nil, err
+	}
+
+	return &orderpb.AcceptOrderDisputeResponse{
+		Message: "dispute accepted",
+	}, nil
+}
+
+func (h *OrderHandler) RejectOrderDispute(ctx context.Context, r *orderpb.RejectOrderDisputeRequest) (*orderpb.RejectOrderDisputeResponse, error) {
+	disputeID := r.DisputeId
+	if err := h.disputeUc.RejectDispute(disputeID); err != nil {
+		return nil, err
+	}
+
+	return &orderpb.RejectOrderDisputeResponse{
+		Message: "dispute rejected",
+	}, nil
+}
+
+func (h *OrderHandler) GetOrderDisputeInfo(ctx context.Context, r *orderpb.GetOrderDisputeInfoRequest) (*orderpb.GetOrderDisputeInfoResponse, error) {
+	dispueID := r.DisputeId
+	dispute, err := h.disputeUc.GetDisputeByID(dispueID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &orderpb.GetOrderDisputeInfoResponse{
+		Dispute: &orderpb.OrderDispute{
+			DisputeId: dispute.ID,
+			OrderId: dispute.OrderID,
+			ProofUrl: dispute.ProofUrl,
+			DisputeReason: dispute.Reason,
+			DisputeStatus: string(dispute.Status),
+		},
+	}, nil
 }
