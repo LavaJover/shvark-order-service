@@ -321,3 +321,12 @@ func (h *OrderHandler) GetOrderDisputeInfo(ctx context.Context, r *orderpb.GetOr
 		},
 	}, nil
 }
+
+func (h *OrderHandler) FreezeOrderDispute(ctx context.Context, r *orderpb.FreezeOrderDisputeRequest) (*orderpb.FreezeOrderDisputeResponse, error) {
+	disputeID := r.DisputeId
+	err := h.disputeUc.FreezeDispute(disputeID)
+	if err != nil {
+		return nil, err
+	}
+	return &orderpb.FreezeOrderDisputeResponse{}, nil
+}

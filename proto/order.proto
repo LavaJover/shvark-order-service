@@ -20,6 +20,14 @@ service OrderService {
     rpc AcceptOrderDispute (AcceptOrderDisputeRequest) returns (AcceptOrderDisputeResponse);
     rpc RejectOrderDispute (RejectOrderDisputeRequest) returns (RejectOrderDisputeResponse);
     rpc GetOrderDisputeInfo (GetOrderDisputeInfoRequest) returns (GetOrderDisputeInfoResponse);
+    rpc FreezeOrderDispute (FreezeOrderDisputeRequest) returns (FreezeOrderDisputeResponse);
+}
+
+message FreezeOrderDisputeRequest {
+    string dispute_id = 1;
+}
+
+message FreezeOrderDisputeResponse {
 }
 
 message CreateOrderDisputeRequest {
