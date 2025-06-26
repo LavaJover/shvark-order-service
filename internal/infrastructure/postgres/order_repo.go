@@ -37,6 +37,7 @@ func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error
 		TraderRewardPercent: order.TraderRewardPercent,
 		Recalculated: order.Recalculated,
 		CryptoRubRate: order.CryptoRubRate,
+		PlatformFee: order.PlatformFee,
 	}
 
 	if err := r.DB.Create(&orderModel).Error; err != nil {
@@ -73,6 +74,7 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 		TraderRewardPercent: order.TraderRewardPercent,
 		Recalculated: order.Recalculated,
 		CryptoRubRate: order.CryptoRubRate,
+		PlatformFee: order.PlatformFee,
 		BankDetail: &domain.BankDetail{
 			ID: order.BankDetail.ID,
 			TraderID: order.BankDetail.TraderID,
@@ -197,6 +199,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(
 			TraderRewardPercent: orderModel.TraderRewardPercent,
 			Recalculated: orderModel.Recalculated,
 			CryptoRubRate: orderModel.CryptoRubRate,
+			PlatformFee: orderModel.PlatformFee,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -249,6 +252,7 @@ func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
 			TraderRewardPercent: orderModel.TraderRewardPercent,
 			Recalculated: orderModel.Recalculated,
 			CryptoRubRate: orderModel.CryptoRubRate,
+			PlatformFee: orderModel.PlatformFee,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -305,6 +309,7 @@ func (r *DefaultOrderRepository) GetOrdersByBankDetailID(bankDetailID string) ([
 			TraderRewardPercent: orderModel.TraderRewardPercent,
 			Recalculated: orderModel.Recalculated,
 			CryptoRubRate: orderModel.CryptoRubRate,
+			PlatformFee: orderModel.PlatformFee,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -357,6 +362,7 @@ func (r *DefaultOrderRepository) GetCreatedOrdersByClientID(clientID string) ([]
 			TraderRewardPercent: orderModel.TraderRewardPercent,
 			Recalculated: orderModel.Recalculated,
 			CryptoRubRate: orderModel.CryptoRubRate,
+			PlatformFee: orderModel.PlatformFee,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
