@@ -43,6 +43,7 @@ func (h *TrafficHandler) EditTraffic(ctx context.Context, r *orderpb.EditTraffic
 		TraderID: r.Traffic.TraderId,
 		TraderRewardPercent: r.Traffic.TraderRewardPercent,
 		TraderPriority: r.Traffic.TraderPriority,
+		PlatformFee: r.Traffic.PlatformFee,
 		Enabled: r.Traffic.Enabled,
 	}
 
@@ -85,6 +86,7 @@ func (h *TrafficHandler) GetTrafficRecords(ctx context.Context, r *orderpb.GetTr
 			TraderId: trafficRecord.TraderID,
 			TraderRewardPercent: trafficRecord.TraderRewardPercent,
 			TraderPriority: trafficRecord.TraderPriority,
+			PlatformFee: trafficRecord.PlatformFee,
 			Enabled: trafficRecord.Enabled,
 		}
 	}
