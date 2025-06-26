@@ -5,6 +5,7 @@ type Traffic struct {
 	MerchantID 			string
 	TraderID 			string
 	TraderRewardPercent float64
+	PlatformFee			float64
 	TraderPriority 		float64
 	Enabled 			bool
 }

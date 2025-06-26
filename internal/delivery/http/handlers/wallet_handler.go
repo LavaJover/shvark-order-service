@@ -50,11 +50,13 @@ func (uc *HTTPWalletHandler) Freeze(traderID, orderID string, amount float64) er
 	}
 }
 
-func (uc *HTTPWalletHandler) Release(traderID, orderID string, rewardPercent float64) error {
+func (uc *HTTPWalletHandler) Release(traderID, merchantID, orderID string, rewardPercent, platformFee float64) error {
 	requestBodyBytes, err := json.Marshal(walletRequest.ReleaseRequest{
 		TraderID: traderID,
 		OrderID: orderID,
 		RewardPercent: rewardPercent,
+		MerchantID: merchantID,
+		PlatformFee: platformFee,
 	})
 	if err != nil {
 		return err

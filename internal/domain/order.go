@@ -31,8 +31,9 @@ type Order struct {
 	Shuffle 			int32
 	CallbackURL 		string
 	TraderRewardPercent float64
+	PlatformFee 		float64
 	Recalculated 		bool
-	CryptoRubRate			float64
+	CryptoRubRate		float64
 }
 
 type OrderFilters struct {

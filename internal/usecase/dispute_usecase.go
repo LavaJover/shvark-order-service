@@ -82,7 +82,7 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	err = disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.ID, traffic.TraderRewardPercent)
+	err = disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, traffic.PlatformFee, traffic.TraderRewardPercent)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	err = disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.ID, 1.)
+	err = disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, 1., 0.)
 	if err != nil {
 		return err
 	}

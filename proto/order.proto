@@ -15,7 +15,7 @@ service OrderService {
     rpc ResolveOrderDispute (ResolveOrderDisputeRequest) returns (ResolveOrderDisputeResponse);
     rpc GetOrderByID (GetOrderByIDRequest) returns (GetOrderByIDResponse);
     rpc GetOrdersByTraderID (GetOrdersByTraderIDRequest) returns (GetOrdersByTraderIDResponse);
-
+    
     rpc CreateOrderDispute (CreateOrderDisputeRequest) returns (CreateOrderDisputeResponse);
     rpc AcceptOrderDispute (AcceptOrderDisputeRequest) returns (AcceptOrderDisputeResponse);
     rpc RejectOrderDispute (RejectOrderDisputeRequest) returns (RejectOrderDisputeResponse);
@@ -211,6 +211,7 @@ message AddTrafficRequest {
     double trader_reward_percent = 3;
     double trader_priority = 4;
     bool enabled = 5;
+    double platform_fee = 6;
 }
 
 message Traffic {
@@ -220,6 +221,7 @@ message Traffic {
     double trader_reward_percent = 4;
     double trader_priority = 5;
     bool enabled = 6;
+    double platform_fee = 7;
 }
 
 message AddTrafficResponse {

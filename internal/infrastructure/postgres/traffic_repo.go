@@ -22,6 +22,7 @@ func (r *DefaultTrafficRepository) CreateTraffic(traffic *domain.Traffic) error 
 		TraderRewardPercent: traffic.TraderRewardPercent,
 		TraderPriority: traffic.TraderPriority,
 		Enabled: traffic.Enabled,
+		PlatformFee: traffic.PlatformFee,
 	}
 
 	if err := r.DB.Create(&trafficModel).Error; err != nil {
@@ -40,13 +41,10 @@ func (r *DefaultTrafficRepository) UpdateTraffic(traffic *domain.Traffic) error 
 		TraderRewardPercent: traffic.TraderRewardPercent,
 		TraderPriority: traffic.TraderPriority,
 		Enabled: traffic.Enabled,
+		PlatformFee: traffic.PlatformFee,
 	}
 
-	if err := r.DB.Model(&trafficModel).Updates(map[string]interface{}{
-		"enabled": trafficModel.Enabled,
-		"trader_reward_percent": trafficModel.TraderRewardPercent,
-		"trader_priority": trafficModel.TraderPriority,
-	}).Error; err != nil {
+	if err := r.DB.Model(&trafficModel).Updates(&trafficModel).Error; err != nil {
 		return err
 	}
 
@@ -85,6 +83,7 @@ func (r *DefaultTrafficRepository) GetTrafficRecords(page, limit int32) ([]*doma
 			TraderRewardPercent: trafficModel.TraderRewardPercent,
 			TraderPriority: trafficModel.TraderPriority,
 			Enabled: trafficModel.Enabled,
+			PlatformFee: trafficModel.PlatformFee,
 		}
 	}
 
@@ -104,6 +103,7 @@ func (r *DefaultTrafficRepository) GetTrafficByID(trafficID string) (*domain.Tra
 		TraderRewardPercent: trafficModel.TraderRewardPercent,
 		TraderPriority: trafficModel.TraderPriority,
 		Enabled: trafficModel.Enabled,
+		PlatformFee: trafficModel.PlatformFee,
 	}, nil
 }
 
@@ -120,6 +120,7 @@ func (r *DefaultTrafficRepository) GetTrafficByTraderMerchant(traderID, merchant
 		TraderRewardPercent: trafficModel.TraderRewardPercent,
 		TraderPriority: trafficModel.TraderPriority,
 		Enabled: trafficModel.Enabled,
+		PlatformFee: trafficModel.PlatformFee,
 	}, nil
 }
 

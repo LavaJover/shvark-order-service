@@ -456,7 +456,9 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		return nil, err
 	}
 	rewardPercent := traffic.TraderRewardPercent
+	platformFee := traffic.PlatformFee
 	order.TraderRewardPercent = rewardPercent
+	order.PlatformFee = platformFee
 	orderID, err := uc.OrderRepo.CreateOrder(order)
 	if err != nil {
 		return nil, err
@@ -566,7 +568,7 @@ func (uc *DefaultOrderUsecase) CancelExpiredOrders(ctx context.Context) error {
 	}
 
 	for _, order := range orders {
-		if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, float64(0.)); err != nil {
+		if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, float64(1.), 0); err != nil {
 			log.Printf("Unfreeze failed for order %s: %v", order.ID, err)
 			return status.Error(codes.Internal, err.Error())
 		}
@@ -634,6 +636,7 @@ func (uc *DefaultOrderUsecase) OpenOrderDispute(orderID string) error {
 	return nil
 }
 
+// Deprecated
 func (uc *DefaultOrderUsecase) ResolveOrderDispute(orderID string) error {
 	// Find exact order
 	order, err := uc.GetOrderByID(orderID)
@@ -648,7 +651,7 @@ func (uc *DefaultOrderUsecase) ResolveOrderDispute(orderID string) error {
 
 	// Improve
 	rewardPercent := order.TraderRewardPercent
-	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, rewardPercent); err != nil {
+	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, rewardPercent, 0); err != nil {
 		return err
 	}
 
@@ -685,7 +688,8 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 	}
 
 	rewardPercent := order.TraderRewardPercent
-	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, rewardPercent); err != nil {
+	platformFee := order.PlatformFee
+	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, rewardPercent, platformFee); err != nil {
 		return err
 	}
 
@@ -737,7 +741,7 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		return err
 	}
 
-	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.ID, 1.); err != nil {
+	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, 1., 0.); err != nil {
 		return err
 	}
 

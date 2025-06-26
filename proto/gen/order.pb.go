@@ -1746,6 +1746,7 @@ type AddTrafficRequest struct {
 	TraderRewardPercent float64                `protobuf:"fixed64,3,opt,name=trader_reward_percent,json=traderRewardPercent,proto3" json:"trader_reward_percent,omitempty"`
 	TraderPriority      float64                `protobuf:"fixed64,4,opt,name=trader_priority,json=traderPriority,proto3" json:"trader_priority,omitempty"`
 	Enabled             bool                   `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	PlatformFee         float64                `protobuf:"fixed64,6,opt,name=platform_fee,json=platformFee,proto3" json:"platform_fee,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -1815,6 +1816,13 @@ func (x *AddTrafficRequest) GetEnabled() bool {
 	return false
 }
 
+func (x *AddTrafficRequest) GetPlatformFee() float64 {
+	if x != nil {
+		return x.PlatformFee
+	}
+	return 0
+}
+
 type Traffic struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	Id                  string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1823,6 +1831,7 @@ type Traffic struct {
 	TraderRewardPercent float64                `protobuf:"fixed64,4,opt,name=trader_reward_percent,json=traderRewardPercent,proto3" json:"trader_reward_percent,omitempty"`
 	TraderPriority      float64                `protobuf:"fixed64,5,opt,name=trader_priority,json=traderPriority,proto3" json:"trader_priority,omitempty"`
 	Enabled             bool                   `protobuf:"varint,6,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	PlatformFee         float64                `protobuf:"fixed64,7,opt,name=platform_fee,json=platformFee,proto3" json:"platform_fee,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -1897,6 +1906,13 @@ func (x *Traffic) GetEnabled() bool {
 		return x.Enabled
 	}
 	return false
+}
+
+func (x *Traffic) GetPlatformFee() float64 {
+	if x != nil {
+		return x.PlatformFee
+	}
+	return 0
 }
 
 type AddTrafficResponse struct {
@@ -2608,14 +2624,15 @@ const file_order_proto_rawDesc = "" +
 	"\x1aResolveOrderDisputeRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\"7\n" +
 	"\x1bResolveOrderDisputeResponse\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\"\xc8\x01\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"\xeb\x01\n" +
 	"\x11AddTrafficRequest\x12\x1f\n" +
 	"\vmerchant_id\x18\x01 \x01(\tR\n" +
 	"merchantId\x12\x1b\n" +
 	"\ttrader_id\x18\x02 \x01(\tR\btraderId\x122\n" +
 	"\x15trader_reward_percent\x18\x03 \x01(\x01R\x13traderRewardPercent\x12'\n" +
 	"\x0ftrader_priority\x18\x04 \x01(\x01R\x0etraderPriority\x12\x18\n" +
-	"\aenabled\x18\x05 \x01(\bR\aenabled\"\xce\x01\n" +
+	"\aenabled\x18\x05 \x01(\bR\aenabled\x12!\n" +
+	"\fplatform_fee\x18\x06 \x01(\x01R\vplatformFee\"\xf1\x01\n" +
 	"\aTraffic\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\vmerchant_id\x18\x02 \x01(\tR\n" +
@@ -2623,7 +2640,8 @@ const file_order_proto_rawDesc = "" +
 	"\ttrader_id\x18\x03 \x01(\tR\btraderId\x122\n" +
 	"\x15trader_reward_percent\x18\x04 \x01(\x01R\x13traderRewardPercent\x12'\n" +
 	"\x0ftrader_priority\x18\x05 \x01(\x01R\x0etraderPriority\x12\x18\n" +
-	"\aenabled\x18\x06 \x01(\bR\aenabled\".\n" +
+	"\aenabled\x18\x06 \x01(\bR\aenabled\x12!\n" +
+	"\fplatform_fee\x18\a \x01(\x01R\vplatformFee\".\n" +
 	"\x12AddTrafficResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\">\n" +
 	"\x12EditTrafficRequest\x12(\n" +
