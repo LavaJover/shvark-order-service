@@ -82,7 +82,7 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	err = disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, traffic.PlatformFee, traffic.TraderRewardPercent)
+	err = disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, traffic.TraderRewardPercent, traffic.PlatformFee)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func (disputeUc *DefaultDisputeUsecase) AcceptExpiredDisputes() error {
 		// if err != nil {
 		// 	return err
 		// }
-		// if err := disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.ID, traffic.TraderRewardPercent); err != nil {
+		// if err := disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, traffic.TraderRewardPercent, traffic.PlatformFee); err != nil {
 		// 	log.Printf("failed to release crypto for order %s\n", order.ID)
 		// 	return status.Error(codes.Internal, err.Error())
 		// }

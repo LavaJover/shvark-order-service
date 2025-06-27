@@ -85,7 +85,7 @@ func main() {
 
 	// order auto-cancel
 	go func() {
-		ticker := time.NewTicker(1 * time.Minute)
+		ticker := time.NewTicker(5 * time.Second)
 		for {
 			<-ticker.C
 			err := uc.CancelExpiredOrders(context.Background())
