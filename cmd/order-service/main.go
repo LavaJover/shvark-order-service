@@ -13,12 +13,14 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/migrate"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
-	"google.golang.org/grpc"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -29,6 +31,11 @@ func main() {
 	cfg := config.MustLoad()
 	// Init database
 	db := postgres.MustInitDB(cfg)
+
+	// run migrations
+	if err := migrate.RunMigrations(db, "/home/bodya/Рабочий стол/shvark/order-service/migrations"); err != nil {
+		log.Fatalf("migration error: %v", err)
+	}
 
 	// Setup kafka
 	orderKafkaPublisher := kafka.NewKafkaPublisher([]string{"localhost:9092"}, "order-events")

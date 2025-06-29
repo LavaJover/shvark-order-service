@@ -32,3 +32,7 @@ type BankDetailQuery struct {
 	PaymentSystem 	string
 	Country 		string
 }
+
+type BankDetailRepository interface {
+	SaveBankDetail(bankDetail *BankDetail) error 
+}

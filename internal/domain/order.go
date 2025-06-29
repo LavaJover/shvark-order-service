@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type OrderStatus string
 
@@ -43,4 +46,37 @@ type OrderFilters struct {
 	DateFrom 		time.Time `form:"date_from"`
 	DateTo 			time.Time `form:"date_to"`
 	Currency 		string 	  `form:"currency"`
+}
+
+type OrderUsecase interface {
+	CreateOrder(order *Order) (*Order, error)
+	GetOrderByID(orderID string) (*Order, error)
+	GetOrdersByTraderID(
+		orderID string, page, 
+		limit int64, sortBy, 
+		sortOrder string, 
+		filters OrderFilters,
+		) ([]*Order, int64, error)
+	FindExpiredOrders() ([]*Order, error)
+	CancelExpiredOrders(context.Context) error
+	OpenOrderDispute(orderID string) error
+	ResolveOrderDispute(orderID string) error
+	ApproveOrder(orderID string) error
+	CancelOrder(orderID string) error
+}
+
+
+type OrderRepository interface {
+	CreateOrder(order *Order) (string, error)
+	UpdateOrderStatus(orderID string, newStatus OrderStatus) error
+	GetOrderByID(orderID string) (*Order, error)
+	GetOrdersByTraderID(
+		orderID string, page, 
+		limit int64, sortBy, 
+		sortOrder string, 
+		filters OrderFilters,
+		) ([]*Order, int64, error)
+	GetOrdersByBankDetailID(bankDetailID string) ([]*Order, error)
+	FindExpiredOrders() ([]*Order, error)
+	GetCreatedOrdersByClientID(clientID string) ([]*Order, error)
 }
