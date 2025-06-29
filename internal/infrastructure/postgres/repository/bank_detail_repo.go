@@ -1,7 +1,8 @@
-package postgres
+package repository
 
 import (
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/entities"
 	"gorm.io/gorm"
 )
 
@@ -14,7 +15,7 @@ func NewDefaultBankDetailRepo(db *gorm.DB) *DefaultBankDetailRepo {
 }
 
 func (r *DefaultBankDetailRepo) SaveBankDetail(bankDetail *domain.BankDetail) error {
-	bankDetailModel := BankDetailModel{
+	bankDetailModel := entities.BankDetailModel{
 		ID: bankDetail.ID,
 		TraderID: bankDetail.TraderID,
 		Country: bankDetail.Country,

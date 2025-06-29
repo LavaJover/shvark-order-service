@@ -1,24 +1,13 @@
-package postgres
+package repository
 
 import (
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/entities"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
-
-type DisputeModel struct {
-	ID 			 string `gorm:"primaryKey"`
-	OrderID 	 string	
-	ProofUrl 	 string
-	Reason 		 string
-	Status 		 string
-	Order		 OrderModel `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
-	CreatedAt	 time.Time
-	UpdatedAt 	 time.Time
-	AutoAcceptAt time.Time   
-}
 
 type DefaultDisputeRepository struct {
 	db *gorm.DB
@@ -29,7 +18,7 @@ func NewDefaultDisputeRepository(db *gorm.DB) *DefaultDisputeRepository {
 }
 
 func (r *DefaultDisputeRepository) CreateDispute(dispute *domain.Dispute) error {
-	disputeModel := DisputeModel{
+	disputeModel := entities.DisputeModel{
 		ID: uuid.New().String(),
 		OrderID: dispute.OrderID,
 		ProofUrl: dispute.ProofUrl,
@@ -45,12 +34,12 @@ func (r *DefaultDisputeRepository) CreateDispute(dispute *domain.Dispute) error 
 }
 
 func (r *DefaultDisputeRepository) UpdateDisputeStatus(disputeID string, status domain.DisputeStatus) error {
-	return r.db.Model(&DisputeModel{ID: disputeID}).Update("status", status).Error
+	return r.db.Model(&entities.DisputeModel{ID: disputeID}).Update("status", status).Error
 }
 
 func (r *DefaultDisputeRepository) GetDisputeByID(disputeID string) (*domain.Dispute, error) {
-	var disputeModel DisputeModel
-	if err := r.db.Model(&DisputeModel{}).Where("id = ?", disputeID).First(&disputeModel).Error; err != nil {
+	var disputeModel entities.DisputeModel
+	if err := r.db.Model(&entities.DisputeModel{}).Where("id = ?", disputeID).First(&disputeModel).Error; err != nil {
 		return nil, err
 	}
 
@@ -64,8 +53,8 @@ func (r *DefaultDisputeRepository) GetDisputeByID(disputeID string) (*domain.Dis
 }
 
 func (r *DefaultDisputeRepository) GetDisputeByOrderID(orderID string) (*domain.Dispute, error) {
-	var disputeModel DisputeModel
-	if err := r.db.Model(&DisputeModel{}).Where("order_id = ?", orderID).First(&disputeModel).Error; err != nil {
+	var disputeModel entities.DisputeModel
+	if err := r.db.Model(&entities.DisputeModel{}).Where("order_id = ?", orderID).First(&disputeModel).Error; err != nil {
 		return nil, err
 	}
 
@@ -79,8 +68,8 @@ func (r *DefaultDisputeRepository) GetDisputeByOrderID(orderID string) (*domain.
 }
 
 func (r *DefaultDisputeRepository) FindExpiredDisputes() ([]*domain.Dispute, error) {
-	var disputeModels []DisputeModel
-	if err := r.db.Model(&DisputeModel{}).
+	var disputeModels []entities.DisputeModel
+	if err := r.db.Model(&entities.DisputeModel{}).
 		Where("status = ?", string(domain.DisputeOpened)).
 		Where("auto_accept_at < ?", time.Now()).
 		Find(&disputeModels).Error; err != nil {

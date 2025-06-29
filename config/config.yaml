@@ -1,4 +1,4 @@
-env: "local"
+env: "dev"
 grpc_server:
   host: "localhost"
   port: "50058"

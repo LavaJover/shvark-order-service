@@ -15,6 +15,7 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/migrate"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
@@ -32,9 +33,11 @@ func main() {
 	// Init database
 	db := postgres.MustInitDB(cfg)
 
-	// run migrations
-	if err := migrate.RunMigrations(db, "/home/bodya/Рабочий стол/shvark/order-service/migrations"); err != nil {
-		log.Fatalf("migration error: %v", err)
+	if cfg.Env == "dev" {
+		// run migrations
+		if err := migrate.RunMigrations(db, "/home/bodya/Рабочий стол/shvark/order-service/migrations"); err != nil {
+			log.Fatalf("migration error: %v", err)
+		}
 	}
 
 	// Setup kafka
@@ -42,11 +45,11 @@ func main() {
 	disputeKafkaPublisher := kafka.NewKafkaPublisher([]string{"localhost:9092"}, "dispute-events")
 
 	// Init order repo
-	orderRepo := postgres.NewDefaultOrderRepository(db)
+	orderRepo := repository.NewDefaultOrderRepository(db)
 	// Init bank detail repo
-	bankDetailRepo := postgres.NewDefaultBankDetailRepo(db)
+	bankDetailRepo := repository.NewDefaultBankDetailRepo(db)
 	// Init traffic repo
-	trafficRepo := postgres.NewDefaultTrafficRepository(db)
+	trafficRepo := repository.NewDefaultTrafficRepository(db)
 
 	// Init banking client
 	bankingAddr := "localhost:50057"
@@ -67,7 +70,7 @@ func main() {
 	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient, httpWalletHandler, trafficUsecase, orderKafkaPublisher)
 
 	// dispute
-	disputeRepo := postgres.NewDefaultDisputeRepository(db)
+	disputeRepo := repository.NewDefaultDisputeRepository(db)
 	disputeUc := usecase.NewDefaultDisputeUsecase(
 		disputeRepo,
 		httpWalletHandler,
