@@ -29,7 +29,7 @@ func (uc *HTTPWalletHandler) Freeze(traderID, orderID string, amount float64) er
 		return err
 	}
 
-	response, err := http.Post("http://localhost:3000/wallets/freeze", "application/json", bytes.NewBuffer(requestBodyBytes))
+	response, err := http.Post("http://tether-wallet-service:3000/wallets/freeze", "application/json", bytes.NewBuffer(requestBodyBytes))
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (uc *HTTPWalletHandler) Release(traderID, merchantID, orderID string, rewar
 		return err
 	}
 
-	response, err := http.Post("http://localhost:3000/wallets/release", "application/json", bytes.NewBuffer(requestBodyBytes))
+	response, err := http.Post("http://tether-wallet-service:3000/wallets/release", "application/json", bytes.NewBuffer(requestBodyBytes))
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (uc *HTTPWalletHandler) Release(traderID, merchantID, orderID string, rewar
 }
 
 func (h *HTTPWalletHandler) GetTraderBalance(traderID string) (float64, error) {
-	response, err := http.Get("http://localhost:3000/wallets/"+traderID+"/balance")
+	response, err := http.Get("http://tether-wallet-service:3000/wallets/"+traderID+"/balance")
 	if err != nil {
 		return 0, err
 	}
