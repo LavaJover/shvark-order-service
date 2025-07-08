@@ -8,3 +8,9 @@ log_config:
   log_level: "debug"
   log_format: "json"
   log_output: "stdout"
+banking-service:
+  host: "localhost"
+  port: "50057"
+wallet-service:
+  host: "localhost"
+  port: "3000"

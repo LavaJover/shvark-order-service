@@ -7,10 +7,12 @@ import (
 )
 
 type OrderConfig struct {
-	Env string 	`yaml:"env"`
-	GRPCServer 	`yaml:"grpc_server"`
-	OrderDB 	`yaml:"order_db"`
-	LogConfig 	`yaml:"log_config"`
+	Env string 	   `yaml:"env"`
+	GRPCServer 	   `yaml:"grpc_server"`
+	OrderDB 	   `yaml:"order_db"`
+	LogConfig 	   `yaml:"log_config"`
+	BankingService `yaml:"banking-service"`
+	WalletService  `yaml:"wallet-service"`
 }
 
 type GRPCServer struct {
@@ -26,6 +28,16 @@ type LogConfig struct {
 	LogLevel 	string 	`yaml:"log_level"`
 	LogFormat 	string 	`yaml:"log_format"`
 	LogOutput 	string 	`yaml:"log_output"`
+}
+
+type BankingService struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+}
+
+type WalletService struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
 }
 
 func MustLoad() *OrderConfig {

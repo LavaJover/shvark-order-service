@@ -17,8 +17,8 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
-	"google.golang.org/grpc"
 	"github.com/joho/godotenv"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -42,14 +42,14 @@ func main() {
 	trafficRepo := postgres.NewDefaultTrafficRepository(db)
 
 	// Init banking client
-	bankingAddr := "localhost:50057"
+	bankingAddr := fmt.Sprintf("%s:%s", cfg.BankingService.Host, cfg.BankingService.Port)
 	bankingClient, err := client.NewbankingClient(bankingAddr)
 	if err != nil {
 		log.Fatalf("failed to init banking client: %v\n", err)
 	}
 
 	// Init wallet handler
-	httpWalletHandler, err := handlers.NewHTTPWalletHandler()
+	httpWalletHandler, err := handlers.NewHTTPWalletHandler(fmt.Sprintf("%s:%s", cfg.WalletService.Host, cfg.WalletService.Port))
 	if err != nil {
 		log.Fatalf("failed to init wallet usecase")
 	}
@@ -78,7 +78,7 @@ func main() {
 	orderpb.RegisterTrafficServiceServer(grpcServer, trafficHandler)
 
 	// Start
-	lis, err := net.Listen("tcp", ":"+cfg.Port)
+	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", cfg.GRPCServer.Host, cfg.GRPCServer.Port))
 	if err != nil{
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -121,7 +121,7 @@ func main() {
 		}
 	}()
 
-	fmt.Printf("gRPC server started on %s:%s\n", cfg.Host, cfg.Port)
+	log.Printf("gRPC server started on %s:%s\n", cfg.GRPCServer.Host, cfg.GRPCServer.Port)
 	if err := grpcServer.Serve(lis); err != nil{
 		log.Fatalf("failed to serve: %v\n", err)
 	}

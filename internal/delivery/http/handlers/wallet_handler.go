@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -12,14 +13,16 @@ import (
 )
 
 type HTTPWalletHandler struct {
-
+	Address string
 }
 
-func NewHTTPWalletHandler() (*HTTPWalletHandler, error) {
-	return &HTTPWalletHandler{}, nil
+func NewHTTPWalletHandler(address string) (*HTTPWalletHandler, error) {
+	return &HTTPWalletHandler{
+		Address: address,
+	}, nil
 }
 
-func (uc *HTTPWalletHandler) Freeze(traderID, orderID string, amount float64) error {
+func (h *HTTPWalletHandler) Freeze(traderID, orderID string, amount float64) error {
 	requestBodyBytes, err := json.Marshal(walletRequest.FreezeRequest{
 		TraderID: traderID,
 		OrderID: orderID,
@@ -29,7 +32,7 @@ func (uc *HTTPWalletHandler) Freeze(traderID, orderID string, amount float64) er
 		return err
 	}
 
-	response, err := http.Post("http://localhost:3000/wallets/freeze", "application/json", bytes.NewBuffer(requestBodyBytes))
+	response, err := http.Post(fmt.Sprintf("%s/wallets/freeze", h.Address), "application/json", bytes.NewBuffer(requestBodyBytes))
 	if err != nil {
 		return err
 	}
@@ -50,7 +53,7 @@ func (uc *HTTPWalletHandler) Freeze(traderID, orderID string, amount float64) er
 	}
 }
 
-func (uc *HTTPWalletHandler) Release(traderID, merchantID, orderID string, rewardPercent, platformFee float64) error {
+func (h *HTTPWalletHandler) Release(traderID, merchantID, orderID string, rewardPercent, platformFee float64) error {
 	requestBodyBytes, err := json.Marshal(walletRequest.ReleaseRequest{
 		TraderID: traderID,
 		OrderID: orderID,
@@ -62,7 +65,7 @@ func (uc *HTTPWalletHandler) Release(traderID, merchantID, orderID string, rewar
 		return err
 	}
 
-	response, err := http.Post("http://localhost:3000/wallets/release", "application/json", bytes.NewBuffer(requestBodyBytes))
+	response, err := http.Post(fmt.Sprintf("%s/wallets/release", h.Address), "application/json", bytes.NewBuffer(requestBodyBytes))
 	if err != nil {
 		return err
 	}
@@ -84,7 +87,7 @@ func (uc *HTTPWalletHandler) Release(traderID, merchantID, orderID string, rewar
 }
 
 func (h *HTTPWalletHandler) GetTraderBalance(traderID string) (float64, error) {
-	response, err := http.Get("http://localhost:3000/wallets/"+traderID+"/balance")
+	response, err := http.Get(fmt.Sprintf("%s/wallets/%s/balance", h.Address, traderID))
 	if err != nil {
 		return 0, err
 	}
