@@ -42,7 +42,7 @@ func main() {
 	trafficRepo := postgres.NewDefaultTrafficRepository(db)
 
 	// Init banking client
-	bankingAddr := "banking-service:50057"
+	bankingAddr := "localhost:50057"
 	bankingClient, err := client.NewbankingClient(bankingAddr)
 	if err != nil {
 		log.Fatalf("failed to init banking client: %v\n", err)

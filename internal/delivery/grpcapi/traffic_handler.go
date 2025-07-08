@@ -23,6 +23,7 @@ func (h *TrafficHandler) AddTraffic(ctx context.Context, r *orderpb.AddTrafficRe
 		TraderRewardPercent: r.TraderRewardPercent,
 		TraderPriority: r.TraderPriority,
 		Enabled: r.Enabled,
+		PlatformFee: r.PlatformFee,
 	}
 
 	if err := h.trafficUsecase.AddTraffic(traffic); err != nil {
