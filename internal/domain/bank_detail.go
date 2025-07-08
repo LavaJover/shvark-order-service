@@ -51,3 +51,16 @@ type BankDetailRepository interface {
 		sortBy, sortOrder string,
 	) ([]*BankDetail, int64, error)
 }
+
+type BankDetailUsecase interface {
+	SaveBankDetail(bankDetail *BankDetail) error
+	CreateBankDetail(bankDetail *BankDetail) (string, error)
+	UpdateBankDetail(bankDetail *BankDetail) error
+	DeleteBankDetail(bankDetailID string) error
+	GetBankDetailByID(bankDetailID string) (*BankDetail, error)
+	GetBankDetailsByTraderID(
+		traderID string,
+		page, limit int,
+		sortBy, sortOrder string,
+	) ([]*BankDetail, int64, error)
+}
