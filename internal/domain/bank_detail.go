@@ -43,7 +43,7 @@ type BankDetailRepository interface {
 	SaveBankDetail(bankDetail *BankDetail) error
 	CreateBankDetail(bankDetail *BankDetail) (string, error)
 	UpdateBankDetail(bankDetail *BankDetail) error
-	DeleteBankDetail(bankDetail *BankDetail) error
+	DeleteBankDetail(bankDetailID string) error
 	GetBankDetailByID(bankDetailID string) (*BankDetail, error)
 	GetBankDetailsByTraderID(
 		bankDetailID string,

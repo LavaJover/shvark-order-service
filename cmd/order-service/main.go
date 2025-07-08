@@ -61,7 +61,7 @@ func main() {
 	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient, httpWalletHandler, trafficUsecase, orderKafkaPublisher)
 
 	// dispute
-	disputeRepo := postgres.NewDefaultDisputeRepository(db)
+	disputeRepo := repository.NewDefaultDisputeRepository(db)
 	disputeUc := usecase.NewDefaultDisputeUsecase(
 		disputeRepo,
 		httpWalletHandler,

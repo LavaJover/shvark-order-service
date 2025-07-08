@@ -70,7 +70,7 @@ func (r *DefaultBankDetailRepo) CreateBankDetail(bankDetail *domain.BankDetail) 
 		return "", err
 	}
 
-	bankDetail.ID = bankDetail.ID
+	bankDetail.ID = bankDetailModel.ID
 
 	return bankDetail.ID, nil
 }
@@ -107,8 +107,8 @@ func (r *DefaultBankDetailRepo) DeleteBankDetail(bankDetailID string) error {
 }
 
 func (r *DefaultBankDetailRepo) GetBankDetailByID(bankDetailID string) (*domain.BankDetail, error) {
-	var bankDetailModel *models.BankDetailModel
-	if err := r.DB.Where("id = ?", bankDetailID).Find(bankDetailModel).Error; err != nil {
+	var bankDetailModel models.BankDetailModel
+	if err := r.DB.Where("id = ?", bankDetailID).Find(&bankDetailModel).Error; err != nil {
 		return nil, err
 	}
 	return &domain.BankDetail{
