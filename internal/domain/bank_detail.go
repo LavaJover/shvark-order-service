@@ -7,6 +7,7 @@ type BankDetail struct {
 	TraderID 				string
 	Country 				string
 	Currency 				string
+	InflowCurrency			string
 	MinAmount 				float32
 	MaxAmount 				float32
 	BankName 				string
@@ -21,9 +22,9 @@ type BankDetail struct {
 	MaxAmountMonth  		int32
 	MaxQuantityDay			int32
 	MaxQuantityMonth		int32
-
-	CreatedAt 	  time.Time
-	UpdatedAt 	  time.Time
+	DeviceID				string
+	CreatedAt 				time.Time
+	UpdatedAt				time.Time
 }
 
 type BankDetailQuery struct {
@@ -31,4 +32,22 @@ type BankDetailQuery struct {
 	Currency 		string
 	PaymentSystem 	string
 	Country 		string
+}
+
+type BankDetailFilters struct {
+	DateFrom time.Time	`form:"date_from"`
+	DateTo 	 time.Time	`form:"date_to"`
+}
+
+type BankDetailRepository interface {
+	SaveBankDetail(bankDetail *BankDetail) error
+	CreateBankDetail(bankDetail *BankDetail) (string, error)
+	UpdateBankDetail(bankDetail *BankDetail) error
+	DeleteBankDetail(bankDetail *BankDetail) error
+	GetBankDetailByID(bankDetailID string) (*BankDetail, error)
+	GetBankDetailsByTraderID(
+		bankDetailID string,
+		page, limit int,
+		sortBy, sortOrder string,
+	) ([]*BankDetail, int64, error)
 }

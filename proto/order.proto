@@ -106,22 +106,6 @@ message CreateOrderResponse {
     Order order = 1;
 }
 
-message BankDetail {
-    string bank_detail_id = 1;
-    string trader_id = 2;
-    string currency = 3;
-    string country = 4;
-    double min_amount = 5;
-    double max_amount = 6;
-    string bank_name = 7;
-    string payment_system = 8;
-    bool enabled = 9;
-    google.protobuf.Duration delay = 10;
-    string owner = 11;
-    string card_number = 12;
-    string phone = 13;
-}
-
 message ApproveOrderRequest {
     string order_id = 1;
 }
@@ -272,4 +256,95 @@ message GetTraderTrafficStatusRequest {
 
 message GetTraderTrafficStatusResponse {
     bool status = 1;
+}
+
+service BankDetailService {
+    rpc CreateBankDetail (CreateBankDetailRequest) returns (CreateBankDetailResponse);
+    rpc UpdateBankDetail (UpdateBankDetailRequest) returns (UpdateBankDetailResponse);
+    rpc DeleteBankDetail (DeleteBankDetailRequest) returns (DeleteBankDetailResponse);
+    rpc GetBankDetailByID (GetBankDetailByIDRequest) returns (GetBankDetailByIDResponse);
+    rpc GetBankDetailsByTraderID (GetBankDetailsByTraderIDRequest) returns (GetBankDetailsByTraderIDResponse);
+}
+
+message BankDetail {
+    string bank_detail_id = 1;
+    string trader_id = 2;
+    string currency = 3;
+    string country = 4;
+    double min_amount = 5;
+    double max_amount = 6;
+    string bank_name = 7;
+    string payment_system = 8;
+    bool enabled = 9;
+    google.protobuf.Duration delay = 10;
+    string card_number = 11;
+    string phone = 12;
+    string owner = 13;
+    int32  max_orders_simultaneosly = 14;
+    double max_amount_day = 15;
+    double max_amount_month = 16;
+    double max_quantity_day = 17;
+    double max_quantity_month = 18;
+    string device_id = 19;
+    string inflow_currency = 20;
+}
+
+message CreateBankDetailRequest {
+    string trader_id = 1;
+    string currency = 2;
+    string country = 3;
+    double min_amount = 4;
+    double max_amount = 5;
+    string bank_name = 6;
+    string payment_system = 7;
+    bool enabled = 8;
+    google.protobuf.Duration delay = 9;
+    string card_number = 10;
+    string phone = 11;
+    string owner = 12;
+    int32  max_orders_simultaneosly = 13;
+    double max_amount_day = 14;
+    double max_amount_month = 15;
+    double max_quantity_day = 16;
+    double max_quantity_month = 17;
+    string device_id = 18;
+    string inflow_currency = 19;
+}
+
+message CreateBankDetailResponse {
+    string bank_detail_id = 1;
+}
+
+message UpdateBankDetailRequest {
+    BankDetail bank_detail = 1;
+}
+
+message UpdateBankDetailResponse {}
+
+message GetBankDetailByIDRequest {
+    string bank_detail_id = 1;
+}
+
+message GetBankDetailByIDResponse {
+    BankDetail bank_detail = 1;
+}
+
+message DeleteBankDetailRequest {
+    string bank_detail_id = 1;
+}
+
+message DeleteBankDetailResponse {}
+
+message GetBankDetailsByTraderIDRequest {
+    string trader_id = 1;
+    int64 page = 2;
+    int64 limit = 3;
+    string sort_by = 4;
+    string sort_order = 5;
+    OrderFilters filters = 6;
+}
+
+message GetBankDetailsByTraderIDResponse {
+    repeated BankDetail bank_details = 1;
+    Pagination pagination = 2;
 }

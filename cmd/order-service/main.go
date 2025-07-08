@@ -14,6 +14,7 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
@@ -35,11 +36,11 @@ func main() {
 	disputeKafkaPublisher := kafka.NewKafkaPublisher([]string{"localhost:9092"}, "dispute-events")
 
 	// Init order repo
-	orderRepo := postgres.NewDefaultOrderRepository(db)
+	orderRepo := repository.NewDefaultOrderRepository(db)
 	// Init bank detail repo
-	bankDetailRepo := postgres.NewDefaultBankDetailRepo(db)
+	bankDetailRepo := repository.NewDefaultBankDetailRepo(db)
 	// Init traffic repo
-	trafficRepo := postgres.NewDefaultTrafficRepository(db)
+	trafficRepo := repository.NewDefaultTrafficRepository(db)
 
 	// Init banking client
 	bankingAddr := fmt.Sprintf("%s:%s", cfg.BankingService.Host, cfg.BankingService.Port)

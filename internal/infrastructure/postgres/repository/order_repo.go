@@ -1,4 +1,4 @@
-package postgres
+package repository
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -19,7 +20,7 @@ func NewDefaultOrderRepository(db *gorm.DB) *DefaultOrderRepository {
 }
 
 func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error) {
-	orderModel := OrderModel{
+	orderModel := models.OrderModel{
 		ID: uuid.New().String(),
 		MerchantID: order.MerchantID,
 		AmountFiat: order.AmountFiat,
@@ -49,7 +50,7 @@ func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error
 }
 
 func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, error) {
-	var order OrderModel
+	var order models.OrderModel
 	if err := r.DB.Preload("BankDetail").First(&order, "id = ?", orderID).Error; err != nil {
 		return nil, err
 	}
@@ -97,7 +98,7 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 }
 
 func (r *DefaultOrderRepository) UpdateOrderStatus(orderID string, newStatus domain.OrderStatus) error {
-	updatedOrderModel := OrderModel{
+	updatedOrderModel := models.OrderModel{
 		ID: orderID,
 		Status: newStatus,
 	}
@@ -115,7 +116,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(
 	sortBy, sortOrder string,
 	filters domain.OrderFilters,
 ) ([]*domain.Order, int64, error) {
-	var orderModels []OrderModel
+	var orderModels []models.OrderModel
 	var total int64
 	
 	safeSortBy := "order_models.created_at"
@@ -134,7 +135,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(
 	}
 
     // Базовый запрос с JOIN
-    baseQuery := r.DB.Model(&OrderModel{}).
+    baseQuery := r.DB.Model(&models.OrderModel{}).
         Preload("BankDetail").
         Joins("JOIN bank_detail_models ON order_models.bank_details_id = bank_detail_models.id").
         Where("bank_detail_models.trader_id = ?", traderID)
@@ -225,7 +226,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(
 }
 
 func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
-	var orderModels []OrderModel
+	var orderModels []models.OrderModel
 	if err := r.DB.Preload("BankDetail").
 		Where("status = ?", domain.StatusCreated).
 		Where("expires_at < ?", time.Now()).
@@ -279,7 +280,7 @@ func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
 }
 
 func (r *DefaultOrderRepository) GetOrdersByBankDetailID(bankDetailID string) ([]*domain.Order, error) {
-	var orderModels []OrderModel
+	var orderModels []models.OrderModel
 	if err := r.DB.
 		Preload("BankDetail").
 		Where("bank_details_id = ?", bankDetailID).
@@ -336,8 +337,8 @@ func (r *DefaultOrderRepository) GetOrdersByBankDetailID(bankDetailID string) ([
 }
 
 func (r *DefaultOrderRepository) GetCreatedOrdersByClientID(clientID string) ([]*domain.Order, error) {
-	var orderModels []OrderModel
-	if err := r.DB.Model(&OrderModel{}).Preload("BankDetail").Where("client_id = ? AND status = ?", clientID, domain.StatusCreated).Find(&orderModels).Error; err != nil {
+	var orderModels []models.OrderModel
+	if err := r.DB.Model(&models.OrderModel{}).Preload("BankDetail").Where("client_id = ? AND status = ?", clientID, domain.StatusCreated).Find(&orderModels).Error; err != nil {
 		return nil, err
 	}
 

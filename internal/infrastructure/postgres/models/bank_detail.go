@@ -1,4 +1,4 @@
-package postgres
+package models
 
 import "time"
 
@@ -6,7 +6,8 @@ type BankDetailModel struct {
 	ID 						string	`gorm:"primaryKey;type:uuid"`
 	TraderID 				string	`gorm:"type:uuid;not null"`
 	Country 				string	
-	Currency 				string	
+	Currency 				string
+	InflowCurrency 			string
 	MinAmount 				float32
 	MaxAmount 				float32
 	BankName 				string
@@ -21,4 +22,7 @@ type BankDetailModel struct {
 	MaxAmountMonth			int32
 	MaxQuantityDay			int32
 	MaxQuantityMonth		int32
+	DeviceID				string
+	CreatedAt				time.Time
+	UpdatedAt 				time.Time
 }

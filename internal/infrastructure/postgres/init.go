@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/LavaJover/shvark-order-service/internal/config"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -15,7 +16,7 @@ func MustInitDB(cfg *config.OrderConfig) *gorm.DB {
 		log.Fatalf("failed to init db: %v\n", err.Error())
 	}
 
-	db.AutoMigrate(&TrafficModel{}, &BankDetailModel{}, &OrderModel{}, &DisputeModel{})
+	db.AutoMigrate(&models.TrafficModel{}, &models.BankDetailModel{}, &models.OrderModel{}, &models.DisputeModel{})
 
 	return db
 }
