@@ -32,7 +32,7 @@ func (h *HTTPWalletHandler) Freeze(traderID, orderID string, amount float64) err
 		return err
 	}
 
-	response, err := http.Post(fmt.Sprintf("%s/wallets/freeze", h.Address), "application/json", bytes.NewBuffer(requestBodyBytes))
+	response, err := http.Post(fmt.Sprintf("http://%s/wallets/freeze", h.Address), "application/json", bytes.NewBuffer(requestBodyBytes))
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (h *HTTPWalletHandler) Release(traderID, merchantID, orderID string, reward
 		return err
 	}
 
-	response, err := http.Post(fmt.Sprintf("%s/wallets/release", h.Address), "application/json", bytes.NewBuffer(requestBodyBytes))
+	response, err := http.Post(fmt.Sprintf("http://%s/wallets/release", h.Address), "application/json", bytes.NewBuffer(requestBodyBytes))
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (h *HTTPWalletHandler) Release(traderID, merchantID, orderID string, reward
 }
 
 func (h *HTTPWalletHandler) GetTraderBalance(traderID string) (float64, error) {
-	response, err := http.Get(fmt.Sprintf("%s/wallets/%s/balance", h.Address, traderID))
+	response, err := http.Get(fmt.Sprintf("http://%s/wallets/%s/balance", h.Address, traderID))
 	if err != nil {
 		return 0, err
 	}

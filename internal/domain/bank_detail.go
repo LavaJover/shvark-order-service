@@ -50,6 +50,7 @@ type BankDetailRepository interface {
 		page, limit int,
 		sortBy, sortOrder string,
 	) ([]*BankDetail, int64, error)
+	FindSuitableBankDetails(order *Order) ([]*BankDetail, error)
 }
 
 type BankDetailUsecase interface {
@@ -62,4 +63,5 @@ type BankDetailUsecase interface {
 		page, limit int,
 		sortBy, sortOrder string,
 	) ([]*BankDetail, int64, error)
+	FindSuitableBankDetails(order *Order) ([]*BankDetail, error)
 }

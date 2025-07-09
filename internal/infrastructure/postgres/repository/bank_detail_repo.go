@@ -226,3 +226,46 @@ func (r *DefaultBankDetailRepo) GetBankDetailsByTraderID(
 
 	return bankDetails, total, nil
 }
+
+func (r *DefaultBankDetailRepo) FindSuitableBankDetails(order *domain.Order) ([]*domain.BankDetail, error) {
+	var candidates []models.BankDetailModel
+
+	if err := r.DB.
+		Where("enabled = ?", true).
+		Where("min_amount <= ? AND max_amount >= ?", order.AmountFiat, order.AmountFiat).
+		Where("payment_system = ?", order.PaymentSystem).
+		Where("currency = ?", order.Currency).
+		Find(&candidates).Error; err != nil {
+		return nil, err
+	}
+
+	bankDetails := make([]*domain.BankDetail, len(candidates))
+	for i, bankDetail := range candidates {
+		bankDetails[i] = &domain.BankDetail{
+			ID: bankDetail.ID,
+			TraderID: bankDetail.TraderID,
+			Country: bankDetail.Country,
+			Currency: bankDetail.Currency,
+			InflowCurrency: bankDetail.InflowCurrency,
+			MinAmount: bankDetail.MinAmount,
+			MaxAmount: bankDetail.MaxAmount,
+			BankName: bankDetail.BankName,
+			PaymentSystem: bankDetail.PaymentSystem,
+			Delay: bankDetail.Delay,
+			Enabled: bankDetail.Enabled,
+			CardNumber: bankDetail.CardNumber,
+			Phone: bankDetail.Phone,
+			Owner: bankDetail.Owner,
+			MaxOrdersSimultaneosly: bankDetail.MaxOrdersSimultaneosly,
+			MaxAmountDay: bankDetail.MaxAmountDay,
+			MaxAmountMonth: bankDetail.MaxAmountMonth,
+			MaxQuantityDay: bankDetail.MaxQuantityDay,
+			MaxQuantityMonth: bankDetail.MaxQuantityMonth,
+			DeviceID: bankDetail.DeviceID,
+			CreatedAt: bankDetail.CreatedAt,
+			UpdatedAt: bankDetail.UpdatedAt,
+		}
+	}
+
+	return bankDetails, nil
+}

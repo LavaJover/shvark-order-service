@@ -8,7 +8,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/LavaJover/shvark-order-service/internal/client"
 	"github.com/LavaJover/shvark-order-service/internal/config"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
@@ -43,11 +42,6 @@ func main() {
 	trafficRepo := repository.NewDefaultTrafficRepository(db)
 
 	// Init banking client
-	bankingAddr := fmt.Sprintf("%s:%s", cfg.BankingService.Host, cfg.BankingService.Port)
-	bankingClient, err := client.NewbankingClient(bankingAddr)
-	if err != nil {
-		log.Fatalf("failed to init banking client: %v\n", err)
-	}
 
 	// Init wallet handler
 	httpWalletHandler, err := handlers.NewHTTPWalletHandler(fmt.Sprintf("%s:%s", cfg.WalletService.Host, cfg.WalletService.Port))
@@ -57,10 +51,10 @@ func main() {
 
 	// Init traffic usecase
 	trafficUsecase := usecase.NewDefaultTrafficUsecase(trafficRepo)
-	// Init order usecase
-	uc := usecase.NewDefaultOrderUsecase(orderRepo, bankDetailRepo, bankingClient, httpWalletHandler, trafficUsecase, orderKafkaPublisher)
 	// Init bank detail usecase
 	bankDetailUsecase := usecase.NewDefaultBankDetailUsecase(bankDetailRepo)
+	// Init order usecase
+	uc := usecase.NewDefaultOrderUsecase(orderRepo, httpWalletHandler, trafficUsecase, bankDetailUsecase, orderKafkaPublisher)
 
 	// dispute
 	disputeRepo := repository.NewDefaultDisputeRepository(db)

@@ -37,3 +37,7 @@ func (uc *DefaultBankDetailUsecase) GetBankDetailsByTraderID(traderID string, pa
 		sortOrder,
 	)
 }
+
+func (uc *DefaultBankDetailUsecase) FindSuitableBankDetails(order *domain.Order) ([]*domain.BankDetail, error) {
+	return uc.bankDetailRepo.FindSuitableBankDetails(order)
+}

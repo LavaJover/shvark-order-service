@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/LavaJover/shvark-order-service/internal/client"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
@@ -19,29 +18,25 @@ import (
 )
 
 type DefaultOrderUsecase struct {
-	OrderRepo 		domain.OrderRepository
-	BankDetailRepo 	domain.BankDetailRepository
-	BankingClient   *client.BankingClient
-	WalletHandler   *handlers.HTTPWalletHandler
-	TrafficUsecase  domain.TrafficUsecase
-
-	Publisher 		*kafka.KafkaPublisher
+	OrderRepo 			domain.OrderRepository
+	WalletHandler   	*handlers.HTTPWalletHandler
+	TrafficUsecase  	domain.TrafficUsecase
+	BankDetailUsecase 	domain.BankDetailUsecase
+	Publisher 			*kafka.KafkaPublisher
 }
 
 func NewDefaultOrderUsecase(
 	orderRepo domain.OrderRepository, 
-	bankDetailRepo domain.BankDetailRepository, 
-	bankingClient *client.BankingClient,
 	walletHandler *handlers.HTTPWalletHandler,
 	trafficUsecase domain.TrafficUsecase,
+	bankDetailUsecase domain.BankDetailUsecase,
 	kafkaPublisher *kafka.KafkaPublisher) *DefaultOrderUsecase {
 
 	return &DefaultOrderUsecase{
 		OrderRepo: orderRepo,
-		BankDetailRepo: bankDetailRepo,
-		BankingClient: bankingClient,
 		WalletHandler: walletHandler,
 		TrafficUsecase: trafficUsecase,
+		BankDetailUsecase: bankDetailUsecase,
 		Publisher: kafkaPublisher,
 	}
 }
@@ -296,38 +291,13 @@ func (uc *DefaultOrderUsecase)FilterByEqualAmountFiat(bankDetails []*domain.Bank
 	return result, nil
 }
 
-func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, query *domain.BankDetailQuery) ([]*domain.BankDetail, error) {
-	eligibleBankDetailsResponse, err := uc.BankingClient.GetEligibleBankDetails(query)
+func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order) ([]*domain.BankDetail, error) {
+	bankDetails, err := uc.BankDetailUsecase.FindSuitableBankDetails(order)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(eligibleBankDetailsResponse.BankDetails) == 0{
-		return nil, domain.ErrNoAvailableBankDetails
-	}
-
-	bankDetails := make([]*domain.BankDetail, len(eligibleBankDetailsResponse.BankDetails))
-	for i, bankDetail := range eligibleBankDetailsResponse.BankDetails {
-		bankDetails[i] = &domain.BankDetail{
-			ID: bankDetail.BankDetailId,
-			TraderID: bankDetail.TraderId,
-			Country: bankDetail.Country,
-			Currency: bankDetail.Currency,
-			MinAmount: float32(bankDetail.MinAmount),
-			MaxAmount: float32(bankDetail.MaxAmount),
-			BankName: bankDetail.BankName,
-			PaymentSystem: bankDetail.PaymentSystem,
-			Delay: bankDetail.Delay.AsDuration(),
-			Enabled: bankDetail.Enabled,
-			CardNumber: bankDetail.CardNumber,
-			Phone: bankDetail.Phone,
-			Owner: bankDetail.Owner,
-			MaxOrdersSimultaneosly: bankDetail.MaxOrdersSimultaneosly,
-			MaxAmountDay: int32(bankDetail.MaxAmountDay),
-			MaxAmountMonth: int32(bankDetail.MaxAmountMonth),
-			MaxQuantityDay: int32(bankDetail.MaxQuantityDay),
-			MaxQuantityMonth: int32(bankDetail.MaxQuantityMonth),
-		}
+	if len(bankDetails) == 0 {
+		log.Printf("Отсеились по статическим параметрам\n")
 	}
 
 	// 0) Filter by Traffic
@@ -335,11 +305,17 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 	if err != nil {
 		return nil, err
 	}
+	if len(bankDetails) == 0 {
+		log.Printf("Отсеились по трафику\n")
+	}
 
 	// 1) Filter by Trader Available balances
 	bankDetails, err = uc.FilterByTraderBalance(bankDetails, order.AmountCrypto)
 	if err != nil {
 		return nil, err
+	}
+	if len(bankDetails) == 0 {
+		log.Printf("Отсеились по балансу трейдеров\n")
 	}
 
 	// 2) Filter by MaxOrdersSimultaneosly
@@ -347,31 +323,49 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order, quer
 	if err != nil {
 		return nil, err
 	}
+	if len(bankDetails) == 0 {
+		log.Printf("Отсеились по одновременным сделкам\n")
+	}
 	// 3) Filter by MaxAmountDay
 	bankDetails, err = uc.FilterByMaxAmountDay(bankDetails, order.AmountFiat)
 	if err != nil {
 		return nil, err
+	}
+	if len(bankDetails) == 0 {
+		log.Printf("Отсеились по сумме в день\n")
 	}
 	// 4) Filter by MaxAmountMonth
 	bankDetails, err = uc.FilterByMaxAmountMonth(bankDetails, order.AmountFiat)
 	if err != nil {
 		return nil, err
 	}
+	if len(bankDetails) == 0 {
+		log.Printf("Отсеились по сумме в месяц\n")
+	}
 	// 5) Filter by delay
 	bankDetails, err = uc.FilterByDelay(bankDetails)
 	if err != nil {
 		return nil, err
+	}
+	if len(bankDetails) == 0 {
+		log.Printf("Отсеились по задержке\n")
 	}
 	// 6) Filter by MaxQuantityDay
 	bankDetails, err = uc.FilterByMaxQuantityDay(bankDetails)
 	if err != nil {
 		return nil, err
 	}
+	if len(bankDetails) == 0 {
+		log.Printf("Отсеились по количеству в день\n")
+	}
 
 	// 7) Filter by MaxQuantityMonth
 	bankDetails, err = uc.FilterByMaxQuantityMonth(bankDetails)
 	if err != nil {
 		return nil, err
+	}
+	if len(bankDetails) == 0 {
+		log.Printf("Отсеились по количеству в месяц\n")
 	}
 
 	// 8) Filter by active order with equal amount fiat
@@ -413,15 +407,7 @@ func (uc *DefaultOrderUsecase) CheckIdempotency(clientID string) error {
 }
 
 func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, error) {
-	// find eligible bank details
-	query := domain.BankDetailQuery{
-		Amount: float32(order.AmountFiat),
-		Currency: order.Currency,
-		PaymentSystem: order.PaymentSystem,
-		Country: order.Country,
-	}
-
-		// USD RATE
+	// USD/RUB RATE
 	amountCrypto := float64(order.AmountFiat / usdt.UsdtRubRates)
 	order.AmountCrypto = amountCrypto
 	order.CryptoRubRate = usdt.UsdtRubRates
@@ -432,23 +418,23 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	}
 
 	// searching for eligible bank details due to order query parameters
-	bankDetails, err := uc.FindEligibleBankDetails(order, &query)
+	bankDetails, err := uc.FindEligibleBankDetails(order)
 	if err != nil {
-		return nil, status.Error(codes.NotFound, "no eligible bank detail")
+		return nil, status.Error(codes.NotFound, "no eligible bank detail" + err.Error())
 	}
+	if len(bankDetails) != 0 {
+		log.Printf("Реквизиты для заявки %s не найдены!\n", order.ID)
+	}
+	log.Printf("Для заявки %s найдены доступные реквизиты!\n", order.ID)
 
 	// business logic to pick best bank detail
 	chosenBankDetail, err := uc.PickBestBankDetail(bankDetails, order.MerchantID)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "failed to pick best bank detail gor order: %s", order.ID)
+		return nil, status.Errorf(codes.NotFound, "failed to pick best bank detail for order: %s", order.ID)
 	}
 
 	// relate found bank detail and order
 	order.BankDetailsID = chosenBankDetail.ID
-	//Save bank detail relevant to order
-	if err := uc.BankDetailRepo.SaveBankDetail(chosenBankDetail); err != nil {
-		return nil, err
-	}
 
 	// Get trader reward percent and save to order
 	traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(chosenBankDetail.TraderID, order.MerchantID)
