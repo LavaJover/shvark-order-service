@@ -3019,8 +3019,8 @@ func (*DeleteBankDetailResponse) Descriptor() ([]byte, []int) {
 type GetBankDetailsByTraderIDRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TraderId      string                 `protobuf:"bytes,1,opt,name=trader_id,json=traderId,proto3" json:"trader_id,omitempty"`
-	Page          int64                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
-	Limit         int64                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
 	SortBy        string                 `protobuf:"bytes,4,opt,name=sort_by,json=sortBy,proto3" json:"sort_by,omitempty"`
 	SortOrder     string                 `protobuf:"bytes,5,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
 	Filters       *OrderFilters          `protobuf:"bytes,6,opt,name=filters,proto3" json:"filters,omitempty"`
@@ -3065,14 +3065,14 @@ func (x *GetBankDetailsByTraderIDRequest) GetTraderId() string {
 	return ""
 }
 
-func (x *GetBankDetailsByTraderIDRequest) GetPage() int64 {
+func (x *GetBankDetailsByTraderIDRequest) GetPage() int32 {
 	if x != nil {
 		return x.Page
 	}
 	return 0
 }
 
-func (x *GetBankDetailsByTraderIDRequest) GetLimit() int64 {
+func (x *GetBankDetailsByTraderIDRequest) GetLimit() int32 {
 	if x != nil {
 		return x.Limit
 	}
@@ -3387,8 +3387,8 @@ const file_order_proto_rawDesc = "" +
 	"\x18DeleteBankDetailResponse\"\xcf\x01\n" +
 	"\x1fGetBankDetailsByTraderIDRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\x12\x12\n" +
-	"\x04page\x18\x02 \x01(\x03R\x04page\x12\x14\n" +
-	"\x05limit\x18\x03 \x01(\x03R\x05limit\x12\x17\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x17\n" +
 	"\asort_by\x18\x04 \x01(\tR\x06sortBy\x12\x1d\n" +
 	"\n" +
 	"sort_order\x18\x05 \x01(\tR\tsortOrder\x12-\n" +

@@ -53,7 +53,6 @@ type BankDetailRepository interface {
 }
 
 type BankDetailUsecase interface {
-	SaveBankDetail(bankDetail *BankDetail) error
 	CreateBankDetail(bankDetail *BankDetail) (string, error)
 	UpdateBankDetail(bankDetail *BankDetail) error
 	DeleteBankDetail(bankDetailID string) error

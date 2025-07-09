@@ -77,7 +77,7 @@ func (r *DefaultBankDetailRepo) CreateBankDetail(bankDetail *domain.BankDetail) 
 
 func (r *DefaultBankDetailRepo) UpdateBankDetail(bankDetail *domain.BankDetail) error {
 	bankDetailModel := &models.BankDetailModel{
-		ID: uuid.New().String(),
+		ID: bankDetail.ID,
 		TraderID: bankDetail.TraderID,
 		Country: bankDetail.Country,
 		Currency: bankDetail.Currency,
@@ -99,7 +99,18 @@ func (r *DefaultBankDetailRepo) UpdateBankDetail(bankDetail *domain.BankDetail) 
 		DeviceID: bankDetail.DeviceID,
 	}
 
-	return r.DB.Updates(bankDetailModel).Error
+	if err := r.DB.Model(&models.BankDetailModel{}).Where("id = ?", bankDetailModel.ID).Updates(bankDetailModel).Error; err != nil {
+		return err
+	}
+
+	if err := r.DB.Model(&models.BankDetailModel{}).Where("id = ?", bankDetailModel.ID).Updates(map[string]interface{}{
+		"enabled": bankDetail.Enabled,
+		"delay": bankDetail.Delay,
+	}).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *DefaultBankDetailRepo) DeleteBankDetail(bankDetailID string) error {
@@ -156,6 +167,14 @@ func (r *DefaultBankDetailRepo) GetBankDetailsByTraderID(
 
 	if sortOrder != "asc" && sortOrder != "desc" {
 		sortOrder = "desc"
+	}
+
+	if page < 1 {
+		page = 1
+	}
+
+	if limit < 1 {
+		limit = 1
 	}
 
 	offset := (page - 1) * limit
