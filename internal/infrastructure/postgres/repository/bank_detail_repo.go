@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
@@ -268,4 +269,52 @@ func (r *DefaultBankDetailRepo) FindSuitableBankDetails(order *domain.Order) ([]
 	}
 
 	return bankDetails, nil
+}
+
+func (r *DefaultBankDetailRepo) GetBankDetailsStatsByTraderID(traderID string) ([]*domain.BankDetailStat, error) {
+	var bankDetails []models.BankDetailModel
+
+	if err := r.DB.Where("trader_id = ? AND deleted_at IS NULL", traderID).Find(&bankDetails).Error; err != nil {
+		return nil, err
+	}
+
+	today := time.Now().Truncate(24 * time.Hour)
+	monthStart := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, today.Location())
+
+	stats := make([]*domain.BankDetailStat, 0, len(bankDetails))
+
+	for _, bd := range bankDetails {
+		var dayCount, monthCount int64
+		var daySum, monthSum float64
+
+		// Кол-во и сумма заявок за сегодня
+		_ = r.DB.Model(&models.OrderModel{}).
+			Where("bank_details_id = ? AND status IN (?) AND created_at >= ?", bd.ID, []string{string(domain.StatusSucceed), string(domain.StatusCreated)}, today).
+			Count(&dayCount).Error
+
+		_ = r.DB.Model(&models.OrderModel{}).
+			Select("COALESCE(SUM(amount_fiat), 0)").
+			Where("bank_details_id = ? AND status IN (?) AND created_at >= ?", bd.ID, []string{string(domain.StatusSucceed), string(domain.StatusCreated)}, today).
+			Scan(&daySum).Error
+
+		// Кол-во и сумма заявок за месяц
+		_ = r.DB.Model(&models.OrderModel{}).
+			Where("bank_details_id = ? AND status IN (?) AND created_at >= ?", bd.ID, []string{string(domain.StatusSucceed), string(domain.StatusCreated)}, monthStart).
+			Count(&monthCount).Error
+
+		_ = r.DB.Model(&models.OrderModel{}).
+			Select("COALESCE(SUM(amount_fiat), 0)").
+			Where("bank_details_id = ? AND status IN (?) AND created_at >= ?", bd.ID, []string{string(domain.StatusSucceed), string(domain.StatusCreated)}, monthStart).
+			Scan(&monthSum).Error
+
+		stats = append(stats, &domain.BankDetailStat{
+			BankDetailID:      bd.ID,
+			CurrentCountToday: int(dayCount),
+			CurrentCountMonth: int(monthCount),
+			CurrentAmountToday: daySum,
+			CurrentAmountMonth: monthSum,
+		})
+	}
+
+	return stats, nil
 }

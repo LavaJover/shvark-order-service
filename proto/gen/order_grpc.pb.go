@@ -869,11 +869,12 @@ var TrafficService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	BankDetailService_CreateBankDetail_FullMethodName         = "/order.BankDetailService/CreateBankDetail"
-	BankDetailService_UpdateBankDetail_FullMethodName         = "/order.BankDetailService/UpdateBankDetail"
-	BankDetailService_DeleteBankDetail_FullMethodName         = "/order.BankDetailService/DeleteBankDetail"
-	BankDetailService_GetBankDetailByID_FullMethodName        = "/order.BankDetailService/GetBankDetailByID"
-	BankDetailService_GetBankDetailsByTraderID_FullMethodName = "/order.BankDetailService/GetBankDetailsByTraderID"
+	BankDetailService_CreateBankDetail_FullMethodName              = "/order.BankDetailService/CreateBankDetail"
+	BankDetailService_UpdateBankDetail_FullMethodName              = "/order.BankDetailService/UpdateBankDetail"
+	BankDetailService_DeleteBankDetail_FullMethodName              = "/order.BankDetailService/DeleteBankDetail"
+	BankDetailService_GetBankDetailByID_FullMethodName             = "/order.BankDetailService/GetBankDetailByID"
+	BankDetailService_GetBankDetailsByTraderID_FullMethodName      = "/order.BankDetailService/GetBankDetailsByTraderID"
+	BankDetailService_GetBankDetailsStatsByTraderID_FullMethodName = "/order.BankDetailService/GetBankDetailsStatsByTraderID"
 )
 
 // BankDetailServiceClient is the client API for BankDetailService service.
@@ -885,6 +886,7 @@ type BankDetailServiceClient interface {
 	DeleteBankDetail(ctx context.Context, in *DeleteBankDetailRequest, opts ...grpc.CallOption) (*DeleteBankDetailResponse, error)
 	GetBankDetailByID(ctx context.Context, in *GetBankDetailByIDRequest, opts ...grpc.CallOption) (*GetBankDetailByIDResponse, error)
 	GetBankDetailsByTraderID(ctx context.Context, in *GetBankDetailsByTraderIDRequest, opts ...grpc.CallOption) (*GetBankDetailsByTraderIDResponse, error)
+	GetBankDetailsStatsByTraderID(ctx context.Context, in *GetBankDetailsStatsByTraderIDRequest, opts ...grpc.CallOption) (*GetBankDetailsStatsByTraderIDResponse, error)
 }
 
 type bankDetailServiceClient struct {
@@ -945,6 +947,16 @@ func (c *bankDetailServiceClient) GetBankDetailsByTraderID(ctx context.Context, 
 	return out, nil
 }
 
+func (c *bankDetailServiceClient) GetBankDetailsStatsByTraderID(ctx context.Context, in *GetBankDetailsStatsByTraderIDRequest, opts ...grpc.CallOption) (*GetBankDetailsStatsByTraderIDResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetBankDetailsStatsByTraderIDResponse)
+	err := c.cc.Invoke(ctx, BankDetailService_GetBankDetailsStatsByTraderID_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BankDetailServiceServer is the server API for BankDetailService service.
 // All implementations must embed UnimplementedBankDetailServiceServer
 // for forward compatibility.
@@ -954,6 +966,7 @@ type BankDetailServiceServer interface {
 	DeleteBankDetail(context.Context, *DeleteBankDetailRequest) (*DeleteBankDetailResponse, error)
 	GetBankDetailByID(context.Context, *GetBankDetailByIDRequest) (*GetBankDetailByIDResponse, error)
 	GetBankDetailsByTraderID(context.Context, *GetBankDetailsByTraderIDRequest) (*GetBankDetailsByTraderIDResponse, error)
+	GetBankDetailsStatsByTraderID(context.Context, *GetBankDetailsStatsByTraderIDRequest) (*GetBankDetailsStatsByTraderIDResponse, error)
 	mustEmbedUnimplementedBankDetailServiceServer()
 }
 
@@ -978,6 +991,9 @@ func (UnimplementedBankDetailServiceServer) GetBankDetailByID(context.Context, *
 }
 func (UnimplementedBankDetailServiceServer) GetBankDetailsByTraderID(context.Context, *GetBankDetailsByTraderIDRequest) (*GetBankDetailsByTraderIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBankDetailsByTraderID not implemented")
+}
+func (UnimplementedBankDetailServiceServer) GetBankDetailsStatsByTraderID(context.Context, *GetBankDetailsStatsByTraderIDRequest) (*GetBankDetailsStatsByTraderIDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBankDetailsStatsByTraderID not implemented")
 }
 func (UnimplementedBankDetailServiceServer) mustEmbedUnimplementedBankDetailServiceServer() {}
 func (UnimplementedBankDetailServiceServer) testEmbeddedByValue()                           {}
@@ -1090,6 +1106,24 @@ func _BankDetailService_GetBankDetailsByTraderID_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BankDetailService_GetBankDetailsStatsByTraderID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBankDetailsStatsByTraderIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BankDetailServiceServer).GetBankDetailsStatsByTraderID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BankDetailService_GetBankDetailsStatsByTraderID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BankDetailServiceServer).GetBankDetailsStatsByTraderID(ctx, req.(*GetBankDetailsStatsByTraderIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BankDetailService_ServiceDesc is the grpc.ServiceDesc for BankDetailService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1116,6 +1150,10 @@ var BankDetailService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetBankDetailsByTraderID",
 			Handler:    _BankDetailService_GetBankDetailsByTraderID_Handler,
+		},
+		{
+			MethodName: "GetBankDetailsStatsByTraderID",
+			Handler:    _BankDetailService_GetBankDetailsStatsByTraderID_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

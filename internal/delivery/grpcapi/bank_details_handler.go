@@ -180,3 +180,25 @@ func (h *BankDetailHandler) GetBankDetailsByTraderID(ctx context.Context, r *ord
 	}, nil
 
 }
+
+func (h *BankDetailHandler) GetBankDetailsStatsByTraderID(ctx context.Context, r *orderpb.GetBankDetailsStatsByTraderIDRequest) (*orderpb.GetBankDetailsStatsByTraderIDResponse, error) {
+	traderID := r.TraderId
+	response, err := h.bankDetailUsecase.GetBankDetailsStatsByTraderID(traderID)
+	if err != nil {
+		return nil, err
+	}
+	bankDetailsStats := make([]*orderpb.BankDetailStat, len(response))
+	for i, bankDetailStat := range response {
+		bankDetailsStats[i] = &orderpb.BankDetailStat{
+			BankDetailId: bankDetailStat.BankDetailID,
+			CurrentCountToday: int32(bankDetailStat.CurrentCountToday),
+			CurrentCountMonth: int32(bankDetailStat.CurrentCountMonth),
+			CurrentAmountToday: bankDetailStat.CurrentAmountToday,
+			CurrentAmountMonth: bankDetailStat.CurrentAmountMonth,
+		}
+	}
+
+	return &orderpb.GetBankDetailsStatsByTraderIDResponse{
+		BankDetailStat: bankDetailsStats,
+	}, nil
+}

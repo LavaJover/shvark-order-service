@@ -3152,6 +3152,170 @@ func (x *GetBankDetailsByTraderIDResponse) GetPagination() *Pagination {
 	return nil
 }
 
+type BankDetailStat struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	BankDetailId       string                 `protobuf:"bytes,1,opt,name=bank_detail_id,json=bankDetailId,proto3" json:"bank_detail_id,omitempty"`
+	CurrentCountToday  int32                  `protobuf:"varint,2,opt,name=current_count_today,json=currentCountToday,proto3" json:"current_count_today,omitempty"`
+	CurrentCountMonth  int32                  `protobuf:"varint,3,opt,name=current_count_month,json=currentCountMonth,proto3" json:"current_count_month,omitempty"`
+	CurrentAmountToday float64                `protobuf:"fixed64,4,opt,name=current_amount_today,json=currentAmountToday,proto3" json:"current_amount_today,omitempty"`
+	CurrentAmountMonth float64                `protobuf:"fixed64,5,opt,name=current_amount_month,json=currentAmountMonth,proto3" json:"current_amount_month,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *BankDetailStat) Reset() {
+	*x = BankDetailStat{}
+	mi := &file_order_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BankDetailStat) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BankDetailStat) ProtoMessage() {}
+
+func (x *BankDetailStat) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BankDetailStat.ProtoReflect.Descriptor instead.
+func (*BankDetailStat) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *BankDetailStat) GetBankDetailId() string {
+	if x != nil {
+		return x.BankDetailId
+	}
+	return ""
+}
+
+func (x *BankDetailStat) GetCurrentCountToday() int32 {
+	if x != nil {
+		return x.CurrentCountToday
+	}
+	return 0
+}
+
+func (x *BankDetailStat) GetCurrentCountMonth() int32 {
+	if x != nil {
+		return x.CurrentCountMonth
+	}
+	return 0
+}
+
+func (x *BankDetailStat) GetCurrentAmountToday() float64 {
+	if x != nil {
+		return x.CurrentAmountToday
+	}
+	return 0
+}
+
+func (x *BankDetailStat) GetCurrentAmountMonth() float64 {
+	if x != nil {
+		return x.CurrentAmountMonth
+	}
+	return 0
+}
+
+type GetBankDetailsStatsByTraderIDRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TraderId      string                 `protobuf:"bytes,1,opt,name=trader_id,json=traderId,proto3" json:"trader_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetBankDetailsStatsByTraderIDRequest) Reset() {
+	*x = GetBankDetailsStatsByTraderIDRequest{}
+	mi := &file_order_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetBankDetailsStatsByTraderIDRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetBankDetailsStatsByTraderIDRequest) ProtoMessage() {}
+
+func (x *GetBankDetailsStatsByTraderIDRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetBankDetailsStatsByTraderIDRequest.ProtoReflect.Descriptor instead.
+func (*GetBankDetailsStatsByTraderIDRequest) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *GetBankDetailsStatsByTraderIDRequest) GetTraderId() string {
+	if x != nil {
+		return x.TraderId
+	}
+	return ""
+}
+
+type GetBankDetailsStatsByTraderIDResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	BankDetailStat []*BankDetailStat      `protobuf:"bytes,1,rep,name=bank_detail_stat,json=bankDetailStat,proto3" json:"bank_detail_stat,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetBankDetailsStatsByTraderIDResponse) Reset() {
+	*x = GetBankDetailsStatsByTraderIDResponse{}
+	mi := &file_order_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetBankDetailsStatsByTraderIDResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetBankDetailsStatsByTraderIDResponse) ProtoMessage() {}
+
+func (x *GetBankDetailsStatsByTraderIDResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetBankDetailsStatsByTraderIDResponse.ProtoReflect.Descriptor instead.
+func (*GetBankDetailsStatsByTraderIDResponse) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{56}
+}
+
+func (x *GetBankDetailsStatsByTraderIDResponse) GetBankDetailStat() []*BankDetailStat {
+	if x != nil {
+		return x.BankDetailStat
+	}
+	return nil
+}
+
 var File_order_proto protoreflect.FileDescriptor
 
 const file_order_proto_rawDesc = "" +
@@ -3397,7 +3561,17 @@ const file_order_proto_rawDesc = "" +
 	"\fbank_details\x18\x01 \x03(\v2\x11.order.BankDetailR\vbankDetails\x121\n" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2\x11.order.PaginationR\n" +
-	"pagination2\x87\b\n" +
+	"pagination\"\xfa\x01\n" +
+	"\x0eBankDetailStat\x12$\n" +
+	"\x0ebank_detail_id\x18\x01 \x01(\tR\fbankDetailId\x12.\n" +
+	"\x13current_count_today\x18\x02 \x01(\x05R\x11currentCountToday\x12.\n" +
+	"\x13current_count_month\x18\x03 \x01(\x05R\x11currentCountMonth\x120\n" +
+	"\x14current_amount_today\x18\x04 \x01(\x01R\x12currentAmountToday\x120\n" +
+	"\x14current_amount_month\x18\x05 \x01(\x01R\x12currentAmountMonth\"C\n" +
+	"$GetBankDetailsStatsByTraderIDRequest\x12\x1b\n" +
+	"\ttrader_id\x18\x01 \x01(\tR\btraderId\"h\n" +
+	"%GetBankDetailsStatsByTraderIDResponse\x12?\n" +
+	"\x10bank_detail_stat\x18\x01 \x03(\v2\x15.order.BankDetailStatR\x0ebankDetailStat2\x87\b\n" +
 	"\fOrderService\x12D\n" +
 	"\vCreateOrder\x12\x19.order.CreateOrderRequest\x1a\x1a.order.CreateOrderResponse\x12G\n" +
 	"\fApproveOrder\x12\x1a.order.ApproveOrderRequest\x1a\x1b.order.ApproveOrderResponse\x12D\n" +
@@ -3419,13 +3593,14 @@ const file_order_proto_rawDesc = "" +
 	"\x11GetTrafficRecords\x12\x1f.order.GetTrafficRecordsRequest\x1a .order.GetTrafficRecordsResponse\x12_\n" +
 	"\x14DisableTraderTraffic\x12\".order.DisableTraderTrafficRequest\x1a#.order.DisableTraderTrafficResponse\x12\\\n" +
 	"\x13EnableTraderTraffic\x12!.order.EnableTraderTrafficRequest\x1a\".order.EnableTraderTrafficResponse\x12e\n" +
-	"\x16GetTraderTrafficStatus\x12$.order.GetTraderTrafficStatusRequest\x1a%.order.GetTraderTrafficStatusResponse2\xd7\x03\n" +
+	"\x16GetTraderTrafficStatus\x12$.order.GetTraderTrafficStatusRequest\x1a%.order.GetTraderTrafficStatusResponse2\xd3\x04\n" +
 	"\x11BankDetailService\x12S\n" +
 	"\x10CreateBankDetail\x12\x1e.order.CreateBankDetailRequest\x1a\x1f.order.CreateBankDetailResponse\x12S\n" +
 	"\x10UpdateBankDetail\x12\x1e.order.UpdateBankDetailRequest\x1a\x1f.order.UpdateBankDetailResponse\x12S\n" +
 	"\x10DeleteBankDetail\x12\x1e.order.DeleteBankDetailRequest\x1a\x1f.order.DeleteBankDetailResponse\x12V\n" +
 	"\x11GetBankDetailByID\x12\x1f.order.GetBankDetailByIDRequest\x1a .order.GetBankDetailByIDResponse\x12k\n" +
-	"\x18GetBankDetailsByTraderID\x12&.order.GetBankDetailsByTraderIDRequest\x1a'.order.GetBankDetailsByTraderIDResponseB=Z;github.com/LavaJover/shvark-order-service/proto/gen;orderpbb\x06proto3"
+	"\x18GetBankDetailsByTraderID\x12&.order.GetBankDetailsByTraderIDRequest\x1a'.order.GetBankDetailsByTraderIDResponse\x12z\n" +
+	"\x1dGetBankDetailsStatsByTraderID\x12+.order.GetBankDetailsStatsByTraderIDRequest\x1a,.order.GetBankDetailsStatsByTraderIDResponseB=Z;github.com/LavaJover/shvark-order-service/proto/gen;orderpbb\x06proto3"
 
 var (
 	file_order_proto_rawDescOnce sync.Once
@@ -3439,142 +3614,148 @@ func file_order_proto_rawDescGZIP() []byte {
 	return file_order_proto_rawDescData
 }
 
-var file_order_proto_msgTypes = make([]protoimpl.MessageInfo, 54)
+var file_order_proto_msgTypes = make([]protoimpl.MessageInfo, 57)
 var file_order_proto_goTypes = []any{
-	(*FreezeOrderDisputeRequest)(nil),        // 0: order.FreezeOrderDisputeRequest
-	(*FreezeOrderDisputeResponse)(nil),       // 1: order.FreezeOrderDisputeResponse
-	(*CreateOrderDisputeRequest)(nil),        // 2: order.CreateOrderDisputeRequest
-	(*CreateOrderDisputeResponse)(nil),       // 3: order.CreateOrderDisputeResponse
-	(*OrderDispute)(nil),                     // 4: order.OrderDispute
-	(*AcceptOrderDisputeRequest)(nil),        // 5: order.AcceptOrderDisputeRequest
-	(*AcceptOrderDisputeResponse)(nil),       // 6: order.AcceptOrderDisputeResponse
-	(*RejectOrderDisputeRequest)(nil),        // 7: order.RejectOrderDisputeRequest
-	(*RejectOrderDisputeResponse)(nil),       // 8: order.RejectOrderDisputeResponse
-	(*GetOrderDisputeInfoRequest)(nil),       // 9: order.GetOrderDisputeInfoRequest
-	(*GetOrderDisputeInfoResponse)(nil),      // 10: order.GetOrderDisputeInfoResponse
-	(*OrderFilters)(nil),                     // 11: order.OrderFilters
-	(*Pagination)(nil),                       // 12: order.Pagination
-	(*CreateOrderRequest)(nil),               // 13: order.CreateOrderRequest
-	(*CreateOrderResponse)(nil),              // 14: order.CreateOrderResponse
-	(*ApproveOrderRequest)(nil),              // 15: order.ApproveOrderRequest
-	(*ApproveOrderResponse)(nil),             // 16: order.ApproveOrderResponse
-	(*CancelOrderRequest)(nil),               // 17: order.CancelOrderRequest
-	(*CancelOrderResponse)(nil),              // 18: order.CancelOrderResponse
-	(*GetOrderByIDRequest)(nil),              // 19: order.GetOrderByIDRequest
-	(*GetOrderByIDResponse)(nil),             // 20: order.GetOrderByIDResponse
-	(*Order)(nil),                            // 21: order.Order
-	(*GetOrdersByTraderIDRequest)(nil),       // 22: order.GetOrdersByTraderIDRequest
-	(*GetOrdersByTraderIDResponse)(nil),      // 23: order.GetOrdersByTraderIDResponse
-	(*OpenOrderDisputeRequest)(nil),          // 24: order.OpenOrderDisputeRequest
-	(*OpenOrderDisputeResponse)(nil),         // 25: order.OpenOrderDisputeResponse
-	(*ResolveOrderDisputeRequest)(nil),       // 26: order.ResolveOrderDisputeRequest
-	(*ResolveOrderDisputeResponse)(nil),      // 27: order.ResolveOrderDisputeResponse
-	(*AddTrafficRequest)(nil),                // 28: order.AddTrafficRequest
-	(*Traffic)(nil),                          // 29: order.Traffic
-	(*AddTrafficResponse)(nil),               // 30: order.AddTrafficResponse
-	(*EditTrafficRequest)(nil),               // 31: order.EditTrafficRequest
-	(*EditTrafficResponse)(nil),              // 32: order.EditTrafficResponse
-	(*DeleteTrafficRequest)(nil),             // 33: order.DeleteTrafficRequest
-	(*DeleteTrafficResponse)(nil),            // 34: order.DeleteTrafficResponse
-	(*GetTrafficRecordsRequest)(nil),         // 35: order.GetTrafficRecordsRequest
-	(*GetTrafficRecordsResponse)(nil),        // 36: order.GetTrafficRecordsResponse
-	(*DisableTraderTrafficRequest)(nil),      // 37: order.DisableTraderTrafficRequest
-	(*DisableTraderTrafficResponse)(nil),     // 38: order.DisableTraderTrafficResponse
-	(*EnableTraderTrafficRequest)(nil),       // 39: order.EnableTraderTrafficRequest
-	(*EnableTraderTrafficResponse)(nil),      // 40: order.EnableTraderTrafficResponse
-	(*GetTraderTrafficStatusRequest)(nil),    // 41: order.GetTraderTrafficStatusRequest
-	(*GetTraderTrafficStatusResponse)(nil),   // 42: order.GetTraderTrafficStatusResponse
-	(*BankDetail)(nil),                       // 43: order.BankDetail
-	(*CreateBankDetailRequest)(nil),          // 44: order.CreateBankDetailRequest
-	(*CreateBankDetailResponse)(nil),         // 45: order.CreateBankDetailResponse
-	(*UpdateBankDetailRequest)(nil),          // 46: order.UpdateBankDetailRequest
-	(*UpdateBankDetailResponse)(nil),         // 47: order.UpdateBankDetailResponse
-	(*GetBankDetailByIDRequest)(nil),         // 48: order.GetBankDetailByIDRequest
-	(*GetBankDetailByIDResponse)(nil),        // 49: order.GetBankDetailByIDResponse
-	(*DeleteBankDetailRequest)(nil),          // 50: order.DeleteBankDetailRequest
-	(*DeleteBankDetailResponse)(nil),         // 51: order.DeleteBankDetailResponse
-	(*GetBankDetailsByTraderIDRequest)(nil),  // 52: order.GetBankDetailsByTraderIDRequest
-	(*GetBankDetailsByTraderIDResponse)(nil), // 53: order.GetBankDetailsByTraderIDResponse
-	(*durationpb.Duration)(nil),              // 54: google.protobuf.Duration
-	(*timestamppb.Timestamp)(nil),            // 55: google.protobuf.Timestamp
+	(*FreezeOrderDisputeRequest)(nil),             // 0: order.FreezeOrderDisputeRequest
+	(*FreezeOrderDisputeResponse)(nil),            // 1: order.FreezeOrderDisputeResponse
+	(*CreateOrderDisputeRequest)(nil),             // 2: order.CreateOrderDisputeRequest
+	(*CreateOrderDisputeResponse)(nil),            // 3: order.CreateOrderDisputeResponse
+	(*OrderDispute)(nil),                          // 4: order.OrderDispute
+	(*AcceptOrderDisputeRequest)(nil),             // 5: order.AcceptOrderDisputeRequest
+	(*AcceptOrderDisputeResponse)(nil),            // 6: order.AcceptOrderDisputeResponse
+	(*RejectOrderDisputeRequest)(nil),             // 7: order.RejectOrderDisputeRequest
+	(*RejectOrderDisputeResponse)(nil),            // 8: order.RejectOrderDisputeResponse
+	(*GetOrderDisputeInfoRequest)(nil),            // 9: order.GetOrderDisputeInfoRequest
+	(*GetOrderDisputeInfoResponse)(nil),           // 10: order.GetOrderDisputeInfoResponse
+	(*OrderFilters)(nil),                          // 11: order.OrderFilters
+	(*Pagination)(nil),                            // 12: order.Pagination
+	(*CreateOrderRequest)(nil),                    // 13: order.CreateOrderRequest
+	(*CreateOrderResponse)(nil),                   // 14: order.CreateOrderResponse
+	(*ApproveOrderRequest)(nil),                   // 15: order.ApproveOrderRequest
+	(*ApproveOrderResponse)(nil),                  // 16: order.ApproveOrderResponse
+	(*CancelOrderRequest)(nil),                    // 17: order.CancelOrderRequest
+	(*CancelOrderResponse)(nil),                   // 18: order.CancelOrderResponse
+	(*GetOrderByIDRequest)(nil),                   // 19: order.GetOrderByIDRequest
+	(*GetOrderByIDResponse)(nil),                  // 20: order.GetOrderByIDResponse
+	(*Order)(nil),                                 // 21: order.Order
+	(*GetOrdersByTraderIDRequest)(nil),            // 22: order.GetOrdersByTraderIDRequest
+	(*GetOrdersByTraderIDResponse)(nil),           // 23: order.GetOrdersByTraderIDResponse
+	(*OpenOrderDisputeRequest)(nil),               // 24: order.OpenOrderDisputeRequest
+	(*OpenOrderDisputeResponse)(nil),              // 25: order.OpenOrderDisputeResponse
+	(*ResolveOrderDisputeRequest)(nil),            // 26: order.ResolveOrderDisputeRequest
+	(*ResolveOrderDisputeResponse)(nil),           // 27: order.ResolveOrderDisputeResponse
+	(*AddTrafficRequest)(nil),                     // 28: order.AddTrafficRequest
+	(*Traffic)(nil),                               // 29: order.Traffic
+	(*AddTrafficResponse)(nil),                    // 30: order.AddTrafficResponse
+	(*EditTrafficRequest)(nil),                    // 31: order.EditTrafficRequest
+	(*EditTrafficResponse)(nil),                   // 32: order.EditTrafficResponse
+	(*DeleteTrafficRequest)(nil),                  // 33: order.DeleteTrafficRequest
+	(*DeleteTrafficResponse)(nil),                 // 34: order.DeleteTrafficResponse
+	(*GetTrafficRecordsRequest)(nil),              // 35: order.GetTrafficRecordsRequest
+	(*GetTrafficRecordsResponse)(nil),             // 36: order.GetTrafficRecordsResponse
+	(*DisableTraderTrafficRequest)(nil),           // 37: order.DisableTraderTrafficRequest
+	(*DisableTraderTrafficResponse)(nil),          // 38: order.DisableTraderTrafficResponse
+	(*EnableTraderTrafficRequest)(nil),            // 39: order.EnableTraderTrafficRequest
+	(*EnableTraderTrafficResponse)(nil),           // 40: order.EnableTraderTrafficResponse
+	(*GetTraderTrafficStatusRequest)(nil),         // 41: order.GetTraderTrafficStatusRequest
+	(*GetTraderTrafficStatusResponse)(nil),        // 42: order.GetTraderTrafficStatusResponse
+	(*BankDetail)(nil),                            // 43: order.BankDetail
+	(*CreateBankDetailRequest)(nil),               // 44: order.CreateBankDetailRequest
+	(*CreateBankDetailResponse)(nil),              // 45: order.CreateBankDetailResponse
+	(*UpdateBankDetailRequest)(nil),               // 46: order.UpdateBankDetailRequest
+	(*UpdateBankDetailResponse)(nil),              // 47: order.UpdateBankDetailResponse
+	(*GetBankDetailByIDRequest)(nil),              // 48: order.GetBankDetailByIDRequest
+	(*GetBankDetailByIDResponse)(nil),             // 49: order.GetBankDetailByIDResponse
+	(*DeleteBankDetailRequest)(nil),               // 50: order.DeleteBankDetailRequest
+	(*DeleteBankDetailResponse)(nil),              // 51: order.DeleteBankDetailResponse
+	(*GetBankDetailsByTraderIDRequest)(nil),       // 52: order.GetBankDetailsByTraderIDRequest
+	(*GetBankDetailsByTraderIDResponse)(nil),      // 53: order.GetBankDetailsByTraderIDResponse
+	(*BankDetailStat)(nil),                        // 54: order.BankDetailStat
+	(*GetBankDetailsStatsByTraderIDRequest)(nil),  // 55: order.GetBankDetailsStatsByTraderIDRequest
+	(*GetBankDetailsStatsByTraderIDResponse)(nil), // 56: order.GetBankDetailsStatsByTraderIDResponse
+	(*durationpb.Duration)(nil),                   // 57: google.protobuf.Duration
+	(*timestamppb.Timestamp)(nil),                 // 58: google.protobuf.Timestamp
 }
 var file_order_proto_depIdxs = []int32{
-	54, // 0: order.CreateOrderDisputeRequest.ttl:type_name -> google.protobuf.Duration
+	57, // 0: order.CreateOrderDisputeRequest.ttl:type_name -> google.protobuf.Duration
 	4,  // 1: order.GetOrderDisputeInfoResponse.dispute:type_name -> order.OrderDispute
-	55, // 2: order.OrderFilters.date_from:type_name -> google.protobuf.Timestamp
-	55, // 3: order.OrderFilters.date_to:type_name -> google.protobuf.Timestamp
-	55, // 4: order.CreateOrderRequest.expires_at:type_name -> google.protobuf.Timestamp
+	58, // 2: order.OrderFilters.date_from:type_name -> google.protobuf.Timestamp
+	58, // 3: order.OrderFilters.date_to:type_name -> google.protobuf.Timestamp
+	58, // 4: order.CreateOrderRequest.expires_at:type_name -> google.protobuf.Timestamp
 	21, // 5: order.CreateOrderResponse.order:type_name -> order.Order
 	21, // 6: order.GetOrderByIDResponse.order:type_name -> order.Order
 	43, // 7: order.Order.bank_detail:type_name -> order.BankDetail
-	55, // 8: order.Order.expires_at:type_name -> google.protobuf.Timestamp
-	55, // 9: order.Order.created_at:type_name -> google.protobuf.Timestamp
-	55, // 10: order.Order.updated_at:type_name -> google.protobuf.Timestamp
+	58, // 8: order.Order.expires_at:type_name -> google.protobuf.Timestamp
+	58, // 9: order.Order.created_at:type_name -> google.protobuf.Timestamp
+	58, // 10: order.Order.updated_at:type_name -> google.protobuf.Timestamp
 	11, // 11: order.GetOrdersByTraderIDRequest.filters:type_name -> order.OrderFilters
 	21, // 12: order.GetOrdersByTraderIDResponse.orders:type_name -> order.Order
 	12, // 13: order.GetOrdersByTraderIDResponse.pagination:type_name -> order.Pagination
 	29, // 14: order.EditTrafficRequest.traffic:type_name -> order.Traffic
 	29, // 15: order.GetTrafficRecordsResponse.traffic_records:type_name -> order.Traffic
-	54, // 16: order.BankDetail.delay:type_name -> google.protobuf.Duration
-	54, // 17: order.CreateBankDetailRequest.delay:type_name -> google.protobuf.Duration
+	57, // 16: order.BankDetail.delay:type_name -> google.protobuf.Duration
+	57, // 17: order.CreateBankDetailRequest.delay:type_name -> google.protobuf.Duration
 	43, // 18: order.UpdateBankDetailRequest.bank_detail:type_name -> order.BankDetail
 	43, // 19: order.GetBankDetailByIDResponse.bank_detail:type_name -> order.BankDetail
 	11, // 20: order.GetBankDetailsByTraderIDRequest.filters:type_name -> order.OrderFilters
 	43, // 21: order.GetBankDetailsByTraderIDResponse.bank_details:type_name -> order.BankDetail
 	12, // 22: order.GetBankDetailsByTraderIDResponse.pagination:type_name -> order.Pagination
-	13, // 23: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
-	15, // 24: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
-	17, // 25: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
-	24, // 26: order.OrderService.OpenOrderDispute:input_type -> order.OpenOrderDisputeRequest
-	26, // 27: order.OrderService.ResolveOrderDispute:input_type -> order.ResolveOrderDisputeRequest
-	19, // 28: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
-	22, // 29: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
-	2,  // 30: order.OrderService.CreateOrderDispute:input_type -> order.CreateOrderDisputeRequest
-	5,  // 31: order.OrderService.AcceptOrderDispute:input_type -> order.AcceptOrderDisputeRequest
-	7,  // 32: order.OrderService.RejectOrderDispute:input_type -> order.RejectOrderDisputeRequest
-	9,  // 33: order.OrderService.GetOrderDisputeInfo:input_type -> order.GetOrderDisputeInfoRequest
-	0,  // 34: order.OrderService.FreezeOrderDispute:input_type -> order.FreezeOrderDisputeRequest
-	28, // 35: order.TrafficService.AddTraffic:input_type -> order.AddTrafficRequest
-	31, // 36: order.TrafficService.EditTraffic:input_type -> order.EditTrafficRequest
-	33, // 37: order.TrafficService.DeleteTraffic:input_type -> order.DeleteTrafficRequest
-	35, // 38: order.TrafficService.GetTrafficRecords:input_type -> order.GetTrafficRecordsRequest
-	37, // 39: order.TrafficService.DisableTraderTraffic:input_type -> order.DisableTraderTrafficRequest
-	39, // 40: order.TrafficService.EnableTraderTraffic:input_type -> order.EnableTraderTrafficRequest
-	41, // 41: order.TrafficService.GetTraderTrafficStatus:input_type -> order.GetTraderTrafficStatusRequest
-	44, // 42: order.BankDetailService.CreateBankDetail:input_type -> order.CreateBankDetailRequest
-	46, // 43: order.BankDetailService.UpdateBankDetail:input_type -> order.UpdateBankDetailRequest
-	50, // 44: order.BankDetailService.DeleteBankDetail:input_type -> order.DeleteBankDetailRequest
-	48, // 45: order.BankDetailService.GetBankDetailByID:input_type -> order.GetBankDetailByIDRequest
-	52, // 46: order.BankDetailService.GetBankDetailsByTraderID:input_type -> order.GetBankDetailsByTraderIDRequest
-	14, // 47: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
-	16, // 48: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
-	18, // 49: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
-	25, // 50: order.OrderService.OpenOrderDispute:output_type -> order.OpenOrderDisputeResponse
-	27, // 51: order.OrderService.ResolveOrderDispute:output_type -> order.ResolveOrderDisputeResponse
-	20, // 52: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
-	23, // 53: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
-	3,  // 54: order.OrderService.CreateOrderDispute:output_type -> order.CreateOrderDisputeResponse
-	6,  // 55: order.OrderService.AcceptOrderDispute:output_type -> order.AcceptOrderDisputeResponse
-	8,  // 56: order.OrderService.RejectOrderDispute:output_type -> order.RejectOrderDisputeResponse
-	10, // 57: order.OrderService.GetOrderDisputeInfo:output_type -> order.GetOrderDisputeInfoResponse
-	1,  // 58: order.OrderService.FreezeOrderDispute:output_type -> order.FreezeOrderDisputeResponse
-	30, // 59: order.TrafficService.AddTraffic:output_type -> order.AddTrafficResponse
-	32, // 60: order.TrafficService.EditTraffic:output_type -> order.EditTrafficResponse
-	34, // 61: order.TrafficService.DeleteTraffic:output_type -> order.DeleteTrafficResponse
-	36, // 62: order.TrafficService.GetTrafficRecords:output_type -> order.GetTrafficRecordsResponse
-	38, // 63: order.TrafficService.DisableTraderTraffic:output_type -> order.DisableTraderTrafficResponse
-	40, // 64: order.TrafficService.EnableTraderTraffic:output_type -> order.EnableTraderTrafficResponse
-	42, // 65: order.TrafficService.GetTraderTrafficStatus:output_type -> order.GetTraderTrafficStatusResponse
-	45, // 66: order.BankDetailService.CreateBankDetail:output_type -> order.CreateBankDetailResponse
-	47, // 67: order.BankDetailService.UpdateBankDetail:output_type -> order.UpdateBankDetailResponse
-	51, // 68: order.BankDetailService.DeleteBankDetail:output_type -> order.DeleteBankDetailResponse
-	49, // 69: order.BankDetailService.GetBankDetailByID:output_type -> order.GetBankDetailByIDResponse
-	53, // 70: order.BankDetailService.GetBankDetailsByTraderID:output_type -> order.GetBankDetailsByTraderIDResponse
-	47, // [47:71] is the sub-list for method output_type
-	23, // [23:47] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	54, // 23: order.GetBankDetailsStatsByTraderIDResponse.bank_detail_stat:type_name -> order.BankDetailStat
+	13, // 24: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
+	15, // 25: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
+	17, // 26: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
+	24, // 27: order.OrderService.OpenOrderDispute:input_type -> order.OpenOrderDisputeRequest
+	26, // 28: order.OrderService.ResolveOrderDispute:input_type -> order.ResolveOrderDisputeRequest
+	19, // 29: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
+	22, // 30: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
+	2,  // 31: order.OrderService.CreateOrderDispute:input_type -> order.CreateOrderDisputeRequest
+	5,  // 32: order.OrderService.AcceptOrderDispute:input_type -> order.AcceptOrderDisputeRequest
+	7,  // 33: order.OrderService.RejectOrderDispute:input_type -> order.RejectOrderDisputeRequest
+	9,  // 34: order.OrderService.GetOrderDisputeInfo:input_type -> order.GetOrderDisputeInfoRequest
+	0,  // 35: order.OrderService.FreezeOrderDispute:input_type -> order.FreezeOrderDisputeRequest
+	28, // 36: order.TrafficService.AddTraffic:input_type -> order.AddTrafficRequest
+	31, // 37: order.TrafficService.EditTraffic:input_type -> order.EditTrafficRequest
+	33, // 38: order.TrafficService.DeleteTraffic:input_type -> order.DeleteTrafficRequest
+	35, // 39: order.TrafficService.GetTrafficRecords:input_type -> order.GetTrafficRecordsRequest
+	37, // 40: order.TrafficService.DisableTraderTraffic:input_type -> order.DisableTraderTrafficRequest
+	39, // 41: order.TrafficService.EnableTraderTraffic:input_type -> order.EnableTraderTrafficRequest
+	41, // 42: order.TrafficService.GetTraderTrafficStatus:input_type -> order.GetTraderTrafficStatusRequest
+	44, // 43: order.BankDetailService.CreateBankDetail:input_type -> order.CreateBankDetailRequest
+	46, // 44: order.BankDetailService.UpdateBankDetail:input_type -> order.UpdateBankDetailRequest
+	50, // 45: order.BankDetailService.DeleteBankDetail:input_type -> order.DeleteBankDetailRequest
+	48, // 46: order.BankDetailService.GetBankDetailByID:input_type -> order.GetBankDetailByIDRequest
+	52, // 47: order.BankDetailService.GetBankDetailsByTraderID:input_type -> order.GetBankDetailsByTraderIDRequest
+	55, // 48: order.BankDetailService.GetBankDetailsStatsByTraderID:input_type -> order.GetBankDetailsStatsByTraderIDRequest
+	14, // 49: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
+	16, // 50: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
+	18, // 51: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
+	25, // 52: order.OrderService.OpenOrderDispute:output_type -> order.OpenOrderDisputeResponse
+	27, // 53: order.OrderService.ResolveOrderDispute:output_type -> order.ResolveOrderDisputeResponse
+	20, // 54: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
+	23, // 55: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
+	3,  // 56: order.OrderService.CreateOrderDispute:output_type -> order.CreateOrderDisputeResponse
+	6,  // 57: order.OrderService.AcceptOrderDispute:output_type -> order.AcceptOrderDisputeResponse
+	8,  // 58: order.OrderService.RejectOrderDispute:output_type -> order.RejectOrderDisputeResponse
+	10, // 59: order.OrderService.GetOrderDisputeInfo:output_type -> order.GetOrderDisputeInfoResponse
+	1,  // 60: order.OrderService.FreezeOrderDispute:output_type -> order.FreezeOrderDisputeResponse
+	30, // 61: order.TrafficService.AddTraffic:output_type -> order.AddTrafficResponse
+	32, // 62: order.TrafficService.EditTraffic:output_type -> order.EditTrafficResponse
+	34, // 63: order.TrafficService.DeleteTraffic:output_type -> order.DeleteTrafficResponse
+	36, // 64: order.TrafficService.GetTrafficRecords:output_type -> order.GetTrafficRecordsResponse
+	38, // 65: order.TrafficService.DisableTraderTraffic:output_type -> order.DisableTraderTrafficResponse
+	40, // 66: order.TrafficService.EnableTraderTraffic:output_type -> order.EnableTraderTrafficResponse
+	42, // 67: order.TrafficService.GetTraderTrafficStatus:output_type -> order.GetTraderTrafficStatusResponse
+	45, // 68: order.BankDetailService.CreateBankDetail:output_type -> order.CreateBankDetailResponse
+	47, // 69: order.BankDetailService.UpdateBankDetail:output_type -> order.UpdateBankDetailResponse
+	51, // 70: order.BankDetailService.DeleteBankDetail:output_type -> order.DeleteBankDetailResponse
+	49, // 71: order.BankDetailService.GetBankDetailByID:output_type -> order.GetBankDetailByIDResponse
+	53, // 72: order.BankDetailService.GetBankDetailsByTraderID:output_type -> order.GetBankDetailsByTraderIDResponse
+	56, // 73: order.BankDetailService.GetBankDetailsStatsByTraderID:output_type -> order.GetBankDetailsStatsByTraderIDResponse
+	49, // [49:74] is the sub-list for method output_type
+	24, // [24:49] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_order_proto_init() }
@@ -3588,7 +3769,7 @@ func file_order_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_order_proto_rawDesc), len(file_order_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   54,
+			NumMessages:   57,
 			NumExtensions: 0,
 			NumServices:   3,
 		},

@@ -34,6 +34,14 @@ type BankDetailQuery struct {
 	Country 		string
 }
 
+type BankDetailStat struct {
+	BankDetailID   	   string  
+	CurrentCountToday  int     
+	CurrentCountMonth  int     
+	CurrentAmountToday float64
+	CurrentAmountMonth float64
+}
+
 type BankDetailFilters struct {
 	DateFrom time.Time	`form:"date_from"`
 	DateTo 	 time.Time	`form:"date_to"`
@@ -51,6 +59,7 @@ type BankDetailRepository interface {
 		sortBy, sortOrder string,
 	) ([]*BankDetail, int64, error)
 	FindSuitableBankDetails(order *Order) ([]*BankDetail, error)
+	GetBankDetailsStatsByTraderID(traderID string) ([]*BankDetailStat, error)
 }
 
 type BankDetailUsecase interface {
@@ -64,4 +73,5 @@ type BankDetailUsecase interface {
 		sortBy, sortOrder string,
 	) ([]*BankDetail, int64, error)
 	FindSuitableBankDetails(order *Order) ([]*BankDetail, error)
+	GetBankDetailsStatsByTraderID(traderID string) ([]*BankDetailStat, error)
 }
