@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type BankDetailModel struct {
 	ID 						string	`gorm:"primaryKey;type:uuid"`
@@ -25,4 +29,5 @@ type BankDetailModel struct {
 	DeviceID				string
 	CreatedAt				time.Time
 	UpdatedAt 				time.Time
+	DeletedAt 				gorm.DeletedAt `gorm:"index"`
 }

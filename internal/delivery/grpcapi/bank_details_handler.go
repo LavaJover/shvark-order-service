@@ -132,6 +132,12 @@ func (h *BankDetailHandler) GetBankDetailByID(ctx context.Context, r *orderpb.Ge
 
 func (h *BankDetailHandler) GetBankDetailsByTraderID(ctx context.Context, r *orderpb.GetBankDetailsByTraderIDRequest) (*orderpb.GetBankDetailsByTraderIDResponse, error) {
 	traderID, page, limit, sortBy, sortOrder := r.TraderId, r.Page, r.Limit, r.SortBy, r.SortOrder
+	if page == 0 {
+		page = 1
+	}
+	if limit == 0 {
+		limit = 1000
+	}
 	bankDetails, total, err := h.bankDetailUsecase.GetBankDetailsByTraderID(traderID, int(page), int(limit), sortBy, sortOrder)
 	if err != nil {
 		return nil, err
