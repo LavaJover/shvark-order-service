@@ -4,13 +4,19 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
+
+	"github.com/LavaJover/shvark-order-service/internal/domain"
 )
 
 func SendCallback(
 	callbackUrl, 
 	internalID, 
 	status string,
+	reconciliationSum,
+	reconciliationAmount,
+	reconciliationRate float64,
 	) {
 	go func() {
 		// Парсим базовый URL
@@ -20,9 +26,25 @@ func SendCallback(
 			return
 		}
 
+		switch status{
+		case string(domain.StatusSucceed):
+			status = "COMPLETED"
+		case string(domain.StatusCanceled):
+			status = "CANCELED"
+		case string(domain.StatusDisputeCreated):
+			status = "DISPUTE"
+		case string(domain.StatusCreated):
+			status = "PENDING"
+		}
+
 		query := parsedURL.Query()
 		query.Set("id", internalID)
 		query.Set("status", status)
+		if reconciliationSum != 0 && reconciliationAmount != 0 && reconciliationRate != 0 {
+			query.Set("reconciliationSum", strconv.FormatFloat(reconciliationSum, 'f', 6, 64))
+			query.Set("reconciliationAmount", strconv.FormatFloat(reconciliationAmount, 'f', 6, 64))
+			query.Set("reconciliationRate", strconv.FormatFloat(reconciliationRate, 'f', 6, 64))
+		}
 		parsedURL.RawQuery = query.Encode()
 
 		client := &http.Client{
