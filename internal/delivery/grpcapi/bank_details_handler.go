@@ -40,6 +40,8 @@ func (h *BankDetailHandler) CreateBankDetail(ctx context.Context, r *orderpb.Cre
 		MaxQuantityDay: int32(r.MaxQuantityDay),
 		MaxQuantityMonth: int32(r.MaxQuantityMonth),
 		DeviceID: r.DeviceId,
+		BankCode: r.BankCode,
+		NspkCode: r.NspkCode,
 	}
 
 	bankDetailID, err := h.bankDetailUsecase.CreateBankDetail(&bankDetail)
@@ -76,6 +78,8 @@ func (h *BankDetailHandler) UpdateBankDetail(ctx context.Context, r *orderpb.Upd
 		MaxQuantityDay: int32(r.BankDetail.MaxQuantityDay),
 		MaxQuantityMonth: int32(r.BankDetail.MaxQuantityMonth),
 		DeviceID: r.BankDetail.DeviceId,
+		BankCode: r.BankDetail.BankCode,
+		NspkCode: r.BankDetail.NspkCode,
 	}
 	err := h.bankDetailUsecase.UpdateBankDetail(&bankDetail)
 	if err != nil {
@@ -126,6 +130,8 @@ func (h *BankDetailHandler) GetBankDetailByID(ctx context.Context, r *orderpb.Ge
 			MaxQuantityMonth: float64(bankDetail.MaxQuantityMonth),
 			DeviceId: bankDetail.DeviceID,
 			InflowCurrency: bankDetail.InflowCurrency,
+			BankCode: bankDetail.BankCode,
+			NspkCode: bankDetail.NspkCode,
 		},
 	}, nil
 }
@@ -166,6 +172,8 @@ func (h *BankDetailHandler) GetBankDetailsByTraderID(ctx context.Context, r *ord
 			MaxQuantityMonth: float64(bankDetail.MaxQuantityMonth),
 			DeviceId: bankDetail.DeviceID,
 			InflowCurrency: bankDetail.InflowCurrency,
+			BankCode: bankDetail.BankCode,
+			NspkCode: bankDetail.NspkCode,
 		}
 	}
 

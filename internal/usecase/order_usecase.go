@@ -10,8 +10,8 @@ import (
 
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/bitwire/notifier"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/notifier"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -206,11 +206,9 @@ func (uc *DefaultOrderUsecase) FilterByMaxQuantityDay(bankDetails []*domain.Bank
 			if order.Status == domain.StatusCanceled {
 				continue
 			}
-			if order.Status == domain.StatusCreated && time.Since(order.CreatedAt) <= 24*time.Hour {
-				ordersQuantityDay++
-				continue
-			}
-			if time.Since(order.UpdatedAt) <= 24*time.Hour {
+			now := time.Now()
+			startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+			if (order.Status == domain.StatusCreated || order.Status == domain.StatusSucceed) && (order.UpdatedAt.After(startOfToday)) {
 				ordersQuantityDay++
 				continue
 			}
@@ -231,22 +229,20 @@ func (uc *DefaultOrderUsecase) FilterByMaxQuantityMonth(bankDetails []*domain.Ba
 		if err != nil {
 			return nil, err
 		}
-		ordersQuantityDay := 0 
+		ordersQuantityMonth := 0 
 		for _, order := range orders {
 			if order.Status == domain.StatusCanceled {
 				continue
 			}
-			if order.Status == domain.StatusCreated && time.Since(order.CreatedAt) <= 24*30*time.Hour {
-				ordersQuantityDay++
-				continue
-			}
-			if time.Since(order.UpdatedAt) <= 24*30*time.Hour {
-				ordersQuantityDay++
+			now := time.Now()
+			startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+			if (order.Status == domain.StatusCreated || order.Status == domain.StatusSucceed) && (order.UpdatedAt.After(startOfMonth)) {
+				ordersQuantityMonth++
 				continue
 			}
 		}
-		fmt.Printf("Max quantity a day: %d. Current daily quantity: %d\n", bankDetail.MaxQuantityDay, ordersQuantityDay)
-		if ordersQuantityDay + 1 <= int(bankDetail.MaxQuantityDay) {
+		fmt.Printf("Max quantity a month: %d. Current monthly quantity: %d\n", bankDetail.MaxQuantityMonth, ordersQuantityMonth)
+		if ordersQuantityMonth + 1 <= int(bankDetail.MaxQuantityMonth) {
 			result = append(result, bankDetail)
 		}
 	}
@@ -417,8 +413,10 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	order.CryptoRubRate = usdt.UsdtRubRates
 
 	// check idempotency by client_id
-	if err := uc.CheckIdempotency(order.ClientID); err != nil {
-		return nil, err
+	if order.ClientID != "" {
+		if err := uc.CheckIdempotency(order.ClientID); err != nil {
+			return nil, err
+		}
 	}
 
 	// searching for eligible bank details due to order query parameters
@@ -467,6 +465,15 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		Currency: order.Currency,
 	}); err != nil {
 		slog.Error("failed to publish event", "error", err.Error())
+	}
+
+	// send to callback
+	if order.CallbackURL != "" {
+		notifier.SendCallback(
+			order.CallbackURL,
+			order.MerchantOrderID,
+			string(order.Status),
+		)
 	}
 
 	return &domain.Order{
@@ -524,11 +531,10 @@ func (uc *DefaultOrderUsecase) GetOrdersByTraderID(
 ) ([]*domain.Order, int64, error) {
 
 	validStatuses := map[string]bool{
-		"SUCCEED": true,
-		"CANCELED": true,
-		"CREATED": true,
-		"DISPUTE_CREATED": true,
-		"DISPUTE_RESOLVED": true,
+		string(domain.StatusSucceed): true,
+		string(domain.StatusCanceled): true,
+		string(domain.StatusCreated): true,
+		string(domain.StatusDisputeCreated): true,
 	}
 
 	for _, status := range filters.Statuses {
@@ -570,22 +576,13 @@ func (uc *DefaultOrderUsecase) CancelExpiredOrders(ctx context.Context) error {
 		log.Printf("Order %s canceled due to timeout!\n", order.ID)
 		// Вызов callback мерчанта
 		if(order.CallbackURL != ""){
-			notifier.SendCallback(order.CallbackURL, notifier.CallbackPayload{
-				OrderID: order.ID,
-				MerchantOrderID: order.MerchantOrderID,
-				Status: string(domain.StatusCanceled),
-				AmountFiat: order.AmountFiat,
-				AmountCrypto: order.AmountCrypto,
-				Currency: order.Currency,
-				ConfirmedAt: order.UpdatedAt,
-				ClientID: order.ClientID,
-			})
 		} 
 	}
 
 	return nil
 }
 
+/////////////////////DEPRECATED/////////////////////
 func (uc *DefaultOrderUsecase) OpenOrderDispute(orderID string) error {
 	// Find exact order
 	order, err := uc.GetOrderByID(orderID)
@@ -611,22 +608,12 @@ func (uc *DefaultOrderUsecase) OpenOrderDispute(orderID string) error {
 	}
 
 	if(order.CallbackURL != ""){
-		notifier.SendCallback(order.CallbackURL, notifier.CallbackPayload{
-			OrderID: order.ID,
-			MerchantOrderID: order.MerchantOrderID,
-			Status: string(domain.StatusDisputeCreated),
-			AmountFiat: order.AmountFiat,
-			AmountCrypto: order.AmountCrypto,
-			Currency: order.Currency,
-			ConfirmedAt: order.UpdatedAt,
-			ClientID: order.ClientID,
-		})
 	} 
 
 	return nil
 }
 
-// Deprecated
+/////////////////////DEPRECATED/////////////////////
 func (uc *DefaultOrderUsecase) ResolveOrderDispute(orderID string) error {
 	// Find exact order
 	order, err := uc.GetOrderByID(orderID)
@@ -646,21 +633,11 @@ func (uc *DefaultOrderUsecase) ResolveOrderDispute(orderID string) error {
 	}
 
 	// Set order status to DISPUTE_CREATED
-	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusDisputeResolved); err != nil {
+	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusDisputeCreated); err != nil {
 		return err
 	}
 
 	if(order.CallbackURL != ""){
-		notifier.SendCallback(order.CallbackURL, notifier.CallbackPayload{
-			OrderID: order.ID,
-			MerchantOrderID: order.MerchantOrderID,
-			Status: string(domain.StatusDisputeResolved),
-			AmountFiat: order.AmountFiat,
-			AmountCrypto: order.AmountCrypto,
-			Currency: order.Currency,
-			ConfirmedAt: order.UpdatedAt,
-			ClientID: order.ClientID,
-		})
 	} 
 
 	return nil
@@ -699,18 +676,13 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 	}
 
 	// Вызов callback мерчанта
-	if(order.CallbackURL != ""){
-		notifier.SendCallback(order.CallbackURL, notifier.CallbackPayload{
-			OrderID: order.ID,
-			MerchantOrderID: order.MerchantOrderID,
-			Status: string(domain.StatusSucceed),
-			AmountFiat: order.AmountFiat,
-			AmountCrypto: order.AmountCrypto,
-			Currency: order.Currency,
-			ConfirmedAt: order.UpdatedAt,
-			ClientID: order.ClientID,
-		})
-	} 
+	if order.CallbackURL != "" {
+		notifier.SendCallback(
+			order.CallbackURL,
+			order.MerchantOrderID,
+			string(order.Status),
+		)
+	}
 
 	return nil
 }
@@ -746,18 +718,13 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 	}
 
 	// Вызов callback мерчанта
-	if(order.CallbackURL != ""){
-		notifier.SendCallback(order.CallbackURL, notifier.CallbackPayload{
-			OrderID: order.ID,
-			MerchantOrderID: order.MerchantOrderID,
-			Status: string(domain.StatusCanceled),
-			AmountFiat: order.AmountFiat,
-			AmountCrypto: order.AmountCrypto,
-			Currency: order.Currency,
-			ConfirmedAt: order.UpdatedAt,
-			ClientID: order.ClientID,
-		})
-	} 
+	if order.CallbackURL != "" {
+		notifier.SendCallback(
+			order.CallbackURL,
+			order.MerchantOrderID,
+			string(order.Status),
+		)
+	}
 
 	return nil
 }

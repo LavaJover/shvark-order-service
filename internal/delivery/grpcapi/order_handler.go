@@ -41,6 +41,8 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 		Shuffle: r.Shuffle,
 		ExpiresAt: r.ExpiresAt.AsTime(),
 		CallbackURL: r.CallbackUrl,
+		BankCode: r.BankCode,
+		NspkCode: r.NspkCode,
 	}
 	
 	savedOrder, err := h.uc.CreateOrder(&orderRequest)
@@ -73,6 +75,8 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 				MaxQuantityMonth: float64(savedOrder.BankDetail.MaxQuantityMonth),
 				DeviceId: savedOrder.BankDetail.DeviceID,
 				InflowCurrency: savedOrder.BankDetail.InflowCurrency,
+				BankCode: savedOrder.BankDetail.BankCode,
+				NspkCode: savedOrder.BankDetail.NspkCode,
 			},
 			AmountFiat: float64(savedOrder.AmountFiat),
 			AmountCrypto: float64(savedOrder.AmountCrypto),
@@ -128,6 +132,9 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 				Owner: orderResponse.BankDetail.Owner,
 				CardNumber: orderResponse.BankDetail.CardNumber,
 				Phone: orderResponse.BankDetail.Phone,
+				BankCode: orderResponse.BankDetail.BankCode,
+				NspkCode: orderResponse.BankDetail.NspkCode,
+				InflowCurrency: orderResponse.BankDetail.InflowCurrency,
 			},
 			AmountFiat: float64(orderResponse.AmountFiat),
 			AmountCrypto: float64(orderResponse.AmountCrypto),
@@ -207,6 +214,8 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 				Owner: order.BankDetail.Owner,
 				CardNumber: order.BankDetail.CardNumber,
 				Phone: order.BankDetail.Phone,
+				BankCode: order.BankDetail.BankCode,
+				NspkCode: order.BankDetail.NspkCode,
 			},
 			AmountFiat: float64(order.AmountFiat),
 			AmountCrypto: float64(order.AmountCrypto),

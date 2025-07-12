@@ -62,6 +62,7 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(dispute *domain.Dispute) e
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
+	disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.OrderStatus(domain.DisputeOpened))
 	return nil
 }
 
@@ -86,6 +87,7 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
+	disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.StatusSucceed)
 	return nil
 }
 
@@ -106,6 +108,7 @@ func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
+	disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.StatusCanceled)
 	return nil
 }
 

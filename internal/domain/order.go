@@ -9,10 +9,10 @@ type OrderStatus string
 
 const (
 	StatusCreated 		  OrderStatus = "CREATED"
+	StatusFailed 		  OrderStatus = "FAILED"
 	StatusCanceled 		  OrderStatus = "CANCELED"
 	StatusSucceed 		  OrderStatus = "SUCCEED"
 	StatusDisputeCreated  OrderStatus = "DISPUTE_CREATED"
-	StatusDisputeResolved OrderStatus = "DISPUTE_RESOLVED"
 )
 
 type Order struct {
@@ -37,6 +37,8 @@ type Order struct {
 	PlatformFee 		float64
 	Recalculated 		bool
 	CryptoRubRate		float64
+	BankCode 			string
+	NspkCode 			string
 }
 
 type OrderFilters struct {

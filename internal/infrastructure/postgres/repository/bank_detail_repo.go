@@ -38,6 +38,10 @@ func (r *DefaultBankDetailRepo) SaveBankDetail(bankDetail *domain.BankDetail) er
 		MaxAmountMonth: bankDetail.MaxAmountMonth,
 		MaxQuantityDay: bankDetail.MaxQuantityDay,
 		MaxQuantityMonth: bankDetail.MaxQuantityMonth,
+		InflowCurrency: bankDetail.InflowCurrency,
+		BankCode: bankDetail.BankCode,
+		NspkCode: bankDetail.NspkCode,
+		DeviceID: bankDetail.DeviceID,
 	}
 
 	return r.DB.Save(&bankDetailModel).Error
@@ -65,6 +69,8 @@ func (r *DefaultBankDetailRepo) CreateBankDetail(bankDetail *domain.BankDetail) 
 		MaxQuantityDay: bankDetail.MaxQuantityDay,
 		MaxQuantityMonth: bankDetail.MaxAmountMonth,
 		DeviceID: bankDetail.DeviceID,
+		BankCode: bankDetail.BankCode,
+		NspkCode: bankDetail.NspkCode,
 	}
 
 	if err := r.DB.Create(bankDetailModel).Error; err != nil {
@@ -98,6 +104,8 @@ func (r *DefaultBankDetailRepo) UpdateBankDetail(bankDetail *domain.BankDetail) 
 		MaxQuantityMonth: bankDetail.MaxAmountMonth,
 		InflowCurrency: bankDetail.InflowCurrency,
 		DeviceID: bankDetail.DeviceID,
+		BankCode: bankDetail.BankCode,
+		NspkCode: bankDetail.NspkCode,
 	}
 
 	if err := r.DB.Model(&models.BankDetailModel{}).Where("id = ?", bankDetailModel.ID).Updates(bankDetailModel).Error; err != nil {
@@ -144,6 +152,10 @@ func (r *DefaultBankDetailRepo) GetBankDetailByID(bankDetailID string) (*domain.
 		MaxQuantityDay: bankDetailModel.MaxQuantityDay,
 		MaxQuantityMonth: bankDetailModel.MaxQuantityMonth,
 		DeviceID: bankDetailModel.DeviceID,
+		BankCode: bankDetailModel.BankCode,
+		NspkCode: bankDetailModel.NspkCode,
+		CreatedAt: bankDetailModel.CreatedAt,
+		UpdatedAt: bankDetailModel.UpdatedAt,
 	}, nil
 }
 
@@ -220,6 +232,8 @@ func (r *DefaultBankDetailRepo) GetBankDetailsByTraderID(
 			MaxQuantityDay: bankDetailModel.MaxQuantityDay,
 			MaxQuantityMonth: bankDetailModel.MaxQuantityMonth,
 			DeviceID: bankDetailModel.DeviceID,
+			BankCode: bankDetailModel.BankCode,
+			NspkCode: bankDetailModel.NspkCode,
 			CreatedAt: bankDetailModel.CreatedAt,
 			UpdatedAt: bankDetailModel.UpdatedAt,
 		}
@@ -231,12 +245,21 @@ func (r *DefaultBankDetailRepo) GetBankDetailsByTraderID(
 func (r *DefaultBankDetailRepo) FindSuitableBankDetails(order *domain.Order) ([]*domain.BankDetail, error) {
 	var candidates []models.BankDetailModel
 
-	if err := r.DB.
+	query := r.DB.
 		Where("enabled = ?", true).
 		Where("min_amount <= ? AND max_amount >= ?", order.AmountFiat, order.AmountFiat).
 		Where("payment_system = ?", order.PaymentSystem).
-		Where("currency = ?", order.Currency).
-		Find(&candidates).Error; err != nil {
+		Where("currency = ?", order.Currency)
+
+	if order.BankCode != "" {
+		query = query.Where("bank_code = ?", order.BankCode)
+	}
+
+	if order.NspkCode != "" {
+		query = query.Where("nspk_code = ?", order.NspkCode)
+	}
+
+	if err := query.Find(&candidates).Error; err != nil {
 		return nil, err
 	}
 
@@ -263,6 +286,8 @@ func (r *DefaultBankDetailRepo) FindSuitableBankDetails(order *domain.Order) ([]
 			MaxQuantityDay: bankDetail.MaxQuantityDay,
 			MaxQuantityMonth: bankDetail.MaxQuantityMonth,
 			DeviceID: bankDetail.DeviceID,
+			BankCode: bankDetail.BankCode,
+			NspkCode: bankDetail.NspkCode,
 			CreatedAt: bankDetail.CreatedAt,
 			UpdatedAt: bankDetail.UpdatedAt,
 		}

@@ -100,6 +100,8 @@ message CreateOrderRequest {
     string merchant_order_id = 8;
     int32 shuffle = 9;
     string callback_url = 10;
+    string bank_code = 11;
+    string nspk_code = 12;
 }
 
 message CreateOrderResponse {
@@ -288,6 +290,8 @@ message BankDetail {
     double max_quantity_month = 18;
     string device_id = 19;
     string inflow_currency = 20;
+    string bank_code = 21;
+    string nspk_code = 22;
 }
 
 message CreateBankDetailRequest {
@@ -310,6 +314,8 @@ message CreateBankDetailRequest {
     double max_quantity_month = 17;
     string device_id = 18;
     string inflow_currency = 19;
+    string bank_code = 20;
+    string nspk_code = 21;
 }
 
 message CreateBankDetailResponse {

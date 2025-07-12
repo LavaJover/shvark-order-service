@@ -15,6 +15,8 @@ type BankDetailModel struct {
 	MinAmount 				float32
 	MaxAmount 				float32
 	BankName 				string
+	BankCode 				string
+	NspkCode 				string
 	PaymentSystem 			string
 	Delay					time.Duration
 	Enabled 				bool

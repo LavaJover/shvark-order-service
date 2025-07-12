@@ -78,7 +78,7 @@ func main() {
 
 	// Start
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", cfg.GRPCServer.Host, cfg.GRPCServer.Port))
-	if err != nil{
+	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
@@ -96,7 +96,7 @@ func main() {
 
 	// updating crypto-rates
 	go func() {
-		ticker := time.NewTicker(5*time.Minute)
+		ticker := time.NewTicker(5 * time.Minute)
 		for {
 			usdtRate, err := usdt.GET_USDT_RUB_RATES(5)
 			if err != nil {
@@ -121,7 +121,7 @@ func main() {
 	}()
 
 	log.Printf("gRPC server started on %s:%s\n", cfg.GRPCServer.Host, cfg.GRPCServer.Port)
-	if err := grpcServer.Serve(lis); err != nil{
+	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v\n", err)
 	}
 }

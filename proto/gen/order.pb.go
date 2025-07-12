@@ -719,6 +719,8 @@ type CreateOrderRequest struct {
 	MerchantOrderId string                 `protobuf:"bytes,8,opt,name=merchant_order_id,json=merchantOrderId,proto3" json:"merchant_order_id,omitempty"`
 	Shuffle         int32                  `protobuf:"varint,9,opt,name=shuffle,proto3" json:"shuffle,omitempty"`
 	CallbackUrl     string                 `protobuf:"bytes,10,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
+	BankCode        string                 `protobuf:"bytes,11,opt,name=bank_code,json=bankCode,proto3" json:"bank_code,omitempty"`
+	NspkCode        string                 `protobuf:"bytes,12,opt,name=nspk_code,json=nspkCode,proto3" json:"nspk_code,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -819,6 +821,20 @@ func (x *CreateOrderRequest) GetShuffle() int32 {
 func (x *CreateOrderRequest) GetCallbackUrl() string {
 	if x != nil {
 		return x.CallbackUrl
+	}
+	return ""
+}
+
+func (x *CreateOrderRequest) GetBankCode() string {
+	if x != nil {
+		return x.BankCode
+	}
+	return ""
+}
+
+func (x *CreateOrderRequest) GetNspkCode() string {
+	if x != nil {
+		return x.NspkCode
 	}
 	return ""
 }
@@ -2362,6 +2378,8 @@ type BankDetail struct {
 	MaxQuantityMonth       float64                `protobuf:"fixed64,18,opt,name=max_quantity_month,json=maxQuantityMonth,proto3" json:"max_quantity_month,omitempty"`
 	DeviceId               string                 `protobuf:"bytes,19,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
 	InflowCurrency         string                 `protobuf:"bytes,20,opt,name=inflow_currency,json=inflowCurrency,proto3" json:"inflow_currency,omitempty"`
+	BankCode               string                 `protobuf:"bytes,21,opt,name=bank_code,json=bankCode,proto3" json:"bank_code,omitempty"`
+	NspkCode               string                 `protobuf:"bytes,22,opt,name=nspk_code,json=nspkCode,proto3" json:"nspk_code,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -2536,6 +2554,20 @@ func (x *BankDetail) GetInflowCurrency() string {
 	return ""
 }
 
+func (x *BankDetail) GetBankCode() string {
+	if x != nil {
+		return x.BankCode
+	}
+	return ""
+}
+
+func (x *BankDetail) GetNspkCode() string {
+	if x != nil {
+		return x.NspkCode
+	}
+	return ""
+}
+
 type CreateBankDetailRequest struct {
 	state                  protoimpl.MessageState `protogen:"open.v1"`
 	TraderId               string                 `protobuf:"bytes,1,opt,name=trader_id,json=traderId,proto3" json:"trader_id,omitempty"`
@@ -2557,6 +2589,8 @@ type CreateBankDetailRequest struct {
 	MaxQuantityMonth       float64                `protobuf:"fixed64,17,opt,name=max_quantity_month,json=maxQuantityMonth,proto3" json:"max_quantity_month,omitempty"`
 	DeviceId               string                 `protobuf:"bytes,18,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
 	InflowCurrency         string                 `protobuf:"bytes,19,opt,name=inflow_currency,json=inflowCurrency,proto3" json:"inflow_currency,omitempty"`
+	BankCode               string                 `protobuf:"bytes,20,opt,name=bank_code,json=bankCode,proto3" json:"bank_code,omitempty"`
+	NspkCode               string                 `protobuf:"bytes,21,opt,name=nspk_code,json=nspkCode,proto3" json:"nspk_code,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -2720,6 +2754,20 @@ func (x *CreateBankDetailRequest) GetDeviceId() string {
 func (x *CreateBankDetailRequest) GetInflowCurrency() string {
 	if x != nil {
 		return x.InflowCurrency
+	}
+	return ""
+}
+
+func (x *CreateBankDetailRequest) GetBankCode() string {
+	if x != nil {
+		return x.BankCode
+	}
+	return ""
+}
+
+func (x *CreateBankDetailRequest) GetNspkCode() string {
+	if x != nil {
+		return x.NspkCode
 	}
 	return ""
 }
@@ -3369,7 +3417,7 @@ const file_order_proto_rawDesc = "" +
 	"totalPages\x12\x1f\n" +
 	"\vtotal_items\x18\x03 \x01(\x03R\n" +
 	"totalItems\x12$\n" +
-	"\x0eitems_per_page\x18\x04 \x01(\x03R\fitemsPerPage\"\xf4\x02\n" +
+	"\x0eitems_per_page\x18\x04 \x01(\x03R\fitemsPerPage\"\xae\x03\n" +
 	"\x12CreateOrderRequest\x12\x1f\n" +
 	"\vmerchant_id\x18\x01 \x01(\tR\n" +
 	"merchantId\x12\x1f\n" +
@@ -3384,7 +3432,9 @@ const file_order_proto_rawDesc = "" +
 	"\x11merchant_order_id\x18\b \x01(\tR\x0fmerchantOrderId\x12\x18\n" +
 	"\ashuffle\x18\t \x01(\x05R\ashuffle\x12!\n" +
 	"\fcallback_url\x18\n" +
-	" \x01(\tR\vcallbackUrl\"9\n" +
+	" \x01(\tR\vcallbackUrl\x12\x1b\n" +
+	"\tbank_code\x18\v \x01(\tR\bbankCode\x12\x1b\n" +
+	"\tnspk_code\x18\f \x01(\tR\bnspkCode\"9\n" +
 	"\x13CreateOrderResponse\x12\"\n" +
 	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"0\n" +
 	"\x13ApproveOrderRequest\x12\x19\n" +
@@ -3484,7 +3534,7 @@ const file_order_proto_rawDesc = "" +
 	"\x1dGetTraderTrafficStatusRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\"8\n" +
 	"\x1eGetTraderTrafficStatusResponse\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\bR\x06status\"\xc7\x05\n" +
+	"\x06status\x18\x01 \x01(\bR\x06status\"\x81\x06\n" +
 	"\n" +
 	"BankDetail\x12$\n" +
 	"\x0ebank_detail_id\x18\x01 \x01(\tR\fbankDetailId\x12\x1b\n" +
@@ -3510,7 +3560,9 @@ const file_order_proto_rawDesc = "" +
 	"\x10max_quantity_day\x18\x11 \x01(\x01R\x0emaxQuantityDay\x12,\n" +
 	"\x12max_quantity_month\x18\x12 \x01(\x01R\x10maxQuantityMonth\x12\x1b\n" +
 	"\tdevice_id\x18\x13 \x01(\tR\bdeviceId\x12'\n" +
-	"\x0finflow_currency\x18\x14 \x01(\tR\x0einflowCurrency\"\xae\x05\n" +
+	"\x0finflow_currency\x18\x14 \x01(\tR\x0einflowCurrency\x12\x1b\n" +
+	"\tbank_code\x18\x15 \x01(\tR\bbankCode\x12\x1b\n" +
+	"\tnspk_code\x18\x16 \x01(\tR\bnspkCode\"\xe8\x05\n" +
 	"\x17CreateBankDetailRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\x12\x1a\n" +
 	"\bcurrency\x18\x02 \x01(\tR\bcurrency\x12\x18\n" +
@@ -3534,7 +3586,9 @@ const file_order_proto_rawDesc = "" +
 	"\x10max_quantity_day\x18\x10 \x01(\x01R\x0emaxQuantityDay\x12,\n" +
 	"\x12max_quantity_month\x18\x11 \x01(\x01R\x10maxQuantityMonth\x12\x1b\n" +
 	"\tdevice_id\x18\x12 \x01(\tR\bdeviceId\x12'\n" +
-	"\x0finflow_currency\x18\x13 \x01(\tR\x0einflowCurrency\"@\n" +
+	"\x0finflow_currency\x18\x13 \x01(\tR\x0einflowCurrency\x12\x1b\n" +
+	"\tbank_code\x18\x14 \x01(\tR\bbankCode\x12\x1b\n" +
+	"\tnspk_code\x18\x15 \x01(\tR\bnspkCode\"@\n" +
 	"\x18CreateBankDetailResponse\x12$\n" +
 	"\x0ebank_detail_id\x18\x01 \x01(\tR\fbankDetailId\"M\n" +
 	"\x17UpdateBankDetailRequest\x122\n" +
