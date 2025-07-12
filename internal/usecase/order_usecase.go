@@ -130,8 +130,10 @@ func (uc *DefaultOrderUsecase) FilterByMaxAmountDay(bankDetails []*domain.BankDe
 			return nil, err
 		}
 		ordersSucceedSummary := float64(0.)
+		now := time.Now()
+		startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		for _, order := range orders {
-			if order.Status == domain.StatusSucceed && time.Since(order.UpdatedAt) <= 24*time.Hour {
+			if (order.Status == domain.StatusSucceed || order.Status == domain.StatusCreated) && (order.UpdatedAt.After(startOfToday)) {
 				ordersSucceedSummary += order.AmountFiat
 			}
 		}
@@ -152,8 +154,10 @@ func (uc *DefaultOrderUsecase) FilterByMaxAmountMonth(bankDetails []*domain.Bank
 			return nil, err
 		}
 		ordersSucceedSummary := float64(0.)
+		now := time.Now()
+		startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 		for _, order := range orders {
-			if order.Status == domain.StatusSucceed && time.Since(order.UpdatedAt) <= 30*24*time.Hour {
+			if (order.Status == domain.StatusSucceed || order.Status == domain.StatusCreated) && (order.UpdatedAt.After(startOfMonth)) {
 				ordersSucceedSummary += order.AmountFiat
 			}
 		}
