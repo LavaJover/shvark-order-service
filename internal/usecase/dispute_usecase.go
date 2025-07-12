@@ -46,6 +46,8 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(dispute *domain.Dispute) e
 	if order.Status != domain.StatusCanceled {
 		return status.Error(codes.FailedPrecondition, "order is not even canceled")
 	}
+	dispute.DisputeCryptoRate = order.CryptoRubRate
+	dispute.DisputeAmountCrypto = dispute.DisputeAmountFiat / dispute.DisputeCryptoRate
 	err = disputeUc.disputeRepo.CreateDispute(dispute)
 	if err != nil {
 		return err
@@ -160,19 +162,6 @@ func (disputeUc *DefaultDisputeUsecase) AcceptExpiredDisputes() error {
 		return err
 	}
 	for _, dispute := range disputes {
-		// order, err := disputeUc.orderRepo.GetOrderByID(dispute.OrderID)
-		// if err != nil {
-		// 	return err
-		// }
-		// traffic, err := disputeUc.trafficRepo.GetTrafficByTraderMerchant(order.BankDetail.TraderID, order.MerchantID)
-		// if err != nil {
-		// 	return err
-		// }
-		// if err := disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, traffic.TraderRewardPercent, traffic.PlatformFee); err != nil {
-		// 	log.Printf("failed to release crypto for order %s\n", order.ID)
-		// 	return status.Error(codes.Internal, err.Error())
-		// }
-
 		if err := disputeUc.AcceptDispute(dispute.ID); err != nil {
 			log.Printf("failed to accept dispute %s\n", dispute.ID)
 			return status.Error(codes.Internal, err.Error())

@@ -25,6 +25,10 @@ func (r *DefaultDisputeRepository) CreateDispute(dispute *domain.Dispute) error 
 		Reason: dispute.Reason,
 		Status: string(domain.DisputeOpened),
 		AutoAcceptAt: time.Now().Add(dispute.Ttl),
+		DisputeAmountFiat: dispute.DisputeAmountFiat,
+		DisputeAmountCrypto: dispute.DisputeAmountCrypto,
+		DisputeCryptoRate: dispute.DisputeCryptoRate,
+		Ttl: dispute.Ttl,
 	}
 	if err := r.db.Create(&disputeModel).Error; err != nil {
 		return err
@@ -49,6 +53,11 @@ func (r *DefaultDisputeRepository) GetDisputeByID(disputeID string) (*domain.Dis
 		ProofUrl: disputeModel.ProofUrl,
 		Reason: disputeModel.Reason,
 		Status: domain.DisputeStatus(disputeModel.Status),
+		DisputeAmountFiat: disputeModel.DisputeAmountFiat,
+		DisputeAmountCrypto: disputeModel.DisputeAmountCrypto,
+		DisputeCryptoRate: disputeModel.DisputeCryptoRate,
+		Ttl: disputeModel.Ttl,
+		AutoAcceptAt: disputeModel.AutoAcceptAt,
 	}, nil
 }
 
@@ -64,6 +73,11 @@ func (r *DefaultDisputeRepository) GetDisputeByOrderID(orderID string) (*domain.
 		ProofUrl: disputeModel.ProofUrl,
 		Reason: disputeModel.Reason,
 		Status: domain.DisputeStatus(disputeModel.Status),
+		DisputeAmountFiat: disputeModel.DisputeAmountFiat,
+		DisputeAmountCrypto: disputeModel.DisputeAmountCrypto,
+		DisputeCryptoRate: disputeModel.DisputeCryptoRate,
+		Ttl: disputeModel.Ttl,
+		AutoAcceptAt: disputeModel.AutoAcceptAt,
 	}, nil
 }
 
@@ -83,6 +97,11 @@ func (r *DefaultDisputeRepository) FindExpiredDisputes() ([]*domain.Dispute, err
 			ProofUrl: disputeModel.ProofUrl,
 			Reason: disputeModel.Reason,
 			Status: domain.DisputeStatus(disputeModel.Reason),
+			DisputeAmountFiat: disputeModel.DisputeAmountFiat,
+			DisputeAmountCrypto: disputeModel.DisputeAmountCrypto,
+			DisputeCryptoRate: disputeModel.DisputeCryptoRate,
+			Ttl: disputeModel.Ttl,
+			AutoAcceptAt: disputeModel.AutoAcceptAt,
 		}
 	}
 

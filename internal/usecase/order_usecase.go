@@ -412,6 +412,14 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	order.AmountCrypto = amountCrypto
 	order.CryptoRubRate = usdt.UsdtRubRates
 
+	// notify merchant that pre-order is ready
+	notifier.SendCallback(
+		order.CallbackURL,
+		order.MerchantOrderID,
+		string(domain.StatusPreorder),
+		0, 0, 0,
+	)
+
 	// check idempotency by client_id
 	if order.ClientID != "" {
 		if err := uc.CheckIdempotency(order.ClientID); err != nil {

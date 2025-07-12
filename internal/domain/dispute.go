@@ -12,12 +12,16 @@ const (
 )
 
 type Dispute struct {
-	ID 			string
-	OrderID 	string
-	ProofUrl 	string
-	Reason 		string
-	Status 		DisputeStatus
-	Ttl			time.Duration
+	ID 				  	string
+	OrderID 		  	string
+	DisputeAmountFiat 	float64
+	DisputeAmountCrypto float64
+	DisputeCryptoRate 	float64
+	ProofUrl 			string
+	Reason 				string
+	Status 				DisputeStatus
+	Ttl					time.Duration
+	AutoAcceptAt		time.Time
 }
 
 type DisputeRepository interface {

@@ -35,6 +35,7 @@ message CreateOrderDisputeRequest {
     string proof_url = 2;
     string dispute_reason = 3; // UNKNOWN, HAS_PAYMENT, NO_PAYMENT, INVALID_SUM
     google.protobuf.Duration ttl = 4;
+    double dispute_amount_fiat = 5;
 }
 
 message CreateOrderDisputeResponse {
@@ -47,6 +48,9 @@ message OrderDispute {
     string proof_url = 3;
     string dispute_reason = 4;
     string dispute_status = 5; // open, accepted, rejected
+    double dispute_amount_fiat = 6;
+    double dispute_amount_crypto = 7;
+    double dispute_crypto_rate = 8;
 }
 
 message AcceptOrderDisputeRequest{

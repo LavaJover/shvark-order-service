@@ -35,6 +35,8 @@ func SendCallback(
 			status = "DISPUTE"
 		case string(domain.StatusCreated):
 			status = "PENDING"
+		case string(domain.StatusPreorder):
+			status = "CREATED"
 		}
 
 		query := parsedURL.Query()

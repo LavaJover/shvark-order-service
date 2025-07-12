@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/bitwire/notifier"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -47,6 +48,14 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 	
 	savedOrder, err := h.uc.CreateOrder(&orderRequest)
 	if err != nil {
+		if orderRequest.CallbackURL != ""{
+			notifier.SendCallback(
+				orderRequest.CallbackURL,
+				orderRequest.MerchantOrderID,
+				string(domain.StatusFailed),
+				0, 0, 0,
+			)
+		}
 		return nil, err
 	}
 
@@ -181,7 +190,7 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 		DateFrom: dateFrom,
 		DateTo: dateTo,
 		Currency: r.Filters.Currency,
-	} 
+	}
 
 	traderID := r.TraderId
 	ordersResponse, total, err := h.uc.GetOrdersByTraderID(
@@ -289,6 +298,7 @@ func (h *OrderHandler) CreateOrderDispute(ctx context.Context, r *orderpb.Create
 		ProofUrl: r.ProofUrl,
 		Reason: r.DisputeReason,
 		Ttl: r.Ttl.AsDuration(),
+		DisputeAmountFiat: float64(r.DisputeAmountFiat),
 	}
 	if err := h.disputeUc.CreateDispute(dispute); err != nil {
 		return nil, err
@@ -334,6 +344,9 @@ func (h *OrderHandler) GetOrderDisputeInfo(ctx context.Context, r *orderpb.GetOr
 			ProofUrl: dispute.ProofUrl,
 			DisputeReason: dispute.Reason,
 			DisputeStatus: string(dispute.Status),
+			DisputeAmountFiat: dispute.DisputeAmountFiat,
+			DisputeAmountCrypto: dispute.DisputeAmountCrypto,
+			DisputeCryptoRate: dispute.DisputeCryptoRate,
 		},
 	}, nil
 }

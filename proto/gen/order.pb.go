@@ -104,13 +104,14 @@ func (*FreezeOrderDisputeResponse) Descriptor() ([]byte, []int) {
 }
 
 type CreateOrderDisputeRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	ProofUrl      string                 `protobuf:"bytes,2,opt,name=proof_url,json=proofUrl,proto3" json:"proof_url,omitempty"`
-	DisputeReason string                 `protobuf:"bytes,3,opt,name=dispute_reason,json=disputeReason,proto3" json:"dispute_reason,omitempty"` // UNKNOWN, HAS_PAYMENT, NO_PAYMENT, INVALID_SUM
-	Ttl           *durationpb.Duration   `protobuf:"bytes,4,opt,name=ttl,proto3" json:"ttl,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	OrderId           string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	ProofUrl          string                 `protobuf:"bytes,2,opt,name=proof_url,json=proofUrl,proto3" json:"proof_url,omitempty"`
+	DisputeReason     string                 `protobuf:"bytes,3,opt,name=dispute_reason,json=disputeReason,proto3" json:"dispute_reason,omitempty"` // UNKNOWN, HAS_PAYMENT, NO_PAYMENT, INVALID_SUM
+	Ttl               *durationpb.Duration   `protobuf:"bytes,4,opt,name=ttl,proto3" json:"ttl,omitempty"`
+	DisputeAmountFiat float64                `protobuf:"fixed64,5,opt,name=dispute_amount_fiat,json=disputeAmountFiat,proto3" json:"dispute_amount_fiat,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *CreateOrderDisputeRequest) Reset() {
@@ -171,6 +172,13 @@ func (x *CreateOrderDisputeRequest) GetTtl() *durationpb.Duration {
 	return nil
 }
 
+func (x *CreateOrderDisputeRequest) GetDisputeAmountFiat() float64 {
+	if x != nil {
+		return x.DisputeAmountFiat
+	}
+	return 0
+}
+
 type CreateOrderDisputeResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	DisputeId     string                 `protobuf:"bytes,1,opt,name=dispute_id,json=disputeId,proto3" json:"dispute_id,omitempty"`
@@ -216,14 +224,17 @@ func (x *CreateOrderDisputeResponse) GetDisputeId() string {
 }
 
 type OrderDispute struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	DisputeId     string                 `protobuf:"bytes,1,opt,name=dispute_id,json=disputeId,proto3" json:"dispute_id,omitempty"`
-	OrderId       string                 `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	ProofUrl      string                 `protobuf:"bytes,3,opt,name=proof_url,json=proofUrl,proto3" json:"proof_url,omitempty"`
-	DisputeReason string                 `protobuf:"bytes,4,opt,name=dispute_reason,json=disputeReason,proto3" json:"dispute_reason,omitempty"`
-	DisputeStatus string                 `protobuf:"bytes,5,opt,name=dispute_status,json=disputeStatus,proto3" json:"dispute_status,omitempty"` // open, accepted, rejected
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	DisputeId           string                 `protobuf:"bytes,1,opt,name=dispute_id,json=disputeId,proto3" json:"dispute_id,omitempty"`
+	OrderId             string                 `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	ProofUrl            string                 `protobuf:"bytes,3,opt,name=proof_url,json=proofUrl,proto3" json:"proof_url,omitempty"`
+	DisputeReason       string                 `protobuf:"bytes,4,opt,name=dispute_reason,json=disputeReason,proto3" json:"dispute_reason,omitempty"`
+	DisputeStatus       string                 `protobuf:"bytes,5,opt,name=dispute_status,json=disputeStatus,proto3" json:"dispute_status,omitempty"` // open, accepted, rejected
+	DisputeAmountFiat   float64                `protobuf:"fixed64,6,opt,name=dispute_amount_fiat,json=disputeAmountFiat,proto3" json:"dispute_amount_fiat,omitempty"`
+	DisputeAmountCrypto float64                `protobuf:"fixed64,7,opt,name=dispute_amount_crypto,json=disputeAmountCrypto,proto3" json:"dispute_amount_crypto,omitempty"`
+	DisputeCryptoRate   float64                `protobuf:"fixed64,8,opt,name=dispute_crypto_rate,json=disputeCryptoRate,proto3" json:"dispute_crypto_rate,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *OrderDispute) Reset() {
@@ -289,6 +300,27 @@ func (x *OrderDispute) GetDisputeStatus() string {
 		return x.DisputeStatus
 	}
 	return ""
+}
+
+func (x *OrderDispute) GetDisputeAmountFiat() float64 {
+	if x != nil {
+		return x.DisputeAmountFiat
+	}
+	return 0
+}
+
+func (x *OrderDispute) GetDisputeAmountCrypto() float64 {
+	if x != nil {
+		return x.DisputeAmountCrypto
+	}
+	return 0
+}
+
+func (x *OrderDispute) GetDisputeCryptoRate() float64 {
+	if x != nil {
+		return x.DisputeCryptoRate
+	}
+	return 0
 }
 
 type AcceptOrderDisputeRequest struct {
@@ -3372,22 +3404,26 @@ const file_order_proto_rawDesc = "" +
 	"\x19FreezeOrderDisputeRequest\x12\x1d\n" +
 	"\n" +
 	"dispute_id\x18\x01 \x01(\tR\tdisputeId\"\x1c\n" +
-	"\x1aFreezeOrderDisputeResponse\"\xa7\x01\n" +
+	"\x1aFreezeOrderDisputeResponse\"\xd7\x01\n" +
 	"\x19CreateOrderDisputeRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x1b\n" +
 	"\tproof_url\x18\x02 \x01(\tR\bproofUrl\x12%\n" +
 	"\x0edispute_reason\x18\x03 \x01(\tR\rdisputeReason\x12+\n" +
-	"\x03ttl\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\x03ttl\";\n" +
+	"\x03ttl\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\x03ttl\x12.\n" +
+	"\x13dispute_amount_fiat\x18\x05 \x01(\x01R\x11disputeAmountFiat\";\n" +
 	"\x1aCreateOrderDisputeResponse\x12\x1d\n" +
 	"\n" +
-	"dispute_id\x18\x01 \x01(\tR\tdisputeId\"\xb3\x01\n" +
+	"dispute_id\x18\x01 \x01(\tR\tdisputeId\"\xc7\x02\n" +
 	"\fOrderDispute\x12\x1d\n" +
 	"\n" +
 	"dispute_id\x18\x01 \x01(\tR\tdisputeId\x12\x19\n" +
 	"\border_id\x18\x02 \x01(\tR\aorderId\x12\x1b\n" +
 	"\tproof_url\x18\x03 \x01(\tR\bproofUrl\x12%\n" +
 	"\x0edispute_reason\x18\x04 \x01(\tR\rdisputeReason\x12%\n" +
-	"\x0edispute_status\x18\x05 \x01(\tR\rdisputeStatus\":\n" +
+	"\x0edispute_status\x18\x05 \x01(\tR\rdisputeStatus\x12.\n" +
+	"\x13dispute_amount_fiat\x18\x06 \x01(\x01R\x11disputeAmountFiat\x122\n" +
+	"\x15dispute_amount_crypto\x18\a \x01(\x01R\x13disputeAmountCrypto\x12.\n" +
+	"\x13dispute_crypto_rate\x18\b \x01(\x01R\x11disputeCryptoRate\":\n" +
 	"\x19AcceptOrderDisputeRequest\x12\x1d\n" +
 	"\n" +
 	"dispute_id\x18\x01 \x01(\tR\tdisputeId\"6\n" +

@@ -9,6 +9,7 @@ type OrderStatus string
 
 const (
 	StatusCreated 		  OrderStatus = "CREATED"
+	StatusPreorder		  OrderStatus = "PREORDER_CREATED"
 	StatusFailed 		  OrderStatus = "FAILED"
 	StatusCanceled 		  OrderStatus = "CANCELED"
 	StatusSucceed 		  OrderStatus = "SUCCEED"
