@@ -515,6 +515,12 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 			MaxAmountMonth: chosenBankDetail.MaxAmountMonth,
 			MaxQuantityDay: chosenBankDetail.MaxQuantityDay,
 			MaxQuantityMonth: chosenBankDetail.MaxQuantityMonth,
+			InflowCurrency: chosenBankDetail.InflowCurrency,
+			BankCode: chosenBankDetail.BankCode,
+			NspkCode: chosenBankDetail.NspkCode,
+			DeviceID: chosenBankDetail.DeviceID,
+			CreatedAt: chosenBankDetail.CreatedAt,
+			UpdatedAt: chosenBankDetail.UpdatedAt,
 		},
 	}, nil
 }
