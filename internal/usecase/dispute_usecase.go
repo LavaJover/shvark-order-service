@@ -5,6 +5,7 @@ import (
 
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/bitwire/notifier"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -63,6 +64,11 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(dispute *domain.Dispute) e
 		return status.Error(codes.Internal, err.Error())
 	}
 	disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.OrderStatus(domain.DisputeOpened))
+	notifier.SendCallback(
+		order.CallbackURL,
+		order.MerchantOrderID,
+		string(domain.StatusDisputeCreated),
+	)
 	return nil
 }
 
@@ -88,6 +94,11 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 		return err
 	}
 	disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.StatusSucceed)
+	notifier.SendCallback(
+		order.CallbackURL,
+		order.MerchantOrderID,
+		string(domain.StatusSucceed),
+	)
 	return nil
 }
 
@@ -109,6 +120,11 @@ func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
 		return err
 	}
 	disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.StatusCanceled)
+	notifier.SendCallback(
+		order.CallbackURL,
+		order.MerchantOrderID,
+		string(domain.StatusCanceled),
+	)
 	return nil
 }
 

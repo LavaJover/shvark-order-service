@@ -686,7 +686,7 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		notifier.SendCallback(
 			order.CallbackURL,
 			order.MerchantOrderID,
-			string(order.Status),
+			string(domain.StatusSucceed),
 		)
 	}
 
@@ -728,7 +728,7 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		notifier.SendCallback(
 			order.CallbackURL,
 			order.MerchantOrderID,
-			string(order.Status),
+			string(domain.StatusCanceled),
 		)
 	}
 
