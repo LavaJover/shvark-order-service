@@ -473,6 +473,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 			order.CallbackURL,
 			order.MerchantOrderID,
 			string(order.Status),
+			0, 0, 0,
 		)
 	}
 
@@ -687,6 +688,7 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 			order.CallbackURL,
 			order.MerchantOrderID,
 			string(domain.StatusSucceed),
+			0, 0, 0,
 		)
 	}
 
@@ -729,6 +731,7 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 			order.CallbackURL,
 			order.MerchantOrderID,
 			string(domain.StatusCanceled),
+			0, 0, 0,
 		)
 	}
 

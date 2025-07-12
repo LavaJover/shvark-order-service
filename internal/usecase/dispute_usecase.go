@@ -68,6 +68,7 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(dispute *domain.Dispute) e
 		order.CallbackURL,
 		order.MerchantOrderID,
 		string(domain.StatusDisputeCreated),
+		0, 0, 0,
 	)
 	return nil
 }
@@ -98,6 +99,7 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 		order.CallbackURL,
 		order.MerchantOrderID,
 		string(domain.StatusSucceed),
+		0, 0, 0,
 	)
 	return nil
 }
@@ -124,6 +126,7 @@ func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
 		order.CallbackURL,
 		order.MerchantOrderID,
 		string(domain.StatusCanceled),
+		0, 0, 0,
 	)
 	return nil
 }
