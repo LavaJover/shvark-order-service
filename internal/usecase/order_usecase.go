@@ -538,6 +538,10 @@ func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*domain.Order, erro
 	return uc.OrderRepo.GetOrderByID(orderID)
 }
 
+func (uc *DefaultOrderUsecase) GetOrderByMerchantOrderID(merchantOrderID string) (*domain.Order, error) {
+	return uc.OrderRepo.GetOrderByMerchantOrderID(merchantOrderID)
+}
+
 func (uc *DefaultOrderUsecase) GetOrdersByTraderID(
 	traderID string, page, 
 	limit int64, sortBy, 

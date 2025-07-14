@@ -19,18 +19,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	OrderService_CreateOrder_FullMethodName         = "/order.OrderService/CreateOrder"
-	OrderService_ApproveOrder_FullMethodName        = "/order.OrderService/ApproveOrder"
-	OrderService_CancelOrder_FullMethodName         = "/order.OrderService/CancelOrder"
-	OrderService_OpenOrderDispute_FullMethodName    = "/order.OrderService/OpenOrderDispute"
-	OrderService_ResolveOrderDispute_FullMethodName = "/order.OrderService/ResolveOrderDispute"
-	OrderService_GetOrderByID_FullMethodName        = "/order.OrderService/GetOrderByID"
-	OrderService_GetOrdersByTraderID_FullMethodName = "/order.OrderService/GetOrdersByTraderID"
-	OrderService_CreateOrderDispute_FullMethodName  = "/order.OrderService/CreateOrderDispute"
-	OrderService_AcceptOrderDispute_FullMethodName  = "/order.OrderService/AcceptOrderDispute"
-	OrderService_RejectOrderDispute_FullMethodName  = "/order.OrderService/RejectOrderDispute"
-	OrderService_GetOrderDisputeInfo_FullMethodName = "/order.OrderService/GetOrderDisputeInfo"
-	OrderService_FreezeOrderDispute_FullMethodName  = "/order.OrderService/FreezeOrderDispute"
+	OrderService_CreateOrder_FullMethodName               = "/order.OrderService/CreateOrder"
+	OrderService_ApproveOrder_FullMethodName              = "/order.OrderService/ApproveOrder"
+	OrderService_CancelOrder_FullMethodName               = "/order.OrderService/CancelOrder"
+	OrderService_OpenOrderDispute_FullMethodName          = "/order.OrderService/OpenOrderDispute"
+	OrderService_ResolveOrderDispute_FullMethodName       = "/order.OrderService/ResolveOrderDispute"
+	OrderService_GetOrderByID_FullMethodName              = "/order.OrderService/GetOrderByID"
+	OrderService_GetOrderByMerchantOrderID_FullMethodName = "/order.OrderService/GetOrderByMerchantOrderID"
+	OrderService_GetOrdersByTraderID_FullMethodName       = "/order.OrderService/GetOrdersByTraderID"
+	OrderService_CreateOrderDispute_FullMethodName        = "/order.OrderService/CreateOrderDispute"
+	OrderService_AcceptOrderDispute_FullMethodName        = "/order.OrderService/AcceptOrderDispute"
+	OrderService_RejectOrderDispute_FullMethodName        = "/order.OrderService/RejectOrderDispute"
+	OrderService_GetOrderDisputeInfo_FullMethodName       = "/order.OrderService/GetOrderDisputeInfo"
+	OrderService_FreezeOrderDispute_FullMethodName        = "/order.OrderService/FreezeOrderDispute"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -43,6 +44,7 @@ type OrderServiceClient interface {
 	OpenOrderDispute(ctx context.Context, in *OpenOrderDisputeRequest, opts ...grpc.CallOption) (*OpenOrderDisputeResponse, error)
 	ResolveOrderDispute(ctx context.Context, in *ResolveOrderDisputeRequest, opts ...grpc.CallOption) (*ResolveOrderDisputeResponse, error)
 	GetOrderByID(ctx context.Context, in *GetOrderByIDRequest, opts ...grpc.CallOption) (*GetOrderByIDResponse, error)
+	GetOrderByMerchantOrderID(ctx context.Context, in *GetOrderByMerchantOrderIDRequest, opts ...grpc.CallOption) (*GetOrderByMerchantOrderIDResponse, error)
 	GetOrdersByTraderID(ctx context.Context, in *GetOrdersByTraderIDRequest, opts ...grpc.CallOption) (*GetOrdersByTraderIDResponse, error)
 	CreateOrderDispute(ctx context.Context, in *CreateOrderDisputeRequest, opts ...grpc.CallOption) (*CreateOrderDisputeResponse, error)
 	AcceptOrderDispute(ctx context.Context, in *AcceptOrderDisputeRequest, opts ...grpc.CallOption) (*AcceptOrderDisputeResponse, error)
@@ -119,6 +121,16 @@ func (c *orderServiceClient) GetOrderByID(ctx context.Context, in *GetOrderByIDR
 	return out, nil
 }
 
+func (c *orderServiceClient) GetOrderByMerchantOrderID(ctx context.Context, in *GetOrderByMerchantOrderIDRequest, opts ...grpc.CallOption) (*GetOrderByMerchantOrderIDResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetOrderByMerchantOrderIDResponse)
+	err := c.cc.Invoke(ctx, OrderService_GetOrderByMerchantOrderID_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *orderServiceClient) GetOrdersByTraderID(ctx context.Context, in *GetOrdersByTraderIDRequest, opts ...grpc.CallOption) (*GetOrdersByTraderIDResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetOrdersByTraderIDResponse)
@@ -189,6 +201,7 @@ type OrderServiceServer interface {
 	OpenOrderDispute(context.Context, *OpenOrderDisputeRequest) (*OpenOrderDisputeResponse, error)
 	ResolveOrderDispute(context.Context, *ResolveOrderDisputeRequest) (*ResolveOrderDisputeResponse, error)
 	GetOrderByID(context.Context, *GetOrderByIDRequest) (*GetOrderByIDResponse, error)
+	GetOrderByMerchantOrderID(context.Context, *GetOrderByMerchantOrderIDRequest) (*GetOrderByMerchantOrderIDResponse, error)
 	GetOrdersByTraderID(context.Context, *GetOrdersByTraderIDRequest) (*GetOrdersByTraderIDResponse, error)
 	CreateOrderDispute(context.Context, *CreateOrderDisputeRequest) (*CreateOrderDisputeResponse, error)
 	AcceptOrderDispute(context.Context, *AcceptOrderDisputeRequest) (*AcceptOrderDisputeResponse, error)
@@ -222,6 +235,9 @@ func (UnimplementedOrderServiceServer) ResolveOrderDispute(context.Context, *Res
 }
 func (UnimplementedOrderServiceServer) GetOrderByID(context.Context, *GetOrderByIDRequest) (*GetOrderByIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrderByID not implemented")
+}
+func (UnimplementedOrderServiceServer) GetOrderByMerchantOrderID(context.Context, *GetOrderByMerchantOrderIDRequest) (*GetOrderByMerchantOrderIDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrderByMerchantOrderID not implemented")
 }
 func (UnimplementedOrderServiceServer) GetOrdersByTraderID(context.Context, *GetOrdersByTraderIDRequest) (*GetOrdersByTraderIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrdersByTraderID not implemented")
@@ -370,6 +386,24 @@ func _OrderService_GetOrderByID_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_GetOrderByMerchantOrderID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrderByMerchantOrderIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).GetOrderByMerchantOrderID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_GetOrderByMerchantOrderID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).GetOrderByMerchantOrderID(ctx, req.(*GetOrderByMerchantOrderIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _OrderService_GetOrdersByTraderID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetOrdersByTraderIDRequest)
 	if err := dec(in); err != nil {
@@ -508,6 +542,10 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetOrderByID",
 			Handler:    _OrderService_GetOrderByID_Handler,
+		},
+		{
+			MethodName: "GetOrderByMerchantOrderID",
+			Handler:    _OrderService_GetOrderByMerchantOrderID_Handler,
 		},
 		{
 			MethodName: "GetOrdersByTraderID",

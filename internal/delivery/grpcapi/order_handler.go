@@ -161,6 +161,51 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 	}, nil
 }
 
+func (h *OrderHandler) GetOrderByMerchantOrderID(ctx context.Context, r *orderpb.GetOrderByMerchantOrderIDRequest) (*orderpb.GetOrderByMerchantOrderIDResponse, error) {
+	merchantOrderID := r.MerchantOrderId
+	orderResponse, err := h.uc.GetOrderByID(merchantOrderID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &orderpb.GetOrderByMerchantOrderIDResponse{
+		Order: &orderpb.Order{
+			OrderId: orderResponse.ID,
+			Status: string(orderResponse.Status),
+			BankDetail: &orderpb.BankDetail{
+				BankDetailId: orderResponse.BankDetail.ID,
+				TraderId: orderResponse.BankDetail.TraderID,
+				Currency: orderResponse.BankDetail.Currency,
+				Country: orderResponse.BankDetail.Country,
+				MinAmount: float64(orderResponse.BankDetail.MinAmount),
+				MaxAmount: float64(orderResponse.BankDetail.MaxAmount),
+				BankName: orderResponse.BankDetail.BankName,
+				PaymentSystem: orderResponse.BankDetail.PaymentSystem,
+				Enabled: orderResponse.BankDetail.Enabled,
+				Delay: durationpb.New(orderResponse.BankDetail.Delay),
+				Owner: orderResponse.BankDetail.Owner,
+				CardNumber: orderResponse.BankDetail.CardNumber,
+				Phone: orderResponse.BankDetail.Phone,
+				BankCode: orderResponse.BankDetail.BankCode,
+				NspkCode: orderResponse.BankDetail.NspkCode,
+				InflowCurrency: orderResponse.BankDetail.InflowCurrency,
+			},
+			AmountFiat: float64(orderResponse.AmountFiat),
+			AmountCrypto: float64(orderResponse.AmountCrypto),
+			ExpiresAt: timestamppb.New(orderResponse.ExpiresAt),
+			MerchantOrderId: orderResponse.MerchantOrderID,
+			Shuffle: orderResponse.Shuffle,
+			ClientId: orderResponse.ClientID,
+			CallbackUrl: orderResponse.CallbackURL,
+			TraderRewardPercent: orderResponse.TraderRewardPercent,
+			CreatedAt: timestamppb.New(orderResponse.CreatedAt),
+			UpdatedAt: timestamppb.New(orderResponse.UpdatedAt),
+			Recalculated: orderResponse.Recalculated,
+			CryptoRubRate: orderResponse.CryptoRubRate,
+		},
+	}, nil
+}
+
 func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOrdersByTraderIDRequest) (*orderpb.GetOrdersByTraderIDResponse, error) {
 	// sort_by validation
 	validSortFields := map[string]bool{

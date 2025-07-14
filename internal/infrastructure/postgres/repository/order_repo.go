@@ -105,6 +105,62 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 	}, nil
 }
 
+func (r *DefaultOrderRepository) GetOrderByMerchantOrderID(merchantOrderID string) (*domain.Order, error) {
+	var order models.OrderModel
+	if err := r.DB.Preload("BankDetail").First(&order, "merchant_order_id = ?", merchantOrderID).Error; err != nil {
+		return nil, err
+	}
+
+	return &domain.Order{
+		ID: order.ID,
+		MerchantID: order.MerchantID,
+		AmountFiat: order.AmountFiat,
+		AmountCrypto: order.AmountCrypto,
+		Currency: order.Currency,
+		Country: order.Country,
+		ClientID: order.ClientID,
+		Status: order.Status,
+		PaymentSystem: order.PaymentSystem,
+		BankDetailsID: order.BankDetailsID,
+		ExpiresAt: order.ExpiresAt,
+		CreatedAt: order.CreatedAt,
+		UpdatedAt: order.UpdatedAt,
+		MerchantOrderID: order.MerchantOrderID,
+		Shuffle: order.Shuffle,
+		CallbackURL: order.CallbackURL,
+		TraderRewardPercent: order.TraderRewardPercent,
+		Recalculated: order.Recalculated,
+		CryptoRubRate: order.CryptoRubRate,
+		PlatformFee: order.PlatformFee,
+		BankDetail: &domain.BankDetail{
+			ID: order.BankDetail.ID,
+			TraderID: order.BankDetail.TraderID,
+			Country: order.BankDetail.Country,
+			Currency: order.BankDetail.Currency,
+			MinAmount: order.BankDetail.MinAmount,
+			MaxAmount: order.BankDetail.MaxAmount,
+			BankName: order.BankDetail.BankName,
+			PaymentSystem: order.BankDetail.PaymentSystem,
+			Delay: order.BankDetail.Delay,
+			Enabled: order.BankDetail.Enabled,
+			CardNumber: order.BankDetail.CardNumber,
+			Phone: order.BankDetail.Phone,
+			Owner: order.BankDetail.Owner,
+			MaxOrdersSimultaneosly: order.BankDetail.MaxOrdersSimultaneosly,
+			MaxAmountDay: order.BankDetail.MaxAmountDay,
+			MaxAmountMonth: order.BankDetail.MaxAmountMonth,
+			InflowCurrency: order.BankDetail.InflowCurrency,
+			BankCode: order.BankDetail.BankCode,
+			NspkCode: order.BankDetail.NspkCode,
+			DeviceID: order.BankDetail.DeviceID,
+			MaxQuantityDay: order.BankDetail.MaxQuantityDay,
+			MaxQuantityMonth: order.BankDetail.MaxQuantityMonth,
+			CreatedAt: order.BankDetail.CreatedAt,
+			UpdatedAt: order.BankDetail.UpdatedAt,
+		},
+	}, nil
+}
+
 func (r *DefaultOrderRepository) UpdateOrderStatus(orderID string, newStatus domain.OrderStatus) error {
 	updatedOrderModel := models.OrderModel{
 		ID: orderID,
