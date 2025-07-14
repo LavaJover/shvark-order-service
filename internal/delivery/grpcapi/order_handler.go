@@ -163,7 +163,7 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 
 func (h *OrderHandler) GetOrderByMerchantOrderID(ctx context.Context, r *orderpb.GetOrderByMerchantOrderIDRequest) (*orderpb.GetOrderByMerchantOrderIDResponse, error) {
 	merchantOrderID := r.MerchantOrderId
-	orderResponse, err := h.uc.GetOrderByID(merchantOrderID)
+	orderResponse, err := h.uc.GetOrderByMerchantOrderID(merchantOrderID)
 	if err != nil {
 		return nil, err
 	}
