@@ -3883,7 +3883,7 @@ const file_order_proto_rawDesc = "" +
 	"$GetBankDetailsStatsByTraderIDRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\"h\n" +
 	"%GetBankDetailsStatsByTraderIDResponse\x12?\n" +
-	"\x10bank_detail_stat\x18\x01 \x03(\v2\x15.order.BankDetailStatR\x0ebankDetailStat2\xd6\t\n" +
+	"\x10bank_detail_stat\x18\x01 \x03(\v2\x15.order.BankDetailStatR\x0ebankDetailStat2\xcc\t\n" +
 	"\fOrderService\x12D\n" +
 	"\vCreateOrder\x12\x19.order.CreateOrderRequest\x1a\x1a.order.CreateOrderResponse\x12G\n" +
 	"\fApproveOrder\x12\x1a.order.ApproveOrderRequest\x1a\x1b.order.ApproveOrderResponse\x12D\n" +
@@ -3897,8 +3897,8 @@ const file_order_proto_rawDesc = "" +
 	"\x12AcceptOrderDispute\x12 .order.AcceptOrderDisputeRequest\x1a!.order.AcceptOrderDisputeResponse\x12Y\n" +
 	"\x12RejectOrderDispute\x12 .order.RejectOrderDisputeRequest\x1a!.order.RejectOrderDisputeResponse\x12\\\n" +
 	"\x13GetOrderDisputeInfo\x12!.order.GetOrderDisputeInfoRequest\x1a\".order.GetOrderDisputeInfoResponse\x12Y\n" +
-	"\x12FreezeOrderDispute\x12 .order.FreezeOrderDisputeRequest\x1a!.order.FreezeOrderDisputeResponse\x12]\n" +
-	"\x1aGetOrderDisputesByTraderID\x12\x1e.order.GetOrderDisputesRequest\x1a\x1f.order.GetOrderDisputesResponse2\xe3\x04\n" +
+	"\x12FreezeOrderDispute\x12 .order.FreezeOrderDisputeRequest\x1a!.order.FreezeOrderDisputeResponse\x12S\n" +
+	"\x10GetOrderDisputes\x12\x1e.order.GetOrderDisputesRequest\x1a\x1f.order.GetOrderDisputesResponse2\xe3\x04\n" +
 	"\x0eTrafficService\x12A\n" +
 	"\n" +
 	"AddTraffic\x12\x18.order.AddTrafficRequest\x1a\x19.order.AddTrafficResponse\x12D\n" +
@@ -4036,7 +4036,7 @@ var file_order_proto_depIdxs = []int32{
 	11, // 38: order.OrderService.RejectOrderDispute:input_type -> order.RejectOrderDisputeRequest
 	13, // 39: order.OrderService.GetOrderDisputeInfo:input_type -> order.GetOrderDisputeInfoRequest
 	4,  // 40: order.OrderService.FreezeOrderDispute:input_type -> order.FreezeOrderDisputeRequest
-	0,  // 41: order.OrderService.GetOrderDisputesByTraderID:input_type -> order.GetOrderDisputesRequest
+	0,  // 41: order.OrderService.GetOrderDisputes:input_type -> order.GetOrderDisputesRequest
 	32, // 42: order.TrafficService.AddTraffic:input_type -> order.AddTrafficRequest
 	35, // 43: order.TrafficService.EditTraffic:input_type -> order.EditTrafficRequest
 	37, // 44: order.TrafficService.DeleteTraffic:input_type -> order.DeleteTrafficRequest
@@ -4063,7 +4063,7 @@ var file_order_proto_depIdxs = []int32{
 	12, // 65: order.OrderService.RejectOrderDispute:output_type -> order.RejectOrderDisputeResponse
 	14, // 66: order.OrderService.GetOrderDisputeInfo:output_type -> order.GetOrderDisputeInfoResponse
 	5,  // 67: order.OrderService.FreezeOrderDispute:output_type -> order.FreezeOrderDisputeResponse
-	1,  // 68: order.OrderService.GetOrderDisputesByTraderID:output_type -> order.GetOrderDisputesResponse
+	1,  // 68: order.OrderService.GetOrderDisputes:output_type -> order.GetOrderDisputesResponse
 	34, // 69: order.TrafficService.AddTraffic:output_type -> order.AddTrafficResponse
 	36, // 70: order.TrafficService.EditTraffic:output_type -> order.EditTrafficResponse
 	38, // 71: order.TrafficService.DeleteTraffic:output_type -> order.DeleteTrafficResponse

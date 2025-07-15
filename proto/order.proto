@@ -22,7 +22,7 @@ service OrderService {
     rpc RejectOrderDispute (RejectOrderDisputeRequest) returns (RejectOrderDisputeResponse);
     rpc GetOrderDisputeInfo (GetOrderDisputeInfoRequest) returns (GetOrderDisputeInfoResponse);
     rpc FreezeOrderDispute (FreezeOrderDisputeRequest) returns (FreezeOrderDisputeResponse);
-    rpc GetOrderDisputesByTraderID (GetOrderDisputesRequest) returns (GetOrderDisputesResponse);
+    rpc GetOrderDisputes (GetOrderDisputesRequest) returns (GetOrderDisputesResponse);
 }
 
 
