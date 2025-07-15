@@ -51,7 +51,9 @@ func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error
 
 func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, error) {
 	var order models.OrderModel
-	if err := r.DB.Preload("BankDetail").First(&order, "id = ?", orderID).Error; err != nil {
+	if err := r.DB.Preload("BankDetail", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped() // отключаем фильтрацию по DeletedAt
+	}).First(&order, "id = ?", orderID).Error; err != nil {
 		return nil, err
 	}
 
@@ -107,7 +109,9 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 
 func (r *DefaultOrderRepository) GetOrderByMerchantOrderID(merchantOrderID string) (*domain.Order, error) {
 	var order models.OrderModel
-	if err := r.DB.Preload("BankDetail").First(&order, "merchant_order_id = ?", merchantOrderID).Error; err != nil {
+	if err := r.DB.Preload("BankDetail", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped() // отключаем фильтрацию по DeletedAt
+	}).First(&order, "merchant_order_id = ?", merchantOrderID).Error; err != nil {
 		return nil, err
 	}
 
@@ -200,7 +204,9 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(
 
     // Базовый запрос с JOIN
     baseQuery := r.DB.Model(&models.OrderModel{}).
-        Preload("BankDetail").
+	Preload("BankDetail", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped() // отключаем фильтрацию по DeletedAt
+	}).
         Joins("JOIN bank_detail_models ON order_models.bank_details_id = bank_detail_models.id").
         Where("bank_detail_models.trader_id = ?", traderID)
 
@@ -299,7 +305,9 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(
 
 func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
 	var orderModels []models.OrderModel
-	if err := r.DB.Preload("BankDetail").
+	if err := r.DB.Preload("BankDetail", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped() // отключаем фильтрацию по DeletedAt
+	}).
 		Where("status = ?", domain.StatusCreated).
 		Where("expires_at < ?", time.Now()).
 		Find(&orderModels).Error; err != nil {return nil, err}
@@ -362,7 +370,9 @@ func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
 func (r *DefaultOrderRepository) GetOrdersByBankDetailID(bankDetailID string) ([]*domain.Order, error) {
 	var orderModels []models.OrderModel
 	if err := r.DB.
-		Preload("BankDetail").
+	Preload("BankDetail", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped() // отключаем фильтрацию по DeletedAt
+	}).
 		Where("bank_details_id = ?", bankDetailID).
 		Find(&orderModels).Error; 
 		err != nil {
@@ -426,7 +436,9 @@ func (r *DefaultOrderRepository) GetOrdersByBankDetailID(bankDetailID string) ([
 
 func (r *DefaultOrderRepository) GetCreatedOrdersByClientID(clientID string) ([]*domain.Order, error) {
 	var orderModels []models.OrderModel
-	if err := r.DB.Model(&models.OrderModel{}).Preload("BankDetail").Where("client_id = ? AND status = ?", clientID, domain.StatusCreated).Find(&orderModels).Error; err != nil {
+	if err := r.DB.Model(&models.OrderModel{}).Preload("BankDetail", func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped() // отключаем фильтрацию по DeletedAt
+	}).Where("client_id = ? AND status = ?", clientID, domain.StatusCreated).Find(&orderModels).Error; err != nil {
 		return nil, err
 	}
 
