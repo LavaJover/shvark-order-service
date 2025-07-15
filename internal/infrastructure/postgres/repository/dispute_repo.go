@@ -107,3 +107,44 @@ func (r *DefaultDisputeRepository) FindExpiredDisputes() ([]*domain.Dispute, err
 
 	return disputes, nil
 }
+
+func (r *DefaultDisputeRepository) GetOrderDisputes(page, limit int64, status string) ([]*domain.Dispute, int64, error) {
+	var (
+		disputeModels []models.DisputeModel
+		total         int64
+	)
+
+	query := r.db.Model(&models.DisputeModel{})
+
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+
+	if err := query.Order("created_at DESC").Offset(int(offset)).Limit(int(limit)).Find(&disputeModels).Error; err != nil {
+		return nil, 0, err
+	}
+
+	disputes := make([]*domain.Dispute, len(disputeModels))
+	for i, dm := range disputeModels {
+		disputes[i] = &domain.Dispute{
+			ID:                  dm.ID,
+			OrderID:             dm.OrderID,
+			DisputeAmountFiat:   dm.DisputeAmountFiat,
+			DisputeAmountCrypto: dm.DisputeAmountCrypto,
+			DisputeCryptoRate:   dm.DisputeCryptoRate,
+			ProofUrl:            dm.ProofUrl,
+			Reason:              dm.Reason,
+			Status:              domain.DisputeStatus(dm.Status),
+			Ttl:                 dm.Ttl,
+			AutoAcceptAt:        dm.AutoAcceptAt,
+		}
+	}
+
+	return disputes, total, nil
+}

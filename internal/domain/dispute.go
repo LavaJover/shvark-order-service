@@ -30,6 +30,7 @@ type DisputeRepository interface {
 	GetDisputeByID(disputeID string) (*Dispute, error)
 	GetDisputeByOrderID(orderID string) (*Dispute, error)
 	FindExpiredDisputes() ([]*Dispute, error)
+	GetOrderDisputes(page, limit int64, status string) ([]*Dispute, int64, error)
 }
 
 type DisputeUsecase interface {
@@ -40,4 +41,5 @@ type DisputeUsecase interface {
 	GetDisputeByID(disputeID string) (*Dispute, error)
 	GetDisputeByOrderID(orderID string) (*Dispute, error)
 	AcceptExpiredDisputes() error
+	GetOrderDisputes(page, limit int64, status string) ([]*Dispute, int64, error)
 }

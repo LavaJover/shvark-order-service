@@ -22,6 +22,19 @@ service OrderService {
     rpc RejectOrderDispute (RejectOrderDisputeRequest) returns (RejectOrderDisputeResponse);
     rpc GetOrderDisputeInfo (GetOrderDisputeInfoRequest) returns (GetOrderDisputeInfoResponse);
     rpc FreezeOrderDispute (FreezeOrderDisputeRequest) returns (FreezeOrderDisputeResponse);
+    rpc GetOrderDisputesByTraderID (GetOrderDisputesRequest) returns (GetOrderDisputesResponse);
+}
+
+
+message GetOrderDisputesRequest {
+    int64 page = 1;
+    int64 limit = 2;
+    string status = 3;
+}
+
+message GetOrderDisputesResponse{
+    repeated OrderDispute disputes = 1;
+    Pagination pagination = 2;
 }
 
 message GetOrderByMerchantOrderIDRequest {
@@ -60,6 +73,7 @@ message OrderDispute {
     double dispute_amount_fiat = 6;
     double dispute_amount_crypto = 7;
     double dispute_crypto_rate = 8;
+    Order order = 9;
 }
 
 message AcceptOrderDisputeRequest{

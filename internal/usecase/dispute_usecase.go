@@ -169,3 +169,7 @@ func (disputeUc *DefaultDisputeUsecase) AcceptExpiredDisputes() error {
 	} 
 	return nil
 }
+
+func (disputeUc *DefaultDisputeUsecase) GetOrderDisputes(page, limit int64, status string) ([]*domain.Dispute, int64, error) {
+	return disputeUc.disputeRepo.GetOrderDisputes(page, limit, status)
+}

@@ -19,19 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	OrderService_CreateOrder_FullMethodName               = "/order.OrderService/CreateOrder"
-	OrderService_ApproveOrder_FullMethodName              = "/order.OrderService/ApproveOrder"
-	OrderService_CancelOrder_FullMethodName               = "/order.OrderService/CancelOrder"
-	OrderService_OpenOrderDispute_FullMethodName          = "/order.OrderService/OpenOrderDispute"
-	OrderService_ResolveOrderDispute_FullMethodName       = "/order.OrderService/ResolveOrderDispute"
-	OrderService_GetOrderByID_FullMethodName              = "/order.OrderService/GetOrderByID"
-	OrderService_GetOrderByMerchantOrderID_FullMethodName = "/order.OrderService/GetOrderByMerchantOrderID"
-	OrderService_GetOrdersByTraderID_FullMethodName       = "/order.OrderService/GetOrdersByTraderID"
-	OrderService_CreateOrderDispute_FullMethodName        = "/order.OrderService/CreateOrderDispute"
-	OrderService_AcceptOrderDispute_FullMethodName        = "/order.OrderService/AcceptOrderDispute"
-	OrderService_RejectOrderDispute_FullMethodName        = "/order.OrderService/RejectOrderDispute"
-	OrderService_GetOrderDisputeInfo_FullMethodName       = "/order.OrderService/GetOrderDisputeInfo"
-	OrderService_FreezeOrderDispute_FullMethodName        = "/order.OrderService/FreezeOrderDispute"
+	OrderService_CreateOrder_FullMethodName                = "/order.OrderService/CreateOrder"
+	OrderService_ApproveOrder_FullMethodName               = "/order.OrderService/ApproveOrder"
+	OrderService_CancelOrder_FullMethodName                = "/order.OrderService/CancelOrder"
+	OrderService_OpenOrderDispute_FullMethodName           = "/order.OrderService/OpenOrderDispute"
+	OrderService_ResolveOrderDispute_FullMethodName        = "/order.OrderService/ResolveOrderDispute"
+	OrderService_GetOrderByID_FullMethodName               = "/order.OrderService/GetOrderByID"
+	OrderService_GetOrderByMerchantOrderID_FullMethodName  = "/order.OrderService/GetOrderByMerchantOrderID"
+	OrderService_GetOrdersByTraderID_FullMethodName        = "/order.OrderService/GetOrdersByTraderID"
+	OrderService_CreateOrderDispute_FullMethodName         = "/order.OrderService/CreateOrderDispute"
+	OrderService_AcceptOrderDispute_FullMethodName         = "/order.OrderService/AcceptOrderDispute"
+	OrderService_RejectOrderDispute_FullMethodName         = "/order.OrderService/RejectOrderDispute"
+	OrderService_GetOrderDisputeInfo_FullMethodName        = "/order.OrderService/GetOrderDisputeInfo"
+	OrderService_FreezeOrderDispute_FullMethodName         = "/order.OrderService/FreezeOrderDispute"
+	OrderService_GetOrderDisputesByTraderID_FullMethodName = "/order.OrderService/GetOrderDisputesByTraderID"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -51,6 +52,7 @@ type OrderServiceClient interface {
 	RejectOrderDispute(ctx context.Context, in *RejectOrderDisputeRequest, opts ...grpc.CallOption) (*RejectOrderDisputeResponse, error)
 	GetOrderDisputeInfo(ctx context.Context, in *GetOrderDisputeInfoRequest, opts ...grpc.CallOption) (*GetOrderDisputeInfoResponse, error)
 	FreezeOrderDispute(ctx context.Context, in *FreezeOrderDisputeRequest, opts ...grpc.CallOption) (*FreezeOrderDisputeResponse, error)
+	GetOrderDisputesByTraderID(ctx context.Context, in *GetOrderDisputesRequest, opts ...grpc.CallOption) (*GetOrderDisputesResponse, error)
 }
 
 type orderServiceClient struct {
@@ -191,6 +193,16 @@ func (c *orderServiceClient) FreezeOrderDispute(ctx context.Context, in *FreezeO
 	return out, nil
 }
 
+func (c *orderServiceClient) GetOrderDisputesByTraderID(ctx context.Context, in *GetOrderDisputesRequest, opts ...grpc.CallOption) (*GetOrderDisputesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetOrderDisputesResponse)
+	err := c.cc.Invoke(ctx, OrderService_GetOrderDisputesByTraderID_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
@@ -208,6 +220,7 @@ type OrderServiceServer interface {
 	RejectOrderDispute(context.Context, *RejectOrderDisputeRequest) (*RejectOrderDisputeResponse, error)
 	GetOrderDisputeInfo(context.Context, *GetOrderDisputeInfoRequest) (*GetOrderDisputeInfoResponse, error)
 	FreezeOrderDispute(context.Context, *FreezeOrderDisputeRequest) (*FreezeOrderDisputeResponse, error)
+	GetOrderDisputesByTraderID(context.Context, *GetOrderDisputesRequest) (*GetOrderDisputesResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -256,6 +269,9 @@ func (UnimplementedOrderServiceServer) GetOrderDisputeInfo(context.Context, *Get
 }
 func (UnimplementedOrderServiceServer) FreezeOrderDispute(context.Context, *FreezeOrderDisputeRequest) (*FreezeOrderDisputeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FreezeOrderDispute not implemented")
+}
+func (UnimplementedOrderServiceServer) GetOrderDisputesByTraderID(context.Context, *GetOrderDisputesRequest) (*GetOrderDisputesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrderDisputesByTraderID not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
@@ -512,6 +528,24 @@ func _OrderService_FreezeOrderDispute_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_GetOrderDisputesByTraderID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrderDisputesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).GetOrderDisputesByTraderID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_GetOrderDisputesByTraderID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).GetOrderDisputesByTraderID(ctx, req.(*GetOrderDisputesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -570,6 +604,10 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FreezeOrderDispute",
 			Handler:    _OrderService_FreezeOrderDispute_Handler,
+		},
+		{
+			MethodName: "GetOrderDisputesByTraderID",
+			Handler:    _OrderService_GetOrderDisputesByTraderID_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

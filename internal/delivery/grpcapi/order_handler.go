@@ -404,3 +404,75 @@ func (h *OrderHandler) FreezeOrderDispute(ctx context.Context, r *orderpb.Freeze
 	}
 	return &orderpb.FreezeOrderDisputeResponse{}, nil
 }
+
+func (h *OrderHandler) GetOrderDisputes(ctx context.Context, r *orderpb.GetOrderDisputesRequest) (*orderpb.GetOrderDisputesResponse, error) {
+	page, limit, status := r.Page, r.Limit, r.Status
+	disputes, total, err := h.disputeUc.GetOrderDisputes(page, limit, status)
+	if err != nil {
+		return nil, err
+	}
+
+	disputesResp := make([]*orderpb.OrderDispute, len(disputes))
+	for i, dispute := range disputes {
+		order, err := h.uc.GetOrderByID(dispute.OrderID)
+		if err != nil {
+			return nil, err
+		}
+		disputesResp[i] = &orderpb.OrderDispute{
+			DisputeId: dispute.ID,
+			OrderId: dispute.OrderID,
+			ProofUrl: dispute.ProofUrl,
+			DisputeReason: dispute.Reason,
+			DisputeStatus: string(dispute.Status),
+			DisputeAmountFiat: dispute.DisputeAmountFiat,
+			DisputeAmountCrypto: dispute.DisputeAmountCrypto,
+			DisputeCryptoRate: dispute.DisputeCryptoRate,
+			Order: &orderpb.Order{
+				OrderId: order.ID,
+				Status: string(order.Status),
+				AmountFiat: order.AmountFiat,
+				AmountCrypto: order.AmountCrypto,
+				ExpiresAt: timestamppb.New(order.ExpiresAt),
+				MerchantOrderId: order.MerchantID,
+				TraderRewardPercent: order.TraderRewardPercent,
+				CreatedAt: timestamppb.New(order.CreatedAt),
+				UpdatedAt: timestamppb.New(order.UpdatedAt),
+				CryptoRubRate: order.CryptoRubRate,
+				BankDetail: &orderpb.BankDetail{
+					BankDetailId: order.BankDetail.ID,
+					TraderId: order.BankDetail.TraderID,
+					Currency: order.BankDetail.Currency,
+					BankName: order.BankDetail.BankName,
+					PaymentSystem: order.BankDetail.PaymentSystem,
+					CardNumber: order.BankDetail.CardNumber,
+					Phone: order.BankDetail.Phone,
+					Owner: order.BankDetail.Owner,
+					DeviceId: order.BankDetail.DeviceID,
+					BankCode: order.BankDetail.BankCode,
+					Country: order.BankDetail.Country,
+					MinAmount: float64(order.BankDetail.MinAmount),
+					MaxAmount: float64(order.BankDetail.MaxAmount),
+					Enabled: order.BankDetail.Enabled,
+					Delay: durationpb.New(order.BankDetail.Delay),
+					MaxOrdersSimultaneosly: order.BankDetail.MaxOrdersSimultaneosly,
+					MaxAmountDay: float64(order.BankDetail.MaxAmountDay),
+					MaxAmountMonth: float64(order.BankDetail.MaxAmountMonth),
+					MaxQuantityDay: float64(order.BankDetail.MaxQuantityDay),
+					MaxQuantityMonth: float64(order.BankDetail.MaxQuantityMonth),
+					InflowCurrency: order.BankDetail.InflowCurrency,
+					NspkCode: order.BankDetail.NspkCode,
+				},
+			},
+		}
+	}
+
+	return &orderpb.GetOrderDisputesResponse{
+		Disputes: disputesResp,
+		Pagination: &orderpb.Pagination{
+			CurrentPage: r.Page,
+			TotalPages:  int64(math.Ceil(float64(total) / float64(r.Limit))),
+			TotalItems: total,
+			ItemsPerPage: r.Limit,
+		},
+	}, nil
+}
