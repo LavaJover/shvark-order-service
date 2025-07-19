@@ -392,6 +392,7 @@ func (h *OrderHandler) GetOrderDisputeInfo(ctx context.Context, r *orderpb.GetOr
 			DisputeAmountFiat: dispute.DisputeAmountFiat,
 			DisputeAmountCrypto: dispute.DisputeAmountCrypto,
 			DisputeCryptoRate: dispute.DisputeCryptoRate,
+			AcceptAt: timestamppb.New(dispute.AutoAcceptAt),
 		},
 	}, nil
 }
@@ -427,6 +428,7 @@ func (h *OrderHandler) GetOrderDisputes(ctx context.Context, r *orderpb.GetOrder
 			DisputeAmountFiat: dispute.DisputeAmountFiat,
 			DisputeAmountCrypto: dispute.DisputeAmountCrypto,
 			DisputeCryptoRate: dispute.DisputeCryptoRate,
+			AcceptAt: timestamppb.New(dispute.AutoAcceptAt),
 			Order: &orderpb.Order{
 				OrderId: order.ID,
 				Status: string(order.Status),

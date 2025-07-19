@@ -74,6 +74,7 @@ message OrderDispute {
     double dispute_amount_crypto = 7;
     double dispute_crypto_rate = 8;
     Order order = 9;
+    google.protobuf.Timestamp accept_at = 10;
 }
 
 message AcceptOrderDisputeRequest{

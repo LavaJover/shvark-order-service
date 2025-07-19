@@ -434,6 +434,7 @@ type OrderDispute struct {
 	DisputeAmountCrypto float64                `protobuf:"fixed64,7,opt,name=dispute_amount_crypto,json=disputeAmountCrypto,proto3" json:"dispute_amount_crypto,omitempty"`
 	DisputeCryptoRate   float64                `protobuf:"fixed64,8,opt,name=dispute_crypto_rate,json=disputeCryptoRate,proto3" json:"dispute_crypto_rate,omitempty"`
 	Order               *Order                 `protobuf:"bytes,9,opt,name=order,proto3" json:"order,omitempty"`
+	AcceptAt            *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=accept_at,json=acceptAt,proto3" json:"accept_at,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -527,6 +528,13 @@ func (x *OrderDispute) GetDisputeCryptoRate() float64 {
 func (x *OrderDispute) GetOrder() *Order {
 	if x != nil {
 		return x.Order
+	}
+	return nil
+}
+
+func (x *OrderDispute) GetAcceptAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AcceptAt
 	}
 	return nil
 }
@@ -3634,7 +3642,7 @@ const file_order_proto_rawDesc = "" +
 	"\x13dispute_amount_fiat\x18\x05 \x01(\x01R\x11disputeAmountFiat\";\n" +
 	"\x1aCreateOrderDisputeResponse\x12\x1d\n" +
 	"\n" +
-	"dispute_id\x18\x01 \x01(\tR\tdisputeId\"\xeb\x02\n" +
+	"dispute_id\x18\x01 \x01(\tR\tdisputeId\"\xa4\x03\n" +
 	"\fOrderDispute\x12\x1d\n" +
 	"\n" +
 	"dispute_id\x18\x01 \x01(\tR\tdisputeId\x12\x19\n" +
@@ -3645,7 +3653,9 @@ const file_order_proto_rawDesc = "" +
 	"\x13dispute_amount_fiat\x18\x06 \x01(\x01R\x11disputeAmountFiat\x122\n" +
 	"\x15dispute_amount_crypto\x18\a \x01(\x01R\x13disputeAmountCrypto\x12.\n" +
 	"\x13dispute_crypto_rate\x18\b \x01(\x01R\x11disputeCryptoRate\x12\"\n" +
-	"\x05order\x18\t \x01(\v2\f.order.OrderR\x05order\":\n" +
+	"\x05order\x18\t \x01(\v2\f.order.OrderR\x05order\x127\n" +
+	"\taccept_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\bacceptAt\":\n" +
 	"\x19AcceptOrderDisputeRequest\x12\x1d\n" +
 	"\n" +
 	"dispute_id\x18\x01 \x01(\tR\tdisputeId\"6\n" +
@@ -4000,88 +4010,89 @@ var file_order_proto_depIdxs = []int32{
 	25, // 2: order.GetOrderByMerchantOrderIDResponse.order:type_name -> order.Order
 	61, // 3: order.CreateOrderDisputeRequest.ttl:type_name -> google.protobuf.Duration
 	25, // 4: order.OrderDispute.order:type_name -> order.Order
-	8,  // 5: order.GetOrderDisputeInfoResponse.dispute:type_name -> order.OrderDispute
-	62, // 6: order.OrderFilters.date_from:type_name -> google.protobuf.Timestamp
-	62, // 7: order.OrderFilters.date_to:type_name -> google.protobuf.Timestamp
-	62, // 8: order.CreateOrderRequest.expires_at:type_name -> google.protobuf.Timestamp
-	25, // 9: order.CreateOrderResponse.order:type_name -> order.Order
-	25, // 10: order.GetOrderByIDResponse.order:type_name -> order.Order
-	47, // 11: order.Order.bank_detail:type_name -> order.BankDetail
-	62, // 12: order.Order.expires_at:type_name -> google.protobuf.Timestamp
-	62, // 13: order.Order.created_at:type_name -> google.protobuf.Timestamp
-	62, // 14: order.Order.updated_at:type_name -> google.protobuf.Timestamp
-	15, // 15: order.GetOrdersByTraderIDRequest.filters:type_name -> order.OrderFilters
-	25, // 16: order.GetOrdersByTraderIDResponse.orders:type_name -> order.Order
-	16, // 17: order.GetOrdersByTraderIDResponse.pagination:type_name -> order.Pagination
-	33, // 18: order.EditTrafficRequest.traffic:type_name -> order.Traffic
-	33, // 19: order.GetTrafficRecordsResponse.traffic_records:type_name -> order.Traffic
-	61, // 20: order.BankDetail.delay:type_name -> google.protobuf.Duration
-	61, // 21: order.CreateBankDetailRequest.delay:type_name -> google.protobuf.Duration
-	47, // 22: order.UpdateBankDetailRequest.bank_detail:type_name -> order.BankDetail
-	47, // 23: order.GetBankDetailByIDResponse.bank_detail:type_name -> order.BankDetail
-	15, // 24: order.GetBankDetailsByTraderIDRequest.filters:type_name -> order.OrderFilters
-	47, // 25: order.GetBankDetailsByTraderIDResponse.bank_details:type_name -> order.BankDetail
-	16, // 26: order.GetBankDetailsByTraderIDResponse.pagination:type_name -> order.Pagination
-	58, // 27: order.GetBankDetailsStatsByTraderIDResponse.bank_detail_stat:type_name -> order.BankDetailStat
-	17, // 28: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
-	19, // 29: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
-	21, // 30: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
-	28, // 31: order.OrderService.OpenOrderDispute:input_type -> order.OpenOrderDisputeRequest
-	30, // 32: order.OrderService.ResolveOrderDispute:input_type -> order.ResolveOrderDisputeRequest
-	23, // 33: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
-	2,  // 34: order.OrderService.GetOrderByMerchantOrderID:input_type -> order.GetOrderByMerchantOrderIDRequest
-	26, // 35: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
-	6,  // 36: order.OrderService.CreateOrderDispute:input_type -> order.CreateOrderDisputeRequest
-	9,  // 37: order.OrderService.AcceptOrderDispute:input_type -> order.AcceptOrderDisputeRequest
-	11, // 38: order.OrderService.RejectOrderDispute:input_type -> order.RejectOrderDisputeRequest
-	13, // 39: order.OrderService.GetOrderDisputeInfo:input_type -> order.GetOrderDisputeInfoRequest
-	4,  // 40: order.OrderService.FreezeOrderDispute:input_type -> order.FreezeOrderDisputeRequest
-	0,  // 41: order.OrderService.GetOrderDisputes:input_type -> order.GetOrderDisputesRequest
-	32, // 42: order.TrafficService.AddTraffic:input_type -> order.AddTrafficRequest
-	35, // 43: order.TrafficService.EditTraffic:input_type -> order.EditTrafficRequest
-	37, // 44: order.TrafficService.DeleteTraffic:input_type -> order.DeleteTrafficRequest
-	39, // 45: order.TrafficService.GetTrafficRecords:input_type -> order.GetTrafficRecordsRequest
-	41, // 46: order.TrafficService.DisableTraderTraffic:input_type -> order.DisableTraderTrafficRequest
-	43, // 47: order.TrafficService.EnableTraderTraffic:input_type -> order.EnableTraderTrafficRequest
-	45, // 48: order.TrafficService.GetTraderTrafficStatus:input_type -> order.GetTraderTrafficStatusRequest
-	48, // 49: order.BankDetailService.CreateBankDetail:input_type -> order.CreateBankDetailRequest
-	50, // 50: order.BankDetailService.UpdateBankDetail:input_type -> order.UpdateBankDetailRequest
-	54, // 51: order.BankDetailService.DeleteBankDetail:input_type -> order.DeleteBankDetailRequest
-	52, // 52: order.BankDetailService.GetBankDetailByID:input_type -> order.GetBankDetailByIDRequest
-	56, // 53: order.BankDetailService.GetBankDetailsByTraderID:input_type -> order.GetBankDetailsByTraderIDRequest
-	59, // 54: order.BankDetailService.GetBankDetailsStatsByTraderID:input_type -> order.GetBankDetailsStatsByTraderIDRequest
-	18, // 55: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
-	20, // 56: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
-	22, // 57: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
-	29, // 58: order.OrderService.OpenOrderDispute:output_type -> order.OpenOrderDisputeResponse
-	31, // 59: order.OrderService.ResolveOrderDispute:output_type -> order.ResolveOrderDisputeResponse
-	24, // 60: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
-	3,  // 61: order.OrderService.GetOrderByMerchantOrderID:output_type -> order.GetOrderByMerchantOrderIDResponse
-	27, // 62: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
-	7,  // 63: order.OrderService.CreateOrderDispute:output_type -> order.CreateOrderDisputeResponse
-	10, // 64: order.OrderService.AcceptOrderDispute:output_type -> order.AcceptOrderDisputeResponse
-	12, // 65: order.OrderService.RejectOrderDispute:output_type -> order.RejectOrderDisputeResponse
-	14, // 66: order.OrderService.GetOrderDisputeInfo:output_type -> order.GetOrderDisputeInfoResponse
-	5,  // 67: order.OrderService.FreezeOrderDispute:output_type -> order.FreezeOrderDisputeResponse
-	1,  // 68: order.OrderService.GetOrderDisputes:output_type -> order.GetOrderDisputesResponse
-	34, // 69: order.TrafficService.AddTraffic:output_type -> order.AddTrafficResponse
-	36, // 70: order.TrafficService.EditTraffic:output_type -> order.EditTrafficResponse
-	38, // 71: order.TrafficService.DeleteTraffic:output_type -> order.DeleteTrafficResponse
-	40, // 72: order.TrafficService.GetTrafficRecords:output_type -> order.GetTrafficRecordsResponse
-	42, // 73: order.TrafficService.DisableTraderTraffic:output_type -> order.DisableTraderTrafficResponse
-	44, // 74: order.TrafficService.EnableTraderTraffic:output_type -> order.EnableTraderTrafficResponse
-	46, // 75: order.TrafficService.GetTraderTrafficStatus:output_type -> order.GetTraderTrafficStatusResponse
-	49, // 76: order.BankDetailService.CreateBankDetail:output_type -> order.CreateBankDetailResponse
-	51, // 77: order.BankDetailService.UpdateBankDetail:output_type -> order.UpdateBankDetailResponse
-	55, // 78: order.BankDetailService.DeleteBankDetail:output_type -> order.DeleteBankDetailResponse
-	53, // 79: order.BankDetailService.GetBankDetailByID:output_type -> order.GetBankDetailByIDResponse
-	57, // 80: order.BankDetailService.GetBankDetailsByTraderID:output_type -> order.GetBankDetailsByTraderIDResponse
-	60, // 81: order.BankDetailService.GetBankDetailsStatsByTraderID:output_type -> order.GetBankDetailsStatsByTraderIDResponse
-	55, // [55:82] is the sub-list for method output_type
-	28, // [28:55] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	62, // 5: order.OrderDispute.accept_at:type_name -> google.protobuf.Timestamp
+	8,  // 6: order.GetOrderDisputeInfoResponse.dispute:type_name -> order.OrderDispute
+	62, // 7: order.OrderFilters.date_from:type_name -> google.protobuf.Timestamp
+	62, // 8: order.OrderFilters.date_to:type_name -> google.protobuf.Timestamp
+	62, // 9: order.CreateOrderRequest.expires_at:type_name -> google.protobuf.Timestamp
+	25, // 10: order.CreateOrderResponse.order:type_name -> order.Order
+	25, // 11: order.GetOrderByIDResponse.order:type_name -> order.Order
+	47, // 12: order.Order.bank_detail:type_name -> order.BankDetail
+	62, // 13: order.Order.expires_at:type_name -> google.protobuf.Timestamp
+	62, // 14: order.Order.created_at:type_name -> google.protobuf.Timestamp
+	62, // 15: order.Order.updated_at:type_name -> google.protobuf.Timestamp
+	15, // 16: order.GetOrdersByTraderIDRequest.filters:type_name -> order.OrderFilters
+	25, // 17: order.GetOrdersByTraderIDResponse.orders:type_name -> order.Order
+	16, // 18: order.GetOrdersByTraderIDResponse.pagination:type_name -> order.Pagination
+	33, // 19: order.EditTrafficRequest.traffic:type_name -> order.Traffic
+	33, // 20: order.GetTrafficRecordsResponse.traffic_records:type_name -> order.Traffic
+	61, // 21: order.BankDetail.delay:type_name -> google.protobuf.Duration
+	61, // 22: order.CreateBankDetailRequest.delay:type_name -> google.protobuf.Duration
+	47, // 23: order.UpdateBankDetailRequest.bank_detail:type_name -> order.BankDetail
+	47, // 24: order.GetBankDetailByIDResponse.bank_detail:type_name -> order.BankDetail
+	15, // 25: order.GetBankDetailsByTraderIDRequest.filters:type_name -> order.OrderFilters
+	47, // 26: order.GetBankDetailsByTraderIDResponse.bank_details:type_name -> order.BankDetail
+	16, // 27: order.GetBankDetailsByTraderIDResponse.pagination:type_name -> order.Pagination
+	58, // 28: order.GetBankDetailsStatsByTraderIDResponse.bank_detail_stat:type_name -> order.BankDetailStat
+	17, // 29: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
+	19, // 30: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
+	21, // 31: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
+	28, // 32: order.OrderService.OpenOrderDispute:input_type -> order.OpenOrderDisputeRequest
+	30, // 33: order.OrderService.ResolveOrderDispute:input_type -> order.ResolveOrderDisputeRequest
+	23, // 34: order.OrderService.GetOrderByID:input_type -> order.GetOrderByIDRequest
+	2,  // 35: order.OrderService.GetOrderByMerchantOrderID:input_type -> order.GetOrderByMerchantOrderIDRequest
+	26, // 36: order.OrderService.GetOrdersByTraderID:input_type -> order.GetOrdersByTraderIDRequest
+	6,  // 37: order.OrderService.CreateOrderDispute:input_type -> order.CreateOrderDisputeRequest
+	9,  // 38: order.OrderService.AcceptOrderDispute:input_type -> order.AcceptOrderDisputeRequest
+	11, // 39: order.OrderService.RejectOrderDispute:input_type -> order.RejectOrderDisputeRequest
+	13, // 40: order.OrderService.GetOrderDisputeInfo:input_type -> order.GetOrderDisputeInfoRequest
+	4,  // 41: order.OrderService.FreezeOrderDispute:input_type -> order.FreezeOrderDisputeRequest
+	0,  // 42: order.OrderService.GetOrderDisputes:input_type -> order.GetOrderDisputesRequest
+	32, // 43: order.TrafficService.AddTraffic:input_type -> order.AddTrafficRequest
+	35, // 44: order.TrafficService.EditTraffic:input_type -> order.EditTrafficRequest
+	37, // 45: order.TrafficService.DeleteTraffic:input_type -> order.DeleteTrafficRequest
+	39, // 46: order.TrafficService.GetTrafficRecords:input_type -> order.GetTrafficRecordsRequest
+	41, // 47: order.TrafficService.DisableTraderTraffic:input_type -> order.DisableTraderTrafficRequest
+	43, // 48: order.TrafficService.EnableTraderTraffic:input_type -> order.EnableTraderTrafficRequest
+	45, // 49: order.TrafficService.GetTraderTrafficStatus:input_type -> order.GetTraderTrafficStatusRequest
+	48, // 50: order.BankDetailService.CreateBankDetail:input_type -> order.CreateBankDetailRequest
+	50, // 51: order.BankDetailService.UpdateBankDetail:input_type -> order.UpdateBankDetailRequest
+	54, // 52: order.BankDetailService.DeleteBankDetail:input_type -> order.DeleteBankDetailRequest
+	52, // 53: order.BankDetailService.GetBankDetailByID:input_type -> order.GetBankDetailByIDRequest
+	56, // 54: order.BankDetailService.GetBankDetailsByTraderID:input_type -> order.GetBankDetailsByTraderIDRequest
+	59, // 55: order.BankDetailService.GetBankDetailsStatsByTraderID:input_type -> order.GetBankDetailsStatsByTraderIDRequest
+	18, // 56: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
+	20, // 57: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
+	22, // 58: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
+	29, // 59: order.OrderService.OpenOrderDispute:output_type -> order.OpenOrderDisputeResponse
+	31, // 60: order.OrderService.ResolveOrderDispute:output_type -> order.ResolveOrderDisputeResponse
+	24, // 61: order.OrderService.GetOrderByID:output_type -> order.GetOrderByIDResponse
+	3,  // 62: order.OrderService.GetOrderByMerchantOrderID:output_type -> order.GetOrderByMerchantOrderIDResponse
+	27, // 63: order.OrderService.GetOrdersByTraderID:output_type -> order.GetOrdersByTraderIDResponse
+	7,  // 64: order.OrderService.CreateOrderDispute:output_type -> order.CreateOrderDisputeResponse
+	10, // 65: order.OrderService.AcceptOrderDispute:output_type -> order.AcceptOrderDisputeResponse
+	12, // 66: order.OrderService.RejectOrderDispute:output_type -> order.RejectOrderDisputeResponse
+	14, // 67: order.OrderService.GetOrderDisputeInfo:output_type -> order.GetOrderDisputeInfoResponse
+	5,  // 68: order.OrderService.FreezeOrderDispute:output_type -> order.FreezeOrderDisputeResponse
+	1,  // 69: order.OrderService.GetOrderDisputes:output_type -> order.GetOrderDisputesResponse
+	34, // 70: order.TrafficService.AddTraffic:output_type -> order.AddTrafficResponse
+	36, // 71: order.TrafficService.EditTraffic:output_type -> order.EditTrafficResponse
+	38, // 72: order.TrafficService.DeleteTraffic:output_type -> order.DeleteTrafficResponse
+	40, // 73: order.TrafficService.GetTrafficRecords:output_type -> order.GetTrafficRecordsResponse
+	42, // 74: order.TrafficService.DisableTraderTraffic:output_type -> order.DisableTraderTrafficResponse
+	44, // 75: order.TrafficService.EnableTraderTraffic:output_type -> order.EnableTraderTrafficResponse
+	46, // 76: order.TrafficService.GetTraderTrafficStatus:output_type -> order.GetTraderTrafficStatusResponse
+	49, // 77: order.BankDetailService.CreateBankDetail:output_type -> order.CreateBankDetailResponse
+	51, // 78: order.BankDetailService.UpdateBankDetail:output_type -> order.UpdateBankDetailResponse
+	55, // 79: order.BankDetailService.DeleteBankDetail:output_type -> order.DeleteBankDetailResponse
+	53, // 80: order.BankDetailService.GetBankDetailByID:output_type -> order.GetBankDetailByIDResponse
+	57, // 81: order.BankDetailService.GetBankDetailsByTraderID:output_type -> order.GetBankDetailsByTraderIDResponse
+	60, // 82: order.BankDetailService.GetBankDetailsStatsByTraderID:output_type -> order.GetBankDetailsStatsByTraderIDResponse
+	56, // [56:83] is the sub-list for method output_type
+	29, // [29:56] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_order_proto_init() }
