@@ -61,7 +61,7 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(dispute *domain.Dispute) e
 		Reason: dispute.Reason,
 		Status: string(dispute.Status),
 	})
-	err = disputeUc.walletHandler.Freeze(order.BankDetail.TraderID, dispute.OrderID, order.AmountCrypto)
+	err = disputeUc.walletHandler.Freeze(order.BankDetail.TraderID, dispute.OrderID, dispute.DisputeAmountCrypto)
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}

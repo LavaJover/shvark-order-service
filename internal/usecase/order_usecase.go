@@ -90,7 +90,7 @@ func (uc *DefaultOrderUsecase) FilterByTraffic(bankDetails []*domain.BankDetail,
 	for _, bankDetail := range bankDetails {
 		traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(bankDetail.TraderID, merchantID)
 		if err != nil {
-			return nil, err
+			continue
 		}
 		if traffic.Enabled {
 			result = append(result, bankDetail)
