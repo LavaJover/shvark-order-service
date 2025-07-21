@@ -749,3 +749,7 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 
 	return nil
 }
+
+func (uc *DefaultOrderUsecase) GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*domain.OrderStatistics, error) {
+	return uc.OrderRepo.GetOrderStatistics(traderID, dateFrom, dateTo)
+}

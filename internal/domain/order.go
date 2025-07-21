@@ -51,6 +51,17 @@ type OrderFilters struct {
 	Currency 		string 	  `form:"currency"`
 }
 
+type OrderStatistics struct {
+	TotalOrders 			int64
+	SucceedOrders 			int64
+	CanceledOrders 			int64
+	ProcessedAmountFiat 	float64
+	ProcessedAmountCrypto 	float64
+	CanceledAmountFiat 		float64
+	CanceledAmountCrypto 	float64
+	IncomeCrypto 			float64
+}
+
 type OrderUsecase interface {
 	CreateOrder(order *Order) (*Order, error)
 	GetOrderByID(orderID string) (*Order, error)
@@ -67,6 +78,7 @@ type OrderUsecase interface {
 	ResolveOrderDispute(orderID string) error
 	ApproveOrder(orderID string) error
 	CancelOrder(orderID string) error
+	GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*OrderStatistics, error)
 }
 
 type OrderRepository interface {
@@ -83,4 +95,5 @@ type OrderRepository interface {
 	GetOrdersByBankDetailID(bankDetailID string) ([]*Order, error)
 	FindExpiredOrders() ([]*Order, error)
 	GetCreatedOrdersByClientID(clientID string) ([]*Order, error)
+	GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*OrderStatistics, error)
 }

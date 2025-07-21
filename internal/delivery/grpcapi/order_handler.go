@@ -478,3 +478,26 @@ func (h *OrderHandler) GetOrderDisputes(ctx context.Context, r *orderpb.GetOrder
 		},
 	}, nil
 }
+
+func (h *OrderHandler) GetOrderStatistics(ctx context.Context, r *orderpb.GetOrderStatisticsRequest) (*orderpb.GetOrderStatisticsResponse, error) {
+	stats, err := h.uc.GetOrderStatistics(
+		r.TraderId,
+		r.DateFrom.AsTime(),
+		r.DateTo.AsTime(),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &orderpb.GetOrderStatisticsResponse{
+		TotalOrders: stats.TotalOrders,
+		SucceedOrders: stats.SucceedOrders,
+		CanceledOrders: stats.CanceledOrders,
+		ProcessedAmountFiat: float32(stats.ProcessedAmountFiat),
+		ProcessedAmountCrypto: float32(stats.ProcessedAmountCrypto),
+		CanceledAmountFiat: float32(stats.CanceledAmountFiat),
+		CanceledAmountCrypto: float32(stats.CanceledAmountCrypto),
+		IncomeCrypto: float32(stats.IncomeCrypto),
+	}, nil
+}

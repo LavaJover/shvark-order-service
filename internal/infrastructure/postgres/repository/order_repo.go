@@ -496,3 +496,60 @@ func (r *DefaultOrderRepository) GetCreatedOrdersByClientID(clientID string) ([]
 
 	return orders, nil
 }
+
+func (r *DefaultOrderRepository) GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*domain.OrderStatistics, error) {
+	var stats domain.OrderStatistics
+
+	baseQuery := func() *gorm.DB {
+		return r.DB.
+			Model(&models.OrderModel{}).
+			Joins("JOIN bank_detail_models AS bdm ON bdm.id = order_models.bank_details_id").
+			Where("bdm.trader_id = ?", traderID).
+			Where("order_models.created_at BETWEEN ? AND ?", dateFrom, dateTo)
+	}
+
+	// Всего сделок
+	if err := baseQuery().Count(&stats.TotalOrders).Error; err != nil {
+		return nil, fmt.Errorf("count total orders: %w", err)
+	}
+
+	// Succeed сделки
+	type SucceedAgg struct {
+		Count     int64
+		SumFiat   float64
+		SumCrypto float64
+		Income    float64
+	}
+	var succ SucceedAgg
+	if err := baseQuery().
+		Where("order_models.status = ?", domain.StatusSucceed).
+		Select("COUNT(*) as count, SUM(amount_fiat) as sum_fiat, SUM(amount_crypto) as sum_crypto, SUM(amount_crypto * trader_reward_percent) as income").
+		Scan(&succ).Error; err != nil {
+		return nil, fmt.Errorf("succeed agg: %w", err)
+	}
+
+	stats.SucceedOrders = succ.Count
+	stats.ProcessedAmountFiat = succ.SumFiat
+	stats.ProcessedAmountCrypto = succ.SumCrypto
+	stats.IncomeCrypto = succ.Income
+
+	// Canceled сделки
+	type CancelAgg struct {
+		Count     int64
+		SumFiat   float64
+		SumCrypto float64
+	}
+	var canc CancelAgg
+	if err := baseQuery().
+		Where("order_models.status = ?", domain.StatusCanceled).
+		Select("COUNT(*) as count, SUM(amount_fiat) as sum_fiat, SUM(amount_crypto) as sum_crypto").
+		Scan(&canc).Error; err != nil {
+		return nil, fmt.Errorf("canceled agg: %w", err)
+	}
+
+	stats.CanceledOrders = canc.Count
+	stats.CanceledAmountFiat = canc.SumFiat
+	stats.CanceledAmountCrypto = canc.SumCrypto
+
+	return &stats, nil
+}

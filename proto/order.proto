@@ -23,8 +23,27 @@ service OrderService {
     rpc GetOrderDisputeInfo (GetOrderDisputeInfoRequest) returns (GetOrderDisputeInfoResponse);
     rpc FreezeOrderDispute (FreezeOrderDisputeRequest) returns (FreezeOrderDisputeResponse);
     rpc GetOrderDisputes (GetOrderDisputesRequest) returns (GetOrderDisputesResponse);
+
+    rpc GetOrderStatistics (GetOrderStatisticsRequest) returns (GetOrderStatisticsResponse);
 }
 
+message GetOrderStatisticsRequest {
+    string trader_id = 1;
+    google.protobuf.Timestamp date_from = 2;
+    google.protobuf.Timestamp date_to = 3;
+}
+
+message GetOrderStatisticsResponse {
+    int64 total_orders = 1;
+    int64 succeed_orders = 2;
+    int64 canceled_orders = 3;
+    int64 active_orders = 4;
+    float processed_amount_fiat = 5;
+    float processed_amount_crypto = 6;
+    float canceled_amount_fiat = 7;
+    float canceled_amount_crypto = 8;
+    float income_crypto = 9;
+}
 
 message GetOrderDisputesRequest {
     int64 page = 1;

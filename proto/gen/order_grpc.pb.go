@@ -33,6 +33,7 @@ const (
 	OrderService_GetOrderDisputeInfo_FullMethodName       = "/order.OrderService/GetOrderDisputeInfo"
 	OrderService_FreezeOrderDispute_FullMethodName        = "/order.OrderService/FreezeOrderDispute"
 	OrderService_GetOrderDisputes_FullMethodName          = "/order.OrderService/GetOrderDisputes"
+	OrderService_GetOrderStatistics_FullMethodName        = "/order.OrderService/GetOrderStatistics"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -53,6 +54,7 @@ type OrderServiceClient interface {
 	GetOrderDisputeInfo(ctx context.Context, in *GetOrderDisputeInfoRequest, opts ...grpc.CallOption) (*GetOrderDisputeInfoResponse, error)
 	FreezeOrderDispute(ctx context.Context, in *FreezeOrderDisputeRequest, opts ...grpc.CallOption) (*FreezeOrderDisputeResponse, error)
 	GetOrderDisputes(ctx context.Context, in *GetOrderDisputesRequest, opts ...grpc.CallOption) (*GetOrderDisputesResponse, error)
+	GetOrderStatistics(ctx context.Context, in *GetOrderStatisticsRequest, opts ...grpc.CallOption) (*GetOrderStatisticsResponse, error)
 }
 
 type orderServiceClient struct {
@@ -203,6 +205,16 @@ func (c *orderServiceClient) GetOrderDisputes(ctx context.Context, in *GetOrderD
 	return out, nil
 }
 
+func (c *orderServiceClient) GetOrderStatistics(ctx context.Context, in *GetOrderStatisticsRequest, opts ...grpc.CallOption) (*GetOrderStatisticsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetOrderStatisticsResponse)
+	err := c.cc.Invoke(ctx, OrderService_GetOrderStatistics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
@@ -221,6 +233,7 @@ type OrderServiceServer interface {
 	GetOrderDisputeInfo(context.Context, *GetOrderDisputeInfoRequest) (*GetOrderDisputeInfoResponse, error)
 	FreezeOrderDispute(context.Context, *FreezeOrderDisputeRequest) (*FreezeOrderDisputeResponse, error)
 	GetOrderDisputes(context.Context, *GetOrderDisputesRequest) (*GetOrderDisputesResponse, error)
+	GetOrderStatistics(context.Context, *GetOrderStatisticsRequest) (*GetOrderStatisticsResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -272,6 +285,9 @@ func (UnimplementedOrderServiceServer) FreezeOrderDispute(context.Context, *Free
 }
 func (UnimplementedOrderServiceServer) GetOrderDisputes(context.Context, *GetOrderDisputesRequest) (*GetOrderDisputesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrderDisputes not implemented")
+}
+func (UnimplementedOrderServiceServer) GetOrderStatistics(context.Context, *GetOrderStatisticsRequest) (*GetOrderStatisticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrderStatistics not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
@@ -546,6 +562,24 @@ func _OrderService_GetOrderDisputes_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_GetOrderStatistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrderStatisticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).GetOrderStatistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_GetOrderStatistics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).GetOrderStatistics(ctx, req.(*GetOrderStatisticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -608,6 +642,10 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetOrderDisputes",
 			Handler:    _OrderService_GetOrderDisputes_Handler,
+		},
+		{
+			MethodName: "GetOrderStatistics",
+			Handler:    _OrderService_GetOrderStatistics_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
