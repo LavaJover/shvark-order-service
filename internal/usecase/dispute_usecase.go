@@ -56,10 +56,15 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(dispute *domain.Dispute) e
 		DisputeID: dispute.ID,
 		OrderID: dispute.OrderID,
 		TraderID: order.BankDetail.TraderID,
-		TraderName: "trader-name",
+		OrderAmountFiat: order.AmountFiat,
+		DisputeAmountFiat: dispute.DisputeAmountFiat,
 		ProofUrl: dispute.ProofUrl,
 		Reason: dispute.Reason,
-		Status: string(dispute.Status),
+		Status: "🆘Открыт диспут",
+		BankName: order.BankDetail.BankName,
+		Phone: order.BankDetail.Phone,
+		CardNumber: order.BankDetail.CardNumber,
+		Owner: order.BankDetail.Owner,
 	})
 	err = disputeUc.walletHandler.Freeze(order.BankDetail.TraderID, dispute.OrderID, dispute.DisputeAmountCrypto)
 	if err != nil {

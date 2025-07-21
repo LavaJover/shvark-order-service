@@ -468,9 +468,13 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	if err = uc.Publisher.Publish(kafka.OrderEvent{
 		OrderID: order.ID,
 		TraderID: chosenBankDetail.TraderID,
-		Status: "🔥"+string(order.Status),
+		Status: "🔥Новая сделка",
 		AmountFiat: order.AmountFiat,
 		Currency: order.Currency,
+		BankName: chosenBankDetail.BankName,
+		Phone: chosenBankDetail.Phone,
+		CardNumber: chosenBankDetail.CardNumber,
+		Owner: chosenBankDetail.Owner,
 	}); err != nil {
 		slog.Error("failed to publish event", "error", err.Error())
 	}
@@ -687,9 +691,13 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 	if err = uc.Publisher.Publish(kafka.OrderEvent{
 		OrderID: order.ID,
 		TraderID: order.BankDetail.TraderID,
-		Status: "✅"+string(domain.StatusSucceed),
+		Status: "✅Сделка закрыта",
 		AmountFiat: order.AmountFiat,
 		Currency: order.Currency,
+		BankName: order.BankDetail.BankName,
+		Phone: order.BankDetail.Phone,
+		CardNumber: order.BankDetail.CardNumber,
+		Owner: order.BankDetail.Owner,
 	}); err != nil {
 		slog.Error("failed to publish event", "error", err.Error())
 	}
@@ -730,9 +738,13 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 	if err = uc.Publisher.Publish(kafka.OrderEvent{
 		OrderID: order.ID,
 		TraderID: order.BankDetail.TraderID,
-		Status: "⛔️"+string(domain.StatusCanceled),
+		Status: "⛔️Отмена сделки",
 		AmountFiat: order.AmountFiat,
 		Currency: order.Currency,
+		BankName: order.BankDetail.BankName,
+		Phone: order.BankDetail.Phone,
+		CardNumber: order.BankDetail.CardNumber,
+		Owner: order.BankDetail.Owner,
 	}); err != nil {
 		slog.Error("failed to publish event", "error", err.Error())
 	}
