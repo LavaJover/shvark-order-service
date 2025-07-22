@@ -49,6 +49,8 @@ type OrderFilters struct {
 	DateFrom 		time.Time `form:"date_from"`
 	DateTo 			time.Time `form:"date_to"`
 	Currency 		string 	  `form:"currency"`
+	OrderID			string    `form:"order_id"`
+	MerchantOrderID string    `form:"merchant_order_id"`
 }
 
 type OrderStatistics struct {

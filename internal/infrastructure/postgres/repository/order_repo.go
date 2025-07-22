@@ -231,6 +231,14 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(
         baseQuery = baseQuery.Where("order_models.created_at <= ?", filters.DateTo)
     }
 
+	if filters.OrderID != "" {
+		baseQuery = baseQuery.Where("order_models.id = ?", filters.OrderID)
+	}
+
+	if filters.MerchantOrderID != "" {
+		baseQuery = baseQuery.Where("order_models.merchant_order_id = ?", filters.MerchantOrderID)
+	}
+
     // Подсчет общего количества с учетом фильтров
     if err := baseQuery.Count(&total).Error; err != nil {
         return nil, 0, fmt.Errorf("failed to count orders: %w", err)

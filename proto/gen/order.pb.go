@@ -972,15 +972,17 @@ func (x *GetOrderDisputeInfoResponse) GetDispute() *OrderDispute {
 }
 
 type OrderFilters struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Statuses      []string               `protobuf:"bytes,1,rep,name=statuses,proto3" json:"statuses,omitempty"`
-	MinAmountFiat float64                `protobuf:"fixed64,2,opt,name=min_amount_fiat,json=minAmountFiat,proto3" json:"min_amount_fiat,omitempty"`
-	MaxAmountFiat float64                `protobuf:"fixed64,3,opt,name=max_amount_fiat,json=maxAmountFiat,proto3" json:"max_amount_fiat,omitempty"`
-	DateFrom      *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=date_from,json=dateFrom,proto3" json:"date_from,omitempty"`
-	DateTo        *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=date_to,json=dateTo,proto3" json:"date_to,omitempty"`
-	Currency      string                 `protobuf:"bytes,6,opt,name=currency,proto3" json:"currency,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Statuses        []string               `protobuf:"bytes,1,rep,name=statuses,proto3" json:"statuses,omitempty"`
+	MinAmountFiat   float64                `protobuf:"fixed64,2,opt,name=min_amount_fiat,json=minAmountFiat,proto3" json:"min_amount_fiat,omitempty"`
+	MaxAmountFiat   float64                `protobuf:"fixed64,3,opt,name=max_amount_fiat,json=maxAmountFiat,proto3" json:"max_amount_fiat,omitempty"`
+	DateFrom        *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=date_from,json=dateFrom,proto3" json:"date_from,omitempty"`
+	DateTo          *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=date_to,json=dateTo,proto3" json:"date_to,omitempty"`
+	Currency        string                 `protobuf:"bytes,6,opt,name=currency,proto3" json:"currency,omitempty"`
+	OrderId         string                 `protobuf:"bytes,7,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	MerchantOrderId string                 `protobuf:"bytes,8,opt,name=merchant_order_id,json=merchantOrderId,proto3" json:"merchant_order_id,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *OrderFilters) Reset() {
@@ -1051,6 +1053,20 @@ func (x *OrderFilters) GetDateTo() *timestamppb.Timestamp {
 func (x *OrderFilters) GetCurrency() string {
 	if x != nil {
 		return x.Currency
+	}
+	return ""
+}
+
+func (x *OrderFilters) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *OrderFilters) GetMerchantOrderId() string {
+	if x != nil {
+		return x.MerchantOrderId
 	}
 	return ""
 }
@@ -3852,14 +3868,16 @@ const file_order_proto_rawDesc = "" +
 	"\n" +
 	"dispute_id\x18\x01 \x01(\tR\tdisputeId\"L\n" +
 	"\x1bGetOrderDisputeInfoResponse\x12-\n" +
-	"\adispute\x18\x01 \x01(\v2\x13.order.OrderDisputeR\adispute\"\x84\x02\n" +
+	"\adispute\x18\x01 \x01(\v2\x13.order.OrderDisputeR\adispute\"\xcb\x02\n" +
 	"\fOrderFilters\x12\x1a\n" +
 	"\bstatuses\x18\x01 \x03(\tR\bstatuses\x12&\n" +
 	"\x0fmin_amount_fiat\x18\x02 \x01(\x01R\rminAmountFiat\x12&\n" +
 	"\x0fmax_amount_fiat\x18\x03 \x01(\x01R\rmaxAmountFiat\x127\n" +
 	"\tdate_from\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\bdateFrom\x123\n" +
 	"\adate_to\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x06dateTo\x12\x1a\n" +
-	"\bcurrency\x18\x06 \x01(\tR\bcurrency\"\x97\x01\n" +
+	"\bcurrency\x18\x06 \x01(\tR\bcurrency\x12\x19\n" +
+	"\border_id\x18\a \x01(\tR\aorderId\x12*\n" +
+	"\x11merchant_order_id\x18\b \x01(\tR\x0fmerchantOrderId\"\x97\x01\n" +
 	"\n" +
 	"Pagination\x12!\n" +
 	"\fcurrent_page\x18\x01 \x01(\x03R\vcurrentPage\x12\x1f\n" +

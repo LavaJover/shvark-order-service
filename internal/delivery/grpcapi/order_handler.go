@@ -235,6 +235,8 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 		DateFrom: dateFrom,
 		DateTo: dateTo,
 		Currency: r.Filters.Currency,
+		OrderID: r.Filters.OrderId,
+		MerchantOrderID: r.Filters.MerchantOrderId,
 	}
 
 	traderID := r.TraderId
