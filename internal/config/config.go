@@ -13,6 +13,12 @@ type OrderConfig struct {
 	LogConfig 	   `yaml:"log_config"`
 	BankingService `yaml:"banking-service"`
 	WalletService  `yaml:"wallet-service"`
+	KafkaService   `yaml:"kafka-service"`
+}
+
+type KafkaService struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
 }
 
 type GRPCServer struct {

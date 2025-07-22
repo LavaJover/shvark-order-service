@@ -14,3 +14,6 @@ banking-service:
 wallet-service:
   host: "localhost"
   port: "3000"
+kafka-service:
+  host: "localhost"
+  port: "9092"

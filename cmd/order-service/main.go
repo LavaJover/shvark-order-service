@@ -31,8 +31,8 @@ func main() {
 	db := postgres.MustInitDB(cfg)
 
 	// Setup kafka
-	orderKafkaPublisher := kafka.NewKafkaPublisher([]string{"0.0.0.0:9092"}, "order-events")
-	disputeKafkaPublisher := kafka.NewKafkaPublisher([]string{"0.0.0.0:9092"}, "dispute-events")
+	orderKafkaPublisher := kafka.NewKafkaPublisher([]string{fmt.Sprintf("%s:%s", cfg.KafkaService.Host, cfg.KafkaService.Port)}, "order-events")
+	disputeKafkaPublisher := kafka.NewKafkaPublisher([]string{fmt.Sprintf("%s:%s", cfg.KafkaService.Host, cfg.KafkaService.Port)}, "dispute-events")
 
 	// Init order repo
 	orderRepo := repository.NewDefaultOrderRepository(db)
