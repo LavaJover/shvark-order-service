@@ -157,6 +157,7 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 			UpdatedAt: timestamppb.New(orderResponse.UpdatedAt),
 			Recalculated: orderResponse.Recalculated,
 			CryptoRubRate: orderResponse.CryptoRubRate,
+			MerchantId: orderResponse.MerchantID,
 		},
 	}, nil
 }
@@ -202,6 +203,7 @@ func (h *OrderHandler) GetOrderByMerchantOrderID(ctx context.Context, r *orderpb
 			UpdatedAt: timestamppb.New(orderResponse.UpdatedAt),
 			Recalculated: orderResponse.Recalculated,
 			CryptoRubRate: orderResponse.CryptoRubRate,
+			MerchantId: orderResponse.MerchantID,
 		},
 	}, nil
 }
@@ -285,6 +287,7 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 			UpdatedAt: timestamppb.New(order.UpdatedAt),
 			Recalculated: order.Recalculated,
 			CryptoRubRate: order.CryptoRubRate,
+			MerchantId: order.MerchantID,
 		}
 	}
 

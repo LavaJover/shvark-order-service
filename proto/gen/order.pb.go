@@ -1596,6 +1596,7 @@ type Order struct {
 	UpdatedAt           *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	Recalculated        bool                   `protobuf:"varint,14,opt,name=recalculated,proto3" json:"recalculated,omitempty"`
 	CryptoRubRate       float64                `protobuf:"fixed64,15,opt,name=crypto_rub_rate,json=cryptoRubRate,proto3" json:"crypto_rub_rate,omitempty"`
+	MerchantId          string                 `protobuf:"bytes,16,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -1733,6 +1734,13 @@ func (x *Order) GetCryptoRubRate() float64 {
 		return x.CryptoRubRate
 	}
 	return 0
+}
+
+func (x *Order) GetMerchantId() string {
+	if x != nil {
+		return x.MerchantId
+	}
+	return ""
 }
 
 type GetOrdersByTraderIDRequest struct {
@@ -3916,7 +3924,7 @@ const file_order_proto_rawDesc = "" +
 	"\x13GetOrderByIDRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\":\n" +
 	"\x14GetOrderByIDResponse\x12\"\n" +
-	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\xeb\x04\n" +
+	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\x8c\x05\n" +
 	"\x05Order\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x122\n" +
@@ -3938,7 +3946,9 @@ const file_order_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\"\n" +
 	"\frecalculated\x18\x0e \x01(\bR\frecalculated\x12&\n" +
-	"\x0fcrypto_rub_rate\x18\x0f \x01(\x01R\rcryptoRubRate\"\xca\x01\n" +
+	"\x0fcrypto_rub_rate\x18\x0f \x01(\x01R\rcryptoRubRate\x12\x1f\n" +
+	"\vmerchant_id\x18\x10 \x01(\tR\n" +
+	"merchantId\"\xca\x01\n" +
 	"\x1aGetOrdersByTraderIDRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x03R\x04page\x12\x14\n" +
