@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/LavaJover/shvark-order-service/internal/domain"
 )
 
 func SendCallback(
@@ -24,19 +23,6 @@ func SendCallback(
 		if err != nil {
 			log.Printf("callback error: invalid URL '%s': %v", callbackUrl, err)
 			return
-		}
-
-		switch status{
-		case string(domain.StatusSucceed):
-			status = "COMPLETED"
-		case string(domain.StatusCanceled):
-			status = "CANCELED"
-		case string(domain.StatusDisputeCreated):
-			status = "DISPUTE"
-		case string(domain.StatusCreated):
-			status = "PENDING"
-		case string(domain.StatusPreorder):
-			status = "CREATED"
 		}
 
 		query := parsedURL.Query()

@@ -8,12 +8,12 @@ import (
 type OrderStatus string
 
 const (
-	StatusCreated 		  OrderStatus = "CREATED"
-	StatusPreorder		  OrderStatus = "PREORDER_CREATED"
+	StatusPending 		  OrderStatus = "PENDING"
+	StatusCreated		  OrderStatus = "CREATED"
 	StatusFailed 		  OrderStatus = "FAILED"
 	StatusCanceled 		  OrderStatus = "CANCELED"
-	StatusSucceed 		  OrderStatus = "SUCCEED"
-	StatusDisputeCreated  OrderStatus = "DISPUTE_CREATED"
+	StatusCompleted 	  OrderStatus = "COMPLETED"
+	StatusDisputeCreated  OrderStatus = "DISPUTE"
 )
 
 type Order struct {
@@ -40,6 +40,7 @@ type Order struct {
 	CryptoRubRate		float64
 	BankCode 			string
 	NspkCode 			string
+	Type 				string
 }
 
 type OrderFilters struct {
@@ -81,6 +82,19 @@ type OrderUsecase interface {
 	ApproveOrder(orderID string) error
 	CancelOrder(orderID string) error
 	GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*OrderStatistics, error)
+
+	GetOrders(filter Filter, sortField string, page, size int) ([]*Order, int64, error)
+}
+
+type Filter struct {
+	DealID  *string
+	Type             *string
+	Status           *string
+	TimeOpeningStart *time.Time
+	TimeOpeningEnd   *time.Time
+	AmountMin        *float64
+	AmountMax        *float64
+	MerchantID       string
 }
 
 type OrderRepository interface {
@@ -98,4 +112,6 @@ type OrderRepository interface {
 	FindExpiredOrders() ([]*Order, error)
 	GetCreatedOrdersByClientID(clientID string) ([]*Order, error)
 	GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*OrderStatistics, error)
+
+	GetOrders(filter Filter, sortField string, page, size int) ([]*Order, int64, error)
 }

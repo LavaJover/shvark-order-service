@@ -36,7 +36,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 		Currency: r.Currency,
 		Country: r.Country,
 		ClientID: r.ClientId,
-		Status: domain.StatusCreated,
+		Status: domain.StatusPending,
 		PaymentSystem: r.PaymentSystem,
 		MerchantOrderID: r.MerchantOrderId,
 		Shuffle: r.Shuffle,
@@ -44,6 +44,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 		CallbackURL: r.CallbackUrl,
 		BankCode: r.BankCode,
 		NspkCode: r.NspkCode,
+		Type: r.Type,
 	}
 	
 	savedOrder, err := h.uc.CreateOrder(&orderRequest)
@@ -63,6 +64,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 		Order: &orderpb.Order{
 			OrderId: savedOrder.ID,
 			Status: string(savedOrder.Status),
+			Type: savedOrder.Type,
 			BankDetail: &orderpb.BankDetail{
 				BankDetailId: savedOrder.BankDetail.ID,
 				TraderId: savedOrder.BankDetail.TraderID,
@@ -127,6 +129,7 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 		Order: &orderpb.Order{
 			OrderId: orderID,
 			Status: string(orderResponse.Status),
+			Type: orderResponse.Type,
 			BankDetail: &orderpb.BankDetail{
 				BankDetailId: orderResponse.BankDetail.ID,
 				TraderId: orderResponse.BankDetail.TraderID,
@@ -173,6 +176,7 @@ func (h *OrderHandler) GetOrderByMerchantOrderID(ctx context.Context, r *orderpb
 		Order: &orderpb.Order{
 			OrderId: orderResponse.ID,
 			Status: string(orderResponse.Status),
+			Type: orderResponse.Type,
 			BankDetail: &orderpb.BankDetail{
 				BankDetailId: orderResponse.BankDetail.ID,
 				TraderId: orderResponse.BankDetail.TraderID,
@@ -258,6 +262,7 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 		orders[i] = &orderpb.Order{
 			OrderId: order.ID,
 			Status: string(order.Status),
+			Type: order.Type,
 			BankDetail: &orderpb.BankDetail{
 				BankDetailId: order.BankDetail.ID,
 				TraderId: order.BankDetail.TraderID,
@@ -445,6 +450,7 @@ func (h *OrderHandler) GetOrderDisputes(ctx context.Context, r *orderpb.GetOrder
 				CreatedAt: timestamppb.New(order.CreatedAt),
 				UpdatedAt: timestamppb.New(order.UpdatedAt),
 				CryptoRubRate: order.CryptoRubRate,
+				Type: order.Type,
 				BankDetail: &orderpb.BankDetail{
 					BankDetailId: order.BankDetail.ID,
 					TraderId: order.BankDetail.TraderID,
@@ -505,4 +511,114 @@ func (h *OrderHandler) GetOrderStatistics(ctx context.Context, r *orderpb.GetOrd
 		CanceledAmountCrypto: float32(stats.CanceledAmountCrypto),
 		IncomeCrypto: float32(stats.IncomeCrypto),
 	}, nil
+}
+
+func (h *OrderHandler) GetOrders(ctx context.Context, r *orderpb.GetOrdersRequest) (*orderpb.GetOrdersResponse, error) {
+    // Обработка параметра сортировки
+    sortField := ""
+    if r.Sort != nil {
+        sortField = *r.Sort
+    }
+
+    page, size, merchantID := r.Page, r.Size, r.MerchantId
+    if size <= 0 {
+        size = 10
+    }
+
+    filter := domain.Filter{
+        DealID:     r.DealId,
+        Type:       r.Type,
+        Status:     r.Status,
+        AmountMin:  r.AmountMin,
+        AmountMax:  r.AmountMax,
+        MerchantID: merchantID,
+    }
+
+    if r.TimeOpeningStart != nil {
+        t := r.TimeOpeningStart.AsTime()
+        filter.TimeOpeningStart = &t
+    }
+    if r.TimeOpeningEnd != nil {
+        t := r.TimeOpeningEnd.AsTime()
+        filter.TimeOpeningEnd = &t
+    }
+
+    orders, total, err := h.uc.GetOrders(
+        filter,
+        sortField, // передаем строку, а не указатель
+        int(page),
+        int(size),
+    )
+    if err != nil {
+        return nil, err
+    }
+
+    // ИСПРАВЛЕНО: создаем срез с 0 длиной и нужной емкостью
+    content := make([]*orderpb.OrderResponse, 0, len(orders))
+    for _, o := range orders {
+        // ИСПРАВЛЕНО: используем реальные данные из модели
+        response := &orderpb.OrderResponse{
+            Id:           o.ID,
+            TimeOpening:  timestamppb.New(o.CreatedAt),
+            TimeExpires:  timestamppb.New(o.ExpiresAt),
+            TimeComplete: timestamppb.New(o.UpdatedAt),
+            StoreName:    "UNKNOWN", // TODO: заменить на реальное значение
+            Type:         o.Type,    // ИСПРАВЛЕНО: берем из модели
+            Status:       string(o.Status),
+            CurrencyRate: o.CryptoRubRate,
+            SumInvoice: &orderpb.Amount{
+                Amount:   o.AmountFiat,
+                Currency: o.Currency,
+            },
+            SumDeal: &orderpb.Amount{
+                Amount:   o.AmountCrypto, // ИСПРАВЛЕНО: используем AmountCrypto
+                Currency: "USDT",
+            },
+            Requisites: &orderpb.Requisites{
+                Issuer:      o.BankDetail.BankCode,
+                HolderName:  o.BankDetail.Owner,
+                PhoneNumber: o.BankDetail.Phone,
+            },
+            Email: "email", // TODO: заменить на реальное значение
+        }
+        content = append(content, response)
+    }
+
+    // ИСПРАВЛЕНО: корректное вычисление пагинации
+    totalPages := 0
+    if size > 0 && total > 0 {
+        totalPages = (int(total) + int(size) - 1) / int(size)
+    }
+
+    offset := page * size
+    last := int(page) >= totalPages-1
+
+    return &orderpb.GetOrdersResponse{
+        Content: content,
+        Pageable: &orderpb.Pageable{
+            Sort: &orderpb.Sort{
+                Unsorted: false,
+                Sorted:   true,
+                Empty:    false,
+            },
+            PageNumber: page,
+            PageSize:   size,
+            Offset:     offset,
+            Paged:      true,
+            Unpaged:    false,
+        },
+        TotalElements:    int32(total),
+        TotalPages:       int32(totalPages),
+        Last:             last,
+        First:            page == 0,
+        NumberOfElements: int32(len(content)),
+        Size:             size,
+        Number:           page,
+        Sort: &orderpb.Sort{
+            Unsorted: false,
+            Sorted:   true,
+            Empty:    false,
+        },
+        Empty: len(content) == 0,
+    }, nil
 }

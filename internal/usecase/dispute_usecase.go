@@ -101,11 +101,11 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.StatusSucceed)
+	disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.StatusCompleted)
 	notifier.SendCallback(
 		order.CallbackURL,
 		order.MerchantOrderID,
-		string(domain.StatusSucceed),
+		string(domain.StatusCompleted),
 		0, 0, 0,
 	)
 	return nil

@@ -109,7 +109,7 @@ func (uc *DefaultOrderUsecase) FilterByMaxOrdersSimulateosly(bankDetails []*doma
 		}
 		ordersCreated := make([]*domain.Order, 0)
 		for _, order := range orders {
-			if order.Status == domain.StatusCreated {
+			if order.Status == domain.StatusPending {
 				ordersCreated = append(ordersCreated, order)
 			}
 		}
@@ -133,7 +133,7 @@ func (uc *DefaultOrderUsecase) FilterByMaxAmountDay(bankDetails []*domain.BankDe
 		now := time.Now()
 		startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		for _, order := range orders {
-			if (order.Status == domain.StatusSucceed || order.Status == domain.StatusCreated) && (order.UpdatedAt.After(startOfToday)) {
+			if (order.Status == domain.StatusCompleted || order.Status == domain.StatusPending) && (order.UpdatedAt.After(startOfToday)) {
 				ordersSucceedSummary += order.AmountFiat
 			}
 		}
@@ -157,7 +157,7 @@ func (uc *DefaultOrderUsecase) FilterByMaxAmountMonth(bankDetails []*domain.Bank
 		now := time.Now()
 		startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 		for _, order := range orders {
-			if (order.Status == domain.StatusSucceed || order.Status == domain.StatusCreated) && (order.UpdatedAt.After(startOfMonth)) {
+			if (order.Status == domain.StatusCompleted || order.Status == domain.StatusPending) && (order.UpdatedAt.After(startOfMonth)) {
 				ordersSucceedSummary += order.AmountFiat
 			}
 		}
@@ -179,7 +179,7 @@ func (uc *DefaultOrderUsecase) FilterByDelay(bankDetails []*domain.BankDetail) (
 			return nil, err
 		}
 		for _, order := range orders {
-			if order.Status != domain.StatusSucceed {
+			if order.Status != domain.StatusCompleted {
 				continue
 			}
 
@@ -208,7 +208,7 @@ func (uc *DefaultOrderUsecase) FilterByMaxQuantityDay(bankDetails []*domain.Bank
 			}
 			now := time.Now()
 			startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-			if (order.Status == domain.StatusCreated || order.Status == domain.StatusSucceed) && (order.UpdatedAt.After(startOfToday)) {
+			if (order.Status == domain.StatusPending || order.Status == domain.StatusCompleted) && (order.UpdatedAt.After(startOfToday)) {
 				ordersQuantityDay++
 				continue
 			}
@@ -236,7 +236,7 @@ func (uc *DefaultOrderUsecase) FilterByMaxQuantityMonth(bankDetails []*domain.Ba
 			}
 			now := time.Now()
 			startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
-			if (order.Status == domain.StatusCreated || order.Status == domain.StatusSucceed) && (order.UpdatedAt.After(startOfMonth)) {
+			if (order.Status == domain.StatusPending || order.Status == domain.StatusCompleted) && (order.UpdatedAt.After(startOfMonth)) {
 				ordersQuantityMonth++
 				continue
 			}
@@ -276,7 +276,7 @@ func (uc *DefaultOrderUsecase)FilterByEqualAmountFiat(bankDetails []*domain.Bank
 		}
 		skipBankDetail := false
 		for _, order := range orders {
-			if order.Status == domain.StatusCreated && order.AmountFiat == amountFiat {
+			if order.Status == domain.StatusPending && order.AmountFiat == amountFiat {
 				// Пропускаем данный рек, тк есть созданная заявка на такую сумму фиата
 				skipBankDetail = true
 				fmt.Println("Обнаружена активная заявка с такой же суммой!")
@@ -412,14 +412,6 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	order.AmountCrypto = amountCrypto
 	order.CryptoRubRate = usdt.UsdtRubRates
 
-	// notify merchant that pre-order is ready
-	notifier.SendCallback(
-		order.CallbackURL,
-		order.MerchantOrderID,
-		string(domain.StatusPreorder),
-		0, 0, 0,
-	)
-
 	// check idempotency by client_id
 	if order.ClientID != "" {
 		if err := uc.CheckIdempotency(order.ClientID); err != nil {
@@ -480,11 +472,22 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 	}
 
 	// send to callback
+	// CREATED
 	if order.CallbackURL != "" {
 		notifier.SendCallback(
 			order.CallbackURL,
 			order.MerchantOrderID,
-			string(order.Status),
+			string(domain.StatusCreated),
+			0, 0, 0,
+		)
+	}
+
+	// PENDING
+	if order.CallbackURL != "" {
+		notifier.SendCallback(
+			order.CallbackURL,
+			order.MerchantOrderID,
+			string(domain.StatusPending),
 			0, 0, 0,
 		)
 	}
@@ -509,6 +512,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		UpdatedAt: order.UpdatedAt,
 		Recalculated: order.Recalculated,
 		CryptoRubRate: order.CryptoRubRate,
+		Type: order.Type,
 		BankDetail: &domain.BankDetail{
 			ID: chosenBankDetail.ID,
 			TraderID: chosenBankDetail.TraderID,
@@ -554,9 +558,9 @@ func (uc *DefaultOrderUsecase) GetOrdersByTraderID(
 ) ([]*domain.Order, int64, error) {
 
 	validStatuses := map[string]bool{
-		string(domain.StatusSucceed): true,
+		string(domain.StatusCompleted): true,
 		string(domain.StatusCanceled): true,
-		string(domain.StatusCreated): true,
+		string(domain.StatusPending): true,
 		string(domain.StatusDisputeCreated): true,
 	}
 
@@ -673,7 +677,7 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		return err
 	}
 
-	if order.Status != domain.StatusCreated {
+	if order.Status != domain.StatusPending {
 		return domain.ErrResolveDisputeFailed
 	}
 
@@ -684,7 +688,7 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 	}
 
 	// Set order status to SUCCEED
-	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusSucceed); err != nil {
+	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusCompleted); err != nil {
 		return err
 	}
 
@@ -707,7 +711,7 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		notifier.SendCallback(
 			order.CallbackURL,
 			order.MerchantOrderID,
-			string(domain.StatusSucceed),
+			string(domain.StatusCompleted),
 			0, 0, 0,
 		)
 	}
@@ -722,7 +726,7 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		return err
 	}
 
-	if order.Status != domain.StatusCreated && order.Status != domain.StatusDisputeCreated{
+	if order.Status != domain.StatusPending && order.Status != domain.StatusDisputeCreated{
 		return domain.ErrCancelOrder
 	}
 
@@ -764,4 +768,8 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 
 func (uc *DefaultOrderUsecase) GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*domain.OrderStatistics, error) {
 	return uc.OrderRepo.GetOrderStatistics(traderID, dateFrom, dateTo)
+}
+
+func (uc *DefaultOrderUsecase) GetOrders(filter domain.Filter, sortField string, page, size int) ([]*domain.Order, int64, error) {
+	return uc.OrderRepo.GetOrders(filter, sortField, page, size)
 }

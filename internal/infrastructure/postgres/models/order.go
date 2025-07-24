@@ -28,4 +28,5 @@ type OrderModel struct {
 	PlatformFee 		float64
 	Recalculated   		bool
 	CryptoRubRate		float64
+	Type 				string
 }

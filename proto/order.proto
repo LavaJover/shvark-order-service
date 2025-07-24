@@ -25,6 +25,76 @@ service OrderService {
     rpc GetOrderDisputes (GetOrderDisputesRequest) returns (GetOrderDisputesResponse);
 
     rpc GetOrderStatistics (GetOrderStatisticsRequest) returns (GetOrderStatisticsResponse);
+    rpc GetOrders (GetOrdersRequest) returns (GetOrdersResponse);
+}
+
+message GetOrdersRequest {
+    optional string deal_id = 1;
+    optional string type = 2;
+    optional string status = 3;
+    optional google.protobuf.Timestamp time_opening_start = 4;
+    optional google.protobuf.Timestamp time_opening_end = 5;
+    optional double amount_min = 6;
+    optional double amount_max = 7;
+    int32 page = 8;
+    int32 size = 9;
+    optional string sort = 10;
+    string merchant_id = 11;
+}
+
+message GetOrdersResponse {
+  repeated OrderResponse content = 1;
+  Pageable pageable = 2;
+  int32 total_elements = 3;
+  int32 total_pages = 4;
+  bool last = 5;
+  int32 number_of_elements = 6;
+  int32 size = 7;
+  int32 number = 8;
+  Sort sort = 9;
+  bool first = 10;
+  bool empty = 11;
+}
+
+message OrderResponse {
+  string id = 1;
+  google.protobuf.Timestamp time_opening = 2;
+  google.protobuf.Timestamp time_expires = 3;
+  google.protobuf.Timestamp time_complete = 4;
+  string store_name = 5;
+  string type = 6;
+  string status = 7;
+  double currency_rate = 8;
+  Amount sum_invoice = 9;
+  Amount sum_deal = 10;
+  Requisites requisites = 11;
+  string email = 12;
+}
+
+message Amount {
+  double amount = 1;
+  string currency = 2;
+}
+
+message Requisites {
+  string issuer = 1;
+  string holder_name = 2;
+  string phone_number = 3;
+}
+
+message Pageable {
+  Sort sort = 1;
+  int32 page_number = 2;
+  int32 page_size = 3;
+  int32 offset = 4;
+  bool paged = 5;
+  bool unpaged = 6;
+}
+
+message Sort {
+  bool unsorted = 1;
+  bool sorted = 2;
+  bool empty = 3;
 }
 
 message GetOrderStatisticsRequest {
@@ -151,6 +221,7 @@ message CreateOrderRequest {
     string callback_url = 10;
     string bank_code = 11;
     string nspk_code = 12;
+    string type = 13;
 }
 
 message CreateOrderResponse {
@@ -199,6 +270,7 @@ message Order {
     bool recalculated = 14;
     double crypto_rub_rate = 15;
     string merchant_id = 16;
+    string type = 17;
 }
 
 message GetOrdersByTraderIDRequest {

@@ -25,7 +25,7 @@ func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error
 		MerchantID: order.MerchantID,
 		AmountFiat: order.AmountFiat,
 		AmountCrypto: order.AmountCrypto,
-		Status: domain.StatusCreated,
+		Status: domain.StatusPending,
 		Currency: order.Currency,
 		Country: order.Country,
 		ClientID: order.ClientID,
@@ -39,6 +39,7 @@ func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error
 		Recalculated: order.Recalculated,
 		CryptoRubRate: order.CryptoRubRate,
 		PlatformFee: order.PlatformFee,
+		Type: order.Type,
 	}
 
 	if err := r.DB.Create(&orderModel).Error; err != nil {
@@ -78,6 +79,7 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 		Recalculated: order.Recalculated,
 		CryptoRubRate: order.CryptoRubRate,
 		PlatformFee: order.PlatformFee,
+		Type: order.Type,
 		BankDetail: &domain.BankDetail{
 			ID: order.BankDetail.ID,
 			TraderID: order.BankDetail.TraderID,
@@ -136,6 +138,7 @@ func (r *DefaultOrderRepository) GetOrderByMerchantOrderID(merchantOrderID strin
 		Recalculated: order.Recalculated,
 		CryptoRubRate: order.CryptoRubRate,
 		PlatformFee: order.PlatformFee,
+		Type: order.Type,
 		BankDetail: &domain.BankDetail{
 			ID: order.BankDetail.ID,
 			TraderID: order.BankDetail.TraderID,
@@ -279,6 +282,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(
 			Recalculated: orderModel.Recalculated,
 			CryptoRubRate: orderModel.CryptoRubRate,
 			PlatformFee: orderModel.PlatformFee,
+			Type: orderModel.Type,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -316,7 +320,7 @@ func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
 	if err := r.DB.Preload("BankDetail", func(db *gorm.DB) *gorm.DB {
 		return db.Unscoped() // отключаем фильтрацию по DeletedAt
 	}).
-		Where("status = ?", domain.StatusCreated).
+		Where("status = ?", domain.StatusPending).
 		Where("expires_at < ?", time.Now()).
 		Find(&orderModels).Error; err != nil {return nil, err}
 	
@@ -342,6 +346,7 @@ func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
 			Recalculated: orderModel.Recalculated,
 			CryptoRubRate: orderModel.CryptoRubRate,
 			PlatformFee: orderModel.PlatformFee,
+			Type: orderModel.Type,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -409,6 +414,7 @@ func (r *DefaultOrderRepository) GetOrdersByBankDetailID(bankDetailID string) ([
 			Recalculated: orderModel.Recalculated,
 			CryptoRubRate: orderModel.CryptoRubRate,
 			PlatformFee: orderModel.PlatformFee,
+			Type: orderModel.Type,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -446,7 +452,7 @@ func (r *DefaultOrderRepository) GetCreatedOrdersByClientID(clientID string) ([]
 	var orderModels []models.OrderModel
 	if err := r.DB.Model(&models.OrderModel{}).Preload("BankDetail", func(db *gorm.DB) *gorm.DB {
 		return db.Unscoped() // отключаем фильтрацию по DeletedAt
-	}).Where("client_id = ? AND status = ?", clientID, domain.StatusCreated).Find(&orderModels).Error; err != nil {
+	}).Where("client_id = ? AND status = ?", clientID, domain.StatusPending).Find(&orderModels).Error; err != nil {
 		return nil, err
 	}
 
@@ -472,6 +478,7 @@ func (r *DefaultOrderRepository) GetCreatedOrdersByClientID(clientID string) ([]
 			Recalculated: orderModel.Recalculated,
 			CryptoRubRate: orderModel.CryptoRubRate,
 			PlatformFee: orderModel.PlatformFee,
+			Type: orderModel.Type,
 			BankDetail: &domain.BankDetail{
 				ID: orderModel.BankDetail.ID,
 				TraderID: orderModel.BankDetail.TraderID,
@@ -530,7 +537,7 @@ func (r *DefaultOrderRepository) GetOrderStatistics(traderID string, dateFrom, d
 	}
 	var succ SucceedAgg
 	if err := baseQuery().
-		Where("order_models.status = ?", domain.StatusSucceed).
+		Where("order_models.status = ?", domain.StatusCompleted).
 		Select("COUNT(*) as count, SUM(amount_fiat) as sum_fiat, SUM(amount_crypto) as sum_crypto, SUM(amount_crypto * trader_reward_percent) as income").
 		Scan(&succ).Error; err != nil {
 		return nil, fmt.Errorf("succeed agg: %w", err)
@@ -560,4 +567,137 @@ func (r *DefaultOrderRepository) GetOrderStatistics(traderID string, dateFrom, d
 	stats.CanceledAmountCrypto = canc.SumCrypto
 
 	return &stats, nil
+}
+
+func (r *DefaultOrderRepository) GetOrders(filter domain.Filter, sortField string, page, size int) ([]*domain.Order, int64, error) {
+    query := r.DB.Model(&models.OrderModel{}).Preload("BankDetail")
+
+    // Применяем фильтры
+    if filter.DealID != nil {
+        // ИСПРАВЛЕНО: используем правильное имя поля
+        query = query.Where("merchant_order_id = ?", *filter.DealID)
+    }
+    if filter.Type != nil {
+        query = query.Where("type = ?", *filter.Type)
+    }
+    if filter.Status != nil {
+        query = query.Where("status = ?", *filter.Status)
+    }
+    if filter.TimeOpeningStart != nil {
+        query = query.Where("created_at >= ?", *filter.TimeOpeningStart)
+    }
+    if filter.TimeOpeningEnd != nil {
+        query = query.Where("created_at <= ?", *filter.TimeOpeningEnd)
+    }
+    if filter.AmountMin != nil {
+        query = query.Where("amount_fiat >= ?", *filter.AmountMin)
+    }
+    if filter.AmountMax != nil {
+        query = query.Where("amount_fiat <= ?", *filter.AmountMax)
+    }
+
+    query = query.Where("merchant_id = ?", filter.MerchantID)
+
+    // Считаем общее количество
+    var total int64
+    if err := query.Count(&total).Error; err != nil {
+        return nil, 0, fmt.Errorf("count failed: %w", err)
+    }
+
+    // Применяем сортировку и пагинацию только если нужно
+    if sortField != "" {
+        // ИСПРАВЛЕНО: проверяем на пустую строку
+        mappedField := MapSortField(sortField)
+        query = query.Order(fmt.Sprintf("%s DESC", mappedField))
+    }
+    
+    if size > 0 {
+        offset := page * size
+        query = query.Offset(offset).Limit(size)
+    }
+
+    // Выполняем запрос
+    var orderModels []models.OrderModel
+    if err := query.Find(&orderModels).Error; err != nil {
+        return nil, 0, fmt.Errorf("find failed: %w", err)
+    }
+
+    orders := make([]*domain.Order, len(orderModels))
+    for i, orderModel := range orderModels {
+        orders[i] = &domain.Order{
+            ID:                 orderModel.ID,
+            MerchantID:         orderModel.MerchantID,
+            AmountFiat:         orderModel.AmountFiat,
+            AmountCrypto:       orderModel.AmountCrypto,
+            Currency:           orderModel.Currency,
+            Country:            orderModel.Country,
+            ClientID:           orderModel.ClientID,
+            Status:             orderModel.Status,
+            PaymentSystem:      orderModel.PaymentSystem,
+            BankDetailsID:      orderModel.BankDetailsID,
+            CreatedAt:          orderModel.CreatedAt,
+            UpdatedAt:          orderModel.UpdatedAt,
+            MerchantOrderID:    orderModel.MerchantOrderID,
+            Shuffle:            orderModel.Shuffle,
+            CallbackURL:        orderModel.CallbackURL,
+            TraderRewardPercent: orderModel.TraderRewardPercent,
+            Recalculated:       orderModel.Recalculated,
+            CryptoRubRate:      orderModel.CryptoRubRate,
+            PlatformFee:        orderModel.PlatformFee,
+            Type:               orderModel.Type,
+            BankDetail: &domain.BankDetail{
+                ID:          orderModel.BankDetail.ID,
+                TraderID:    orderModel.BankDetail.TraderID,
+                Country:     orderModel.BankDetail.Country,
+                Currency:    orderModel.BankDetail.Currency,
+                MinAmount:   orderModel.BankDetail.MinAmount,
+                MaxAmount:   orderModel.BankDetail.MaxAmount,
+                BankName:    orderModel.BankDetail.BankName,
+                PaymentSystem: orderModel.BankDetail.PaymentSystem,
+                Delay:       orderModel.BankDetail.Delay,
+                Enabled:     orderModel.BankDetail.Enabled,
+                CardNumber:  orderModel.BankDetail.CardNumber,
+                Phone:       orderModel.BankDetail.Phone,
+                Owner:       orderModel.BankDetail.Owner,
+                MaxOrdersSimultaneosly: orderModel.BankDetail.MaxOrdersSimultaneosly,
+                MaxAmountDay:           orderModel.BankDetail.MaxAmountDay,
+                MaxAmountMonth:         orderModel.BankDetail.MaxAmountMonth,
+                InflowCurrency:         orderModel.BankDetail.InflowCurrency,
+                BankCode:               orderModel.BankDetail.BankCode,
+                NspkCode:               orderModel.BankDetail.NspkCode,
+                MaxQuantityDay:         orderModel.BankDetail.MaxQuantityDay,
+                MaxQuantityMonth:       orderModel.BankDetail.MaxQuantityMonth,
+                DeviceID:               orderModel.BankDetail.DeviceID,
+                CreatedAt:              orderModel.BankDetail.CreatedAt,
+                UpdatedAt:              orderModel.BankDetail.UpdatedAt,
+            },
+            ExpiresAt: orderModel.ExpiresAt,
+        }
+    }
+
+    return orders, total, nil
+}
+
+// MapSortField без изменений
+func MapSortField(input string) string {
+    switch input {
+    case "id":
+        return "id"
+    case "deal_id":
+        return "merchant_order_id"
+    case "time_opening":
+        return "created_at"
+    case "time_expires":
+        return "expires_at"
+    case "time_complete":
+        return "updated_at"
+    case "type":
+        return "type"
+    case "status":
+        return "status"
+    case "amount":
+        return "amount_fiat"
+    default:
+        return "created_at"
+    }
 }

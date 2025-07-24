@@ -314,22 +314,22 @@ func (r *DefaultBankDetailRepo) GetBankDetailsStatsByTraderID(traderID string) (
 
 		// Кол-во и сумма заявок за сегодня
 		_ = r.DB.Model(&models.OrderModel{}).
-			Where("bank_details_id = ? AND status IN (?) AND created_at >= ?", bd.ID, []string{string(domain.StatusSucceed), string(domain.StatusCreated)}, today).
+			Where("bank_details_id = ? AND status IN (?) AND created_at >= ?", bd.ID, []string{string(domain.StatusCompleted), string(domain.StatusPending)}, today).
 			Count(&dayCount).Error
 
 		_ = r.DB.Model(&models.OrderModel{}).
 			Select("COALESCE(SUM(amount_fiat), 0)").
-			Where("bank_details_id = ? AND status IN (?) AND created_at >= ?", bd.ID, []string{string(domain.StatusSucceed), string(domain.StatusCreated)}, today).
+			Where("bank_details_id = ? AND status IN (?) AND created_at >= ?", bd.ID, []string{string(domain.StatusCompleted), string(domain.StatusPending)}, today).
 			Scan(&daySum).Error
 
 		// Кол-во и сумма заявок за месяц
 		_ = r.DB.Model(&models.OrderModel{}).
-			Where("bank_details_id = ? AND status IN (?) AND created_at >= ?", bd.ID, []string{string(domain.StatusSucceed), string(domain.StatusCreated)}, monthStart).
+			Where("bank_details_id = ? AND status IN (?) AND created_at >= ?", bd.ID, []string{string(domain.StatusCompleted), string(domain.StatusPending)}, monthStart).
 			Count(&monthCount).Error
 
 		_ = r.DB.Model(&models.OrderModel{}).
 			Select("COALESCE(SUM(amount_fiat), 0)").
-			Where("bank_details_id = ? AND status IN (?) AND created_at >= ?", bd.ID, []string{string(domain.StatusSucceed), string(domain.StatusCreated)}, monthStart).
+			Where("bank_details_id = ? AND status IN (?) AND created_at >= ?", bd.ID, []string{string(domain.StatusCompleted), string(domain.StatusPending)}, monthStart).
 			Scan(&monthSum).Error
 
 		stats = append(stats, &domain.BankDetailStat{
