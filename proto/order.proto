@@ -80,6 +80,7 @@ message Requisites {
   string issuer = 1;
   string holder_name = 2;
   string phone_number = 3;
+  string card_number = 4;
 }
 
 message Pageable {

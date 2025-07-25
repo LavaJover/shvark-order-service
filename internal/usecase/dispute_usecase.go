@@ -70,13 +70,18 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(dispute *domain.Dispute) e
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
-	disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.OrderStatus(domain.DisputeOpened))
-	notifier.SendCallback(
-		order.CallbackURL,
-		order.MerchantOrderID,
-		string(domain.StatusDisputeCreated),
-		0, 0, 0,
-	)
+	err = disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.OrderStatus(domain.DisputeOpened))
+	if err != nil {
+		return err
+	}
+	if order.CallbackURL != "" {
+		notifier.SendCallback(
+			order.CallbackURL,
+			order.MerchantOrderID,
+			string(domain.DisputeOpened),
+			0, 0, 0,
+		)
+	}
 	return nil
 }
 
@@ -101,13 +106,18 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.StatusCompleted)
-	notifier.SendCallback(
-		order.CallbackURL,
-		order.MerchantOrderID,
-		string(domain.StatusCompleted),
-		0, 0, 0,
-	)
+	err = disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.StatusCompleted)
+	if err != nil {
+		return err
+	}
+	if order.CallbackURL != "" {
+		notifier.SendCallback(
+			order.CallbackURL,
+			order.MerchantOrderID,
+			string(domain.StatusCompleted),
+			dispute.DisputeAmountCrypto, dispute.DisputeAmountFiat, dispute.DisputeCryptoRate,
+		)
+	}
 	return nil
 }
 
@@ -128,13 +138,18 @@ func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.StatusCanceled)
-	notifier.SendCallback(
-		order.CallbackURL,
-		order.MerchantOrderID,
-		string(domain.StatusCanceled),
-		0, 0, 0,
-	)
+	err = disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.StatusCanceled)
+	if err != nil {
+		return err
+	}
+	if order.CallbackURL != "" {
+		notifier.SendCallback(
+			order.CallbackURL,
+			order.MerchantOrderID,
+			string(domain.StatusCanceled),
+			0, 0, 0,
+		)
+	}
 	return nil
 }
 

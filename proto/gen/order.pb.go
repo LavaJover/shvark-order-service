@@ -460,6 +460,7 @@ type Requisites struct {
 	Issuer        string                 `protobuf:"bytes,1,opt,name=issuer,proto3" json:"issuer,omitempty"`
 	HolderName    string                 `protobuf:"bytes,2,opt,name=holder_name,json=holderName,proto3" json:"holder_name,omitempty"`
 	PhoneNumber   string                 `protobuf:"bytes,3,opt,name=phone_number,json=phoneNumber,proto3" json:"phone_number,omitempty"`
+	CardNumber    string                 `protobuf:"bytes,4,opt,name=card_number,json=cardNumber,proto3" json:"card_number,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -511,6 +512,13 @@ func (x *Requisites) GetHolderName() string {
 func (x *Requisites) GetPhoneNumber() string {
 	if x != nil {
 		return x.PhoneNumber
+	}
+	return ""
+}
+
+func (x *Requisites) GetCardNumber() string {
+	if x != nil {
+		return x.CardNumber
 	}
 	return ""
 }
@@ -4520,13 +4528,15 @@ const file_order_proto_rawDesc = "" +
 	"\x05email\x18\f \x01(\tR\x05email\"<\n" +
 	"\x06Amount\x12\x16\n" +
 	"\x06amount\x18\x01 \x01(\x01R\x06amount\x12\x1a\n" +
-	"\bcurrency\x18\x02 \x01(\tR\bcurrency\"h\n" +
+	"\bcurrency\x18\x02 \x01(\tR\bcurrency\"\x89\x01\n" +
 	"\n" +
 	"Requisites\x12\x16\n" +
 	"\x06issuer\x18\x01 \x01(\tR\x06issuer\x12\x1f\n" +
 	"\vholder_name\x18\x02 \x01(\tR\n" +
 	"holderName\x12!\n" +
-	"\fphone_number\x18\x03 \x01(\tR\vphoneNumber\"\xb1\x01\n" +
+	"\fphone_number\x18\x03 \x01(\tR\vphoneNumber\x12\x1f\n" +
+	"\vcard_number\x18\x04 \x01(\tR\n" +
+	"cardNumber\"\xb1\x01\n" +
 	"\bPageable\x12\x1f\n" +
 	"\x04sort\x18\x01 \x01(\v2\v.order.SortR\x04sort\x12\x1f\n" +
 	"\vpage_number\x18\x02 \x01(\x05R\n" +

@@ -471,8 +471,6 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		slog.Error("failed to publish event", "error", err.Error())
 	}
 
-	// send to callback
-	// CREATED
 	if order.CallbackURL != "" {
 		notifier.SendCallback(
 			order.CallbackURL,
@@ -482,7 +480,6 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		)
 	}
 
-	// PENDING
 	if order.CallbackURL != "" {
 		notifier.SendCallback(
 			order.CallbackURL,
@@ -601,9 +598,6 @@ func (uc *DefaultOrderUsecase) CancelExpiredOrders(ctx context.Context) error {
 		}
 
 		log.Printf("Order %s canceled due to timeout!\n", order.ID)
-		// Вызов callback мерчанта
-		if(order.CallbackURL != ""){
-		} 
 	}
 
 	return nil
@@ -706,7 +700,6 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		slog.Error("failed to publish event", "error", err.Error())
 	}
 
-	// Вызов callback мерчанта
 	if order.CallbackURL != "" {
 		notifier.SendCallback(
 			order.CallbackURL,
@@ -753,7 +746,6 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		slog.Error("failed to publish event", "error", err.Error())
 	}
 
-	// Вызов callback мерчанта
 	if order.CallbackURL != "" {
 		notifier.SendCallback(
 			order.CallbackURL,

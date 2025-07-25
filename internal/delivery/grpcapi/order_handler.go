@@ -571,13 +571,14 @@ func (h *OrderHandler) GetOrders(ctx context.Context, r *orderpb.GetOrdersReques
                 Currency: o.Currency,
             },
             SumDeal: &orderpb.Amount{
-                Amount:   o.AmountCrypto, // ИСПРАВЛЕНО: используем AmountCrypto
+                Amount:   o.AmountCrypto - o.AmountCrypto * o.PlatformFee, // ИСПРАВЛЕНО: используем AmountCrypto
                 Currency: "USDT",
             },
             Requisites: &orderpb.Requisites{
                 Issuer:      o.BankDetail.BankCode,
                 HolderName:  o.BankDetail.Owner,
                 PhoneNumber: o.BankDetail.Phone,
+				CardNumber: o.BankDetail.CardNumber,
             },
             Email: "email", // TODO: заменить на реальное значение
         }

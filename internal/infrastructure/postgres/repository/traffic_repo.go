@@ -35,21 +35,22 @@ func (r *DefaultTrafficRepository) CreateTraffic(traffic *domain.Traffic) error 
 }
 
 func (r *DefaultTrafficRepository) UpdateTraffic(traffic *domain.Traffic) error {
-	trafficModel := models.TrafficModel{
-		ID: traffic.ID,
-		MerchantID: traffic.MerchantID,
-		TraderID: traffic.TraderID,
-		TraderRewardPercent: traffic.TraderRewardPercent,
-		TraderPriority: traffic.TraderPriority,
-		Enabled: traffic.Enabled,
-		PlatformFee: traffic.PlatformFee,
-	}
+    // Используем карту для явного указания полей к обновлению
+    updateData := map[string]interface{}{
+        "trader_reward_percent": traffic.TraderRewardPercent,
+        "trader_priority":      traffic.TraderPriority,
+        "enabled":              traffic.Enabled,
+        "platform_fee":         traffic.PlatformFee,
+    }
 
-	if err := r.DB.Model(&trafficModel).Updates(&trafficModel).Error; err != nil {
-		return err
-	}
+    // Обновляем запись с явным указанием полей
+    if err := r.DB.Model(&models.TrafficModel{}).
+        Where("id = ?", traffic.ID).
+        Updates(updateData).Error; err != nil {
+        return err
+    }
 
-	return nil
+    return nil
 }
 
 func (r *DefaultTrafficRepository) DeleteTraffic(trafficID string) error {
