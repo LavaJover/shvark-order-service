@@ -428,6 +428,14 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		log.Printf("Реквизиты для заявки %s не найдены!\n", order.ID)
 	}
 	log.Printf("Для заявки %s найдены доступные реквизиты!\n", order.ID)
+	if order.CallbackURL != "" {
+		notifier.SendCallback(
+			order.CallbackURL,
+			order.MerchantOrderID,
+			string(domain.StatusCreated),
+			0, 0, 0,
+		)
+	}
 
 	// business logic to pick best bank detail
 	chosenBankDetail, err := uc.PickBestBankDetail(bankDetails, order.MerchantID)
@@ -469,15 +477,6 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		Owner: chosenBankDetail.Owner,
 	}); err != nil {
 		slog.Error("failed to publish event", "error", err.Error())
-	}
-
-	if order.CallbackURL != "" {
-		notifier.SendCallback(
-			order.CallbackURL,
-			order.MerchantOrderID,
-			string(domain.StatusCreated),
-			0, 0, 0,
-		)
 	}
 
 	if order.CallbackURL != "" {
@@ -588,13 +587,17 @@ func (uc *DefaultOrderUsecase) CancelExpiredOrders(ctx context.Context) error {
 	}
 
 	for _, order := range orders {
-		if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, float64(1.), 0); err != nil {
-			log.Printf("Unfreeze failed for order %s: %v", order.ID, err)
-			return status.Error(codes.Internal, err.Error())
-		}
+		// if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, float64(1.), 0); err != nil {
+		// 	log.Printf("Unfreeze failed for order %s: %v", order.ID, err)
+		// 	return status.Error(codes.Internal, err.Error())
+		// }
 		
-		if err := uc.OrderRepo.UpdateOrderStatus(order.ID, domain.StatusCanceled); err != nil {
-			return status.Error(codes.Internal, err.Error())
+		// if err := uc.OrderRepo.UpdateOrderStatus(order.ID, domain.StatusCanceled); err != nil {
+		// 	return status.Error(codes.Internal, err.Error())
+		// }
+		err = uc.CancelOrder(order.ID)
+		if err != nil {
+			log.Printf("Failed to cancel order %s to timeout!\n", order.ID)
 		}
 
 		log.Printf("Order %s canceled due to timeout!\n", order.ID)

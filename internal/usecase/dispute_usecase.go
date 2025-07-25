@@ -78,7 +78,7 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(dispute *domain.Dispute) e
 		notifier.SendCallback(
 			order.CallbackURL,
 			order.MerchantOrderID,
-			string(domain.DisputeOpened),
+			string(domain.StatusDisputeCreated),
 			0, 0, 0,
 		)
 	}
