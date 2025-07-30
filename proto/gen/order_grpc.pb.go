@@ -1311,3 +1311,181 @@ var BankDetailService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "order.proto",
 }
+
+const (
+	TeamRelationsService_CreateTeamRelation_FullMethodName       = "/order.TeamRelationsService/CreateTeamRelation"
+	TeamRelationsService_GetRelationsByTeamLeadID_FullMethodName = "/order.TeamRelationsService/GetRelationsByTeamLeadID"
+	TeamRelationsService_UpdateRelationParams_FullMethodName     = "/order.TeamRelationsService/UpdateRelationParams"
+)
+
+// TeamRelationsServiceClient is the client API for TeamRelationsService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type TeamRelationsServiceClient interface {
+	CreateTeamRelation(ctx context.Context, in *CreateTeamRelationRequest, opts ...grpc.CallOption) (*CreateTeamRelationResponse, error)
+	GetRelationsByTeamLeadID(ctx context.Context, in *GetRelationsByTeamLeadIDRequest, opts ...grpc.CallOption) (*GetRelationsByTeamLeadIDResponse, error)
+	UpdateRelationParams(ctx context.Context, in *UpdateRelationParamsRequest, opts ...grpc.CallOption) (*UpdateRelationParamsResponse, error)
+}
+
+type teamRelationsServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewTeamRelationsServiceClient(cc grpc.ClientConnInterface) TeamRelationsServiceClient {
+	return &teamRelationsServiceClient{cc}
+}
+
+func (c *teamRelationsServiceClient) CreateTeamRelation(ctx context.Context, in *CreateTeamRelationRequest, opts ...grpc.CallOption) (*CreateTeamRelationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateTeamRelationResponse)
+	err := c.cc.Invoke(ctx, TeamRelationsService_CreateTeamRelation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *teamRelationsServiceClient) GetRelationsByTeamLeadID(ctx context.Context, in *GetRelationsByTeamLeadIDRequest, opts ...grpc.CallOption) (*GetRelationsByTeamLeadIDResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRelationsByTeamLeadIDResponse)
+	err := c.cc.Invoke(ctx, TeamRelationsService_GetRelationsByTeamLeadID_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *teamRelationsServiceClient) UpdateRelationParams(ctx context.Context, in *UpdateRelationParamsRequest, opts ...grpc.CallOption) (*UpdateRelationParamsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateRelationParamsResponse)
+	err := c.cc.Invoke(ctx, TeamRelationsService_UpdateRelationParams_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// TeamRelationsServiceServer is the server API for TeamRelationsService service.
+// All implementations must embed UnimplementedTeamRelationsServiceServer
+// for forward compatibility.
+type TeamRelationsServiceServer interface {
+	CreateTeamRelation(context.Context, *CreateTeamRelationRequest) (*CreateTeamRelationResponse, error)
+	GetRelationsByTeamLeadID(context.Context, *GetRelationsByTeamLeadIDRequest) (*GetRelationsByTeamLeadIDResponse, error)
+	UpdateRelationParams(context.Context, *UpdateRelationParamsRequest) (*UpdateRelationParamsResponse, error)
+	mustEmbedUnimplementedTeamRelationsServiceServer()
+}
+
+// UnimplementedTeamRelationsServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedTeamRelationsServiceServer struct{}
+
+func (UnimplementedTeamRelationsServiceServer) CreateTeamRelation(context.Context, *CreateTeamRelationRequest) (*CreateTeamRelationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateTeamRelation not implemented")
+}
+func (UnimplementedTeamRelationsServiceServer) GetRelationsByTeamLeadID(context.Context, *GetRelationsByTeamLeadIDRequest) (*GetRelationsByTeamLeadIDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRelationsByTeamLeadID not implemented")
+}
+func (UnimplementedTeamRelationsServiceServer) UpdateRelationParams(context.Context, *UpdateRelationParamsRequest) (*UpdateRelationParamsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateRelationParams not implemented")
+}
+func (UnimplementedTeamRelationsServiceServer) mustEmbedUnimplementedTeamRelationsServiceServer() {}
+func (UnimplementedTeamRelationsServiceServer) testEmbeddedByValue()                              {}
+
+// UnsafeTeamRelationsServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to TeamRelationsServiceServer will
+// result in compilation errors.
+type UnsafeTeamRelationsServiceServer interface {
+	mustEmbedUnimplementedTeamRelationsServiceServer()
+}
+
+func RegisterTeamRelationsServiceServer(s grpc.ServiceRegistrar, srv TeamRelationsServiceServer) {
+	// If the following call pancis, it indicates UnimplementedTeamRelationsServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&TeamRelationsService_ServiceDesc, srv)
+}
+
+func _TeamRelationsService_CreateTeamRelation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTeamRelationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TeamRelationsServiceServer).CreateTeamRelation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TeamRelationsService_CreateTeamRelation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TeamRelationsServiceServer).CreateTeamRelation(ctx, req.(*CreateTeamRelationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TeamRelationsService_GetRelationsByTeamLeadID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRelationsByTeamLeadIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TeamRelationsServiceServer).GetRelationsByTeamLeadID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TeamRelationsService_GetRelationsByTeamLeadID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TeamRelationsServiceServer).GetRelationsByTeamLeadID(ctx, req.(*GetRelationsByTeamLeadIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TeamRelationsService_UpdateRelationParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRelationParamsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TeamRelationsServiceServer).UpdateRelationParams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TeamRelationsService_UpdateRelationParams_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TeamRelationsServiceServer).UpdateRelationParams(ctx, req.(*UpdateRelationParamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// TeamRelationsService_ServiceDesc is the grpc.ServiceDesc for TeamRelationsService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var TeamRelationsService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "order.TeamRelationsService",
+	HandlerType: (*TeamRelationsServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateTeamRelation",
+			Handler:    _TeamRelationsService_CreateTeamRelation_Handler,
+		},
+		{
+			MethodName: "GetRelationsByTeamLeadID",
+			Handler:    _TeamRelationsService_GetRelationsByTeamLeadID_Handler,
+		},
+		{
+			MethodName: "UpdateRelationParams",
+			Handler:    _TeamRelationsService_UpdateRelationParams_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "order.proto",
+}

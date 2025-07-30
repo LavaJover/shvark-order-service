@@ -16,7 +16,7 @@ func MustInitDB(cfg *config.OrderConfig) *gorm.DB {
 		log.Fatalf("failed to init db: %v\n", err.Error())
 	}
 
-	db.AutoMigrate(&models.TrafficModel{}, &models.BankDetailModel{}, &models.OrderModel{}, &models.DisputeModel{})
+	db.AutoMigrate(&models.TrafficModel{}, &models.BankDetailModel{}, &models.OrderModel{}, &models.DisputeModel{}, &models.TeamRelationshipModel{})
 
 	return db
 }

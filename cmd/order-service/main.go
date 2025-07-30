@@ -41,8 +41,6 @@ func main() {
 	// Init traffic repo
 	trafficRepo := repository.NewDefaultTrafficRepository(db)
 
-	// Init banking client
-
 	// Init wallet handler
 	httpWalletHandler, err := handlers.NewHTTPWalletHandler(fmt.Sprintf("%s:%s", cfg.WalletService.Host, cfg.WalletService.Port))
 	if err != nil {
@@ -66,15 +64,23 @@ func main() {
 		disputeKafkaPublisher,
 	)
 
+	// team relations
+	teamRelationsRepo := repository.NewDefaultTeamRelationsRepository(db)
+	teamRelationsUc := usecase.NewDefaultTeamRelationsUsecase(
+		teamRelationsRepo,
+	)
+
 	// Creating gRPC server
 	grpcServer := grpc.NewServer()
 	orderHandler := grpcapi.NewOrderHandler(uc, disputeUc)
 	trafficHandler := grpcapi.NewTrafficHandler(trafficUsecase)
 	bankDetailHandler := grpcapi.NewBankDetailHandler(bankDetailUsecase)
+	teamRelationsHandler := grpcapi.NewTeamRelationsHandler(teamRelationsUc)
 
 	orderpb.RegisterOrderServiceServer(grpcServer, orderHandler)
 	orderpb.RegisterTrafficServiceServer(grpcServer, trafficHandler)
 	orderpb.RegisterBankDetailServiceServer(grpcServer, bankDetailHandler)
+	orderpb.RegisterTeamRelationsServiceServer(grpcServer, teamRelationsHandler)
 
 	// Start
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", cfg.GRPCServer.Host, cfg.GRPCServer.Port))
