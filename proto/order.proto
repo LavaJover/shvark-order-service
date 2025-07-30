@@ -494,3 +494,40 @@ message GetBankDetailsStatsByTraderIDRequest {
 message GetBankDetailsStatsByTraderIDResponse {
     repeated BankDetailStat bank_detail_stat = 1;
 }
+
+service TeamRelationsService {
+    rpc CreateTeamRelation (CreateTeamRelationRequest) returns (CreateTeamRelationResponse);
+    rpc GetRelationsByTeamLeadID (GetRelationsByTeamLeadIDRequest) returns (GetRelationsByTeamLeadIDResponse);
+    rpc UpdateRelationParams (UpdateRelationParamsRequest) returns (UpdateRelationParamsResponse);
+}
+
+message TeamRelationship {
+    string id = 1;
+    string team_lead_id = 2;
+    string trader_id = 3;
+    double commission = 4;
+    google.protobuf.Timestamp created_at = 5;
+    google.protobuf.Timestamp updated_at = 6;
+}
+
+message CreateTeamRelationRequest {
+    string team_lead_id = 1;
+    string trader_id = 2;
+    double commission = 3;
+}
+
+message CreateTeamRelationResponse {}
+
+message GetRelationsByTeamLeadIDRequest {
+    string team_lead_id = 1;
+}
+
+message GetRelationsByTeamLeadIDResponse {
+    repeated TeamRelationship team_relations = 1; 
+}
+
+message UpdateRelationParamsRequest {
+    TeamRelationship relation = 1;
+}
+
+message UpdateRelationParamsResponse {}
