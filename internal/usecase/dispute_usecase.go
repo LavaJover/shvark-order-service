@@ -3,6 +3,7 @@ package usecase
 import (
 	"log"
 
+	walletRequest "github.com/LavaJover/shvark-order-service/internal/delivery/http/dto/wallet/request"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/bitwire/notifier"
@@ -17,6 +18,7 @@ type DefaultDisputeUsecase struct {
 	orderRepo domain.OrderRepository
 	trafficRepo domain.TrafficRepository
 	kafkaPublisher *kafka.KafkaPublisher
+	teamRelationsUsecase TeamRelationsUsecase
 }
 
 func NewDefaultDisputeUsecase(
@@ -25,6 +27,7 @@ func NewDefaultDisputeUsecase(
 	orderRepo domain.OrderRepository,
 	trafficRepo domain.TrafficRepository,
 	kafkaPublisher *kafka.KafkaPublisher,
+	teamRelationsUsecase TeamRelationsUsecase,
 	) *DefaultDisputeUsecase {
 	return &DefaultDisputeUsecase{
 		disputeRepo: disputeRepo,
@@ -32,6 +35,7 @@ func NewDefaultDisputeUsecase(
 		orderRepo: orderRepo,
 		trafficRepo: trafficRepo,
 		kafkaPublisher: kafkaPublisher,
+		teamRelationsUsecase: teamRelationsUsecase,
 	}
 }
 
@@ -102,7 +106,26 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	err = disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, traffic.TraderRewardPercent, traffic.PlatformFee)
+	// Search for team relations to find commission users
+	var commissionUsers []walletRequest.CommissionUser
+	teamRelations, err := disputeUc.teamRelationsUsecase.GetRelationshipsByTraderID(order.BankDetail.TraderID)
+	if err == nil {
+		for _, teamRelation := range teamRelations {
+			commissionUsers = append(commissionUsers, walletRequest.CommissionUser{
+				UserID: teamRelation.TeamLeadID,
+				Commission: teamRelation.TeamRelationshipRapams.Commission,
+			})
+		}
+	}
+	releaseRequest := walletRequest.ReleaseRequest{
+		TraderID: order.BankDetail.TraderID,
+		MerchantID: order.MerchantID,
+		OrderID: order.ID,
+		RewardPercent: traffic.TraderRewardPercent,
+		PlatformFee: traffic.PlatformFee,
+		CommissionUsers: commissionUsers,
+	}
+	err = disputeUc.walletHandler.Release(releaseRequest)
 	if err != nil {
 		return err
 	}
@@ -134,7 +157,26 @@ func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	err = disputeUc.walletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, 1., 0.)
+	// Search for team relations to find commission users
+	var commissionUsers []walletRequest.CommissionUser
+	teamRelations, err := disputeUc.teamRelationsUsecase.GetRelationshipsByTraderID(order.BankDetail.TraderID)
+	if err == nil {
+		for _, teamRelation := range teamRelations {
+			commissionUsers = append(commissionUsers, walletRequest.CommissionUser{
+				UserID: teamRelation.TeamLeadID,
+				Commission: teamRelation.TeamRelationshipRapams.Commission,
+			})
+		}
+	}
+	releaseRequest := walletRequest.ReleaseRequest{
+		TraderID: order.BankDetail.TraderID,
+		MerchantID: order.MerchantID,
+		OrderID: order.ID,
+		RewardPercent: 1,
+		PlatformFee: 1,
+		// CommissionUsers: commissionUsers,
+	}
+	err = disputeUc.walletHandler.Release(releaseRequest)
 	if err != nil {
 		return err
 	}

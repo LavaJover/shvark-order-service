@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"time"
 
+	walletRequest "github.com/LavaJover/shvark-order-service/internal/delivery/http/dto/wallet/request"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/bitwire/notifier"
@@ -22,6 +23,7 @@ type DefaultOrderUsecase struct {
 	WalletHandler   	*handlers.HTTPWalletHandler
 	TrafficUsecase  	domain.TrafficUsecase
 	BankDetailUsecase 	domain.BankDetailUsecase
+	TeamRelationsUsecase TeamRelationsUsecase
 	Publisher 			*kafka.KafkaPublisher
 }
 
@@ -30,7 +32,8 @@ func NewDefaultOrderUsecase(
 	walletHandler *handlers.HTTPWalletHandler,
 	trafficUsecase domain.TrafficUsecase,
 	bankDetailUsecase domain.BankDetailUsecase,
-	kafkaPublisher *kafka.KafkaPublisher) *DefaultOrderUsecase {
+	kafkaPublisher *kafka.KafkaPublisher,
+	teamRelationsUsecase TeamRelationsUsecase) *DefaultOrderUsecase {
 
 	return &DefaultOrderUsecase{
 		OrderRepo: orderRepo,
@@ -38,6 +41,7 @@ func NewDefaultOrderUsecase(
 		TrafficUsecase: trafficUsecase,
 		BankDetailUsecase: bankDetailUsecase,
 		Publisher: kafkaPublisher,
+		TeamRelationsUsecase: teamRelationsUsecase,
 	}
 }
 
@@ -597,72 +601,11 @@ func (uc *DefaultOrderUsecase) CancelExpiredOrders(ctx context.Context) error {
 		// }
 		err = uc.CancelOrder(order.ID)
 		if err != nil {
-			log.Printf("Failed to cancel order %s to timeout!\n", order.ID)
+			log.Printf("Failed to cancel order %s to timeout! Error: %v\n", order.ID, err)
 		}
 
 		log.Printf("Order %s canceled due to timeout!\n", order.ID)
 	}
-
-	return nil
-}
-
-/////////////////////DEPRECATED/////////////////////
-func (uc *DefaultOrderUsecase) OpenOrderDispute(orderID string) error {
-	// Find exact order
-	order, err := uc.GetOrderByID(orderID)
-	if err != nil {
-		return err
-	}
-
-	// Check order status to open dispute (only cancelled can be opened with dispute status)
-	if order.Status != domain.StatusCanceled {
-		return domain.ErrOpenDisputeFailed
-	}
-
-	// Set order status to DISPUTE_CREATED
-	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusDisputeCreated); err != nil {
-		return err
-	}
-
-	// Freeze crypto
-	fmt.Println("Freezing crypto!")
-	fmt.Println(order.AmountCrypto)
-	if err := uc.WalletHandler.Freeze(order.BankDetail.TraderID, order.ID, order.AmountCrypto); err != nil {
-		return err
-	}
-
-	if(order.CallbackURL != ""){
-	} 
-
-	return nil
-}
-
-/////////////////////DEPRECATED/////////////////////
-func (uc *DefaultOrderUsecase) ResolveOrderDispute(orderID string) error {
-	// Find exact order
-	order, err := uc.GetOrderByID(orderID)
-	if err != nil {
-		return err
-	}
-
-	if order.Status != domain.StatusDisputeCreated {
-		return domain.ErrResolveDisputeFailed
-	}
-
-
-	// Improve
-	rewardPercent := order.TraderRewardPercent
-	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, rewardPercent, 0); err != nil {
-		return err
-	}
-
-	// Set order status to DISPUTE_CREATED
-	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusDisputeCreated); err != nil {
-		return err
-	}
-
-	if(order.CallbackURL != ""){
-	} 
 
 	return nil
 }
@@ -678,9 +621,27 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		return domain.ErrResolveDisputeFailed
 	}
 
-	rewardPercent := order.TraderRewardPercent
-	platformFee := order.PlatformFee
-	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, rewardPercent, platformFee); err != nil {
+	// Search for team relations to find commission users
+	var commissionUsers []walletRequest.CommissionUser
+	teamRelations, err := uc.TeamRelationsUsecase.GetRelationshipsByTraderID(order.BankDetail.TraderID)
+	if err == nil {
+		for _, teamRelation := range teamRelations {
+			commissionUsers = append(commissionUsers, walletRequest.CommissionUser{
+				UserID: teamRelation.TeamLeadID,
+				Commission: teamRelation.TeamRelationshipRapams.Commission,
+			})
+		}
+	}
+	// make request to wallet-service to release order
+	releaseRequest := walletRequest.ReleaseRequest{
+		TraderID: order.BankDetail.TraderID,
+		MerchantID: order.MerchantID,
+		OrderID: order.ID,
+		RewardPercent: order.TraderRewardPercent,
+		PlatformFee: order.PlatformFee,
+		CommissionUsers: commissionUsers,
+	}
+	if err := uc.WalletHandler.Release(releaseRequest); err != nil {
 		return err
 	}
 
@@ -730,8 +691,26 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusCanceled); err != nil {
 		return err
 	}
-
-	if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, 1., 0.); err != nil {
+	// Search for team relations to find commission users
+	var commissionUsers []walletRequest.CommissionUser
+	teamRelations, err := uc.TeamRelationsUsecase.GetRelationshipsByTraderID(order.BankDetail.TraderID)
+	if err == nil {
+		for _, teamRelation := range teamRelations {
+			commissionUsers = append(commissionUsers, walletRequest.CommissionUser{
+				UserID: teamRelation.TeamLeadID,
+				Commission: teamRelation.TeamRelationshipRapams.Commission,
+			})
+		}
+	}
+	releaseRequest := walletRequest.ReleaseRequest{
+		TraderID: order.BankDetail.TraderID,
+		MerchantID: order.MerchantID,
+		OrderID: order.ID,
+		RewardPercent: 1,
+		PlatformFee: 1,
+		// CommissionUsers: commissionUsers,
+	}
+	if err := uc.WalletHandler.Release(releaseRequest); err != nil {
 		return err
 	}
 

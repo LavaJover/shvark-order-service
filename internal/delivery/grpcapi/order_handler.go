@@ -308,32 +308,6 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 
 }
 
-func (h *OrderHandler) OpenOrderDispute(ctx context.Context, r *orderpb.OpenOrderDisputeRequest) (*orderpb.OpenOrderDisputeResponse, error) {
-	orderID := r.OrderId
-	if err := h.uc.OpenOrderDispute(orderID); err != nil {
-		return &orderpb.OpenOrderDisputeResponse{
-			Message: "Failed to open dispute: " + err.Error(),
-		}, err
-	}else {
-		return &orderpb.OpenOrderDisputeResponse{
-			Message: "Dispute opened successfully!",
-		}, nil
-	}
-}
-
-func (h *OrderHandler) ResolveOrderDispute(ctx context.Context, r *orderpb.ResolveOrderDisputeRequest) (*orderpb.ResolveOrderDisputeResponse, error) {
-	orderID := r.OrderId
-	if err := h.uc.ResolveOrderDispute(orderID); err != nil {
-		return &orderpb.ResolveOrderDisputeResponse{
-			Message: "Failed to resolve dispute: " + err.Error(),
-		}, err
-	}else {
-		return &orderpb.ResolveOrderDisputeResponse{
-			Message: "Dispute resolved successfully!",
-		}, nil
-	}
-}
-
 func (h *OrderHandler) CancelOrder(ctx context.Context, r *orderpb.CancelOrderRequest) (*orderpb.CancelOrderResponse, error) {
 	orderID := r.OrderId
 	if err := h.uc.CancelOrder(orderID); err != nil {

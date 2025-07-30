@@ -19,4 +19,6 @@ type TeamRelationRepository interface {
 	GetRelationshipsByTeamLeadID(teamLeadID string) ([]*TeamRelationship, error)
 	CreateRelationship(relationship *TeamRelationship) error
 	UpdateRelationshipParams(relationship *TeamRelationship) error
+	GetRelationshipsByTraderID(traderID string) ([]*TeamRelationship, error)
+	DeleteRelationship(relationID string) error
 }

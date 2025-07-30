@@ -11,8 +11,6 @@ service OrderService {
     rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
     rpc ApproveOrder (ApproveOrderRequest) returns (ApproveOrderResponse);
     rpc CancelOrder (CancelOrderRequest) returns (CancelOrderResponse);
-    rpc OpenOrderDispute (OpenOrderDisputeRequest) returns (OpenOrderDisputeResponse);
-    rpc ResolveOrderDispute (ResolveOrderDisputeRequest) returns (ResolveOrderDisputeResponse);
     rpc GetOrderByID (GetOrderByIDRequest) returns (GetOrderByIDResponse);
     rpc GetOrderByMerchantOrderID (GetOrderByMerchantOrderIDRequest) returns (GetOrderByMerchantOrderIDResponse);
     rpc GetOrdersByTraderID (GetOrdersByTraderIDRequest) returns (GetOrdersByTraderIDResponse);
@@ -288,22 +286,6 @@ message GetOrdersByTraderIDResponse {
     Pagination pagination = 2;
 }
 
-message OpenOrderDisputeRequest {
-    string order_id = 1;
-}
-
-message OpenOrderDisputeResponse {
-    string message = 1;
-}
-
-message ResolveOrderDisputeRequest {
-    string order_id = 1;
-}
-
-message ResolveOrderDisputeResponse {
-    string message = 1;
-}
-
 service TrafficService {
     rpc AddTraffic (AddTrafficRequest) returns (AddTrafficResponse);
     rpc EditTraffic (EditTrafficRequest) returns (EditTrafficResponse);
@@ -499,7 +481,14 @@ service TeamRelationsService {
     rpc CreateTeamRelation (CreateTeamRelationRequest) returns (CreateTeamRelationResponse);
     rpc GetRelationsByTeamLeadID (GetRelationsByTeamLeadIDRequest) returns (GetRelationsByTeamLeadIDResponse);
     rpc UpdateRelationParams (UpdateRelationParamsRequest) returns (UpdateRelationParamsResponse);
+    rpc DeleteTeamRelationship (DeleteTeamRelationshipRequest) returns (DeleteTeamRelationshipResponse);
 }
+
+message DeleteTeamRelationshipRequest {
+    string relation_id = 1;
+}
+
+message DeleteTeamRelationshipResponse {}
 
 message TeamRelationship {
     string id = 1;

@@ -52,3 +52,22 @@ func (r *DefaultTeamRelationsRepository) UpdateRelationshipParams(relationship *
 			"updated_at": time.Now(),
 		}).Error
 }
+
+func (r *DefaultTeamRelationsRepository) GetRelationshipsByTraderID(traderID string) ([]*domain.TeamRelationship, error) {
+	var models []models.TeamRelationshipModel
+	if err := r.DB.
+		Where("trader_id = ?", traderID).
+		Find(&models).Error; err != nil {
+		return nil, err
+	}
+
+	relationships := make([]*domain.TeamRelationship, len(models))
+	for i, model := range models {
+		relationships[i] = mappers.ToDomainRelationship(&model)
+	}
+	return relationships, nil
+}
+
+func (r *DefaultTeamRelationsRepository) DeleteRelationship(relationID string) error {
+	return r.DB.Delete(models.TeamRelationshipModel{ID: relationID}).Error
+}

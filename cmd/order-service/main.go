@@ -40,6 +40,8 @@ func main() {
 	bankDetailRepo := repository.NewDefaultBankDetailRepo(db)
 	// Init traffic repo
 	trafficRepo := repository.NewDefaultTrafficRepository(db)
+	// Init team relations repo
+	teamRelationsRepo := repository.NewDefaultTeamRelationsRepository(db)
 
 	// Init wallet handler
 	httpWalletHandler, err := handlers.NewHTTPWalletHandler(fmt.Sprintf("%s:%s", cfg.WalletService.Host, cfg.WalletService.Port))
@@ -51,8 +53,10 @@ func main() {
 	trafficUsecase := usecase.NewDefaultTrafficUsecase(trafficRepo)
 	// Init bank detail usecase
 	bankDetailUsecase := usecase.NewDefaultBankDetailUsecase(bankDetailRepo)
+	// Init team relations usecase
+	teamRelationsUsecase := usecase.NewDefaultTeamRelationsUsecase(teamRelationsRepo)
 	// Init order usecase
-	uc := usecase.NewDefaultOrderUsecase(orderRepo, httpWalletHandler, trafficUsecase, bankDetailUsecase, orderKafkaPublisher)
+	uc := usecase.NewDefaultOrderUsecase(orderRepo, httpWalletHandler, trafficUsecase, bankDetailUsecase, orderKafkaPublisher, teamRelationsUsecase)
 
 	// dispute
 	disputeRepo := repository.NewDefaultDisputeRepository(db)
@@ -62,12 +66,7 @@ func main() {
 		orderRepo,
 		trafficRepo,
 		disputeKafkaPublisher,
-	)
-
-	// team relations
-	teamRelationsRepo := repository.NewDefaultTeamRelationsRepository(db)
-	teamRelationsUc := usecase.NewDefaultTeamRelationsUsecase(
-		teamRelationsRepo,
+		teamRelationsUsecase,
 	)
 
 	// Creating gRPC server
@@ -75,7 +74,7 @@ func main() {
 	orderHandler := grpcapi.NewOrderHandler(uc, disputeUc)
 	trafficHandler := grpcapi.NewTrafficHandler(trafficUsecase)
 	bankDetailHandler := grpcapi.NewBankDetailHandler(bankDetailUsecase)
-	teamRelationsHandler := grpcapi.NewTeamRelationsHandler(teamRelationsUc)
+	teamRelationsHandler := grpcapi.NewTeamRelationsHandler(teamRelationsUsecase)
 
 	orderpb.RegisterOrderServiceServer(grpcServer, orderHandler)
 	orderpb.RegisterTrafficServiceServer(grpcServer, trafficHandler)

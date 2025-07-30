@@ -22,8 +22,6 @@ const (
 	OrderService_CreateOrder_FullMethodName               = "/order.OrderService/CreateOrder"
 	OrderService_ApproveOrder_FullMethodName              = "/order.OrderService/ApproveOrder"
 	OrderService_CancelOrder_FullMethodName               = "/order.OrderService/CancelOrder"
-	OrderService_OpenOrderDispute_FullMethodName          = "/order.OrderService/OpenOrderDispute"
-	OrderService_ResolveOrderDispute_FullMethodName       = "/order.OrderService/ResolveOrderDispute"
 	OrderService_GetOrderByID_FullMethodName              = "/order.OrderService/GetOrderByID"
 	OrderService_GetOrderByMerchantOrderID_FullMethodName = "/order.OrderService/GetOrderByMerchantOrderID"
 	OrderService_GetOrdersByTraderID_FullMethodName       = "/order.OrderService/GetOrdersByTraderID"
@@ -44,8 +42,6 @@ type OrderServiceClient interface {
 	CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*CreateOrderResponse, error)
 	ApproveOrder(ctx context.Context, in *ApproveOrderRequest, opts ...grpc.CallOption) (*ApproveOrderResponse, error)
 	CancelOrder(ctx context.Context, in *CancelOrderRequest, opts ...grpc.CallOption) (*CancelOrderResponse, error)
-	OpenOrderDispute(ctx context.Context, in *OpenOrderDisputeRequest, opts ...grpc.CallOption) (*OpenOrderDisputeResponse, error)
-	ResolveOrderDispute(ctx context.Context, in *ResolveOrderDisputeRequest, opts ...grpc.CallOption) (*ResolveOrderDisputeResponse, error)
 	GetOrderByID(ctx context.Context, in *GetOrderByIDRequest, opts ...grpc.CallOption) (*GetOrderByIDResponse, error)
 	GetOrderByMerchantOrderID(ctx context.Context, in *GetOrderByMerchantOrderIDRequest, opts ...grpc.CallOption) (*GetOrderByMerchantOrderIDResponse, error)
 	GetOrdersByTraderID(ctx context.Context, in *GetOrdersByTraderIDRequest, opts ...grpc.CallOption) (*GetOrdersByTraderIDResponse, error)
@@ -91,26 +87,6 @@ func (c *orderServiceClient) CancelOrder(ctx context.Context, in *CancelOrderReq
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CancelOrderResponse)
 	err := c.cc.Invoke(ctx, OrderService_CancelOrder_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *orderServiceClient) OpenOrderDispute(ctx context.Context, in *OpenOrderDisputeRequest, opts ...grpc.CallOption) (*OpenOrderDisputeResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OpenOrderDisputeResponse)
-	err := c.cc.Invoke(ctx, OrderService_OpenOrderDispute_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *orderServiceClient) ResolveOrderDispute(ctx context.Context, in *ResolveOrderDisputeRequest, opts ...grpc.CallOption) (*ResolveOrderDisputeResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ResolveOrderDisputeResponse)
-	err := c.cc.Invoke(ctx, OrderService_ResolveOrderDispute_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -234,8 +210,6 @@ type OrderServiceServer interface {
 	CreateOrder(context.Context, *CreateOrderRequest) (*CreateOrderResponse, error)
 	ApproveOrder(context.Context, *ApproveOrderRequest) (*ApproveOrderResponse, error)
 	CancelOrder(context.Context, *CancelOrderRequest) (*CancelOrderResponse, error)
-	OpenOrderDispute(context.Context, *OpenOrderDisputeRequest) (*OpenOrderDisputeResponse, error)
-	ResolveOrderDispute(context.Context, *ResolveOrderDisputeRequest) (*ResolveOrderDisputeResponse, error)
 	GetOrderByID(context.Context, *GetOrderByIDRequest) (*GetOrderByIDResponse, error)
 	GetOrderByMerchantOrderID(context.Context, *GetOrderByMerchantOrderIDRequest) (*GetOrderByMerchantOrderIDResponse, error)
 	GetOrdersByTraderID(context.Context, *GetOrdersByTraderIDRequest) (*GetOrdersByTraderIDResponse, error)
@@ -265,12 +239,6 @@ func (UnimplementedOrderServiceServer) ApproveOrder(context.Context, *ApproveOrd
 }
 func (UnimplementedOrderServiceServer) CancelOrder(context.Context, *CancelOrderRequest) (*CancelOrderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelOrder not implemented")
-}
-func (UnimplementedOrderServiceServer) OpenOrderDispute(context.Context, *OpenOrderDisputeRequest) (*OpenOrderDisputeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method OpenOrderDispute not implemented")
-}
-func (UnimplementedOrderServiceServer) ResolveOrderDispute(context.Context, *ResolveOrderDisputeRequest) (*ResolveOrderDisputeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ResolveOrderDispute not implemented")
 }
 func (UnimplementedOrderServiceServer) GetOrderByID(context.Context, *GetOrderByIDRequest) (*GetOrderByIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrderByID not implemented")
@@ -376,42 +344,6 @@ func _OrderService_CancelOrder_Handler(srv interface{}, ctx context.Context, dec
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(OrderServiceServer).CancelOrder(ctx, req.(*CancelOrderRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _OrderService_OpenOrderDispute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OpenOrderDisputeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(OrderServiceServer).OpenOrderDispute(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: OrderService_OpenOrderDispute_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrderServiceServer).OpenOrderDispute(ctx, req.(*OpenOrderDisputeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _OrderService_ResolveOrderDispute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ResolveOrderDisputeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(OrderServiceServer).ResolveOrderDispute(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: OrderService_ResolveOrderDispute_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrderServiceServer).ResolveOrderDispute(ctx, req.(*ResolveOrderDisputeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -632,14 +564,6 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelOrder",
 			Handler:    _OrderService_CancelOrder_Handler,
-		},
-		{
-			MethodName: "OpenOrderDispute",
-			Handler:    _OrderService_OpenOrderDispute_Handler,
-		},
-		{
-			MethodName: "ResolveOrderDispute",
-			Handler:    _OrderService_ResolveOrderDispute_Handler,
 		},
 		{
 			MethodName: "GetOrderByID",
@@ -1316,6 +1240,7 @@ const (
 	TeamRelationsService_CreateTeamRelation_FullMethodName       = "/order.TeamRelationsService/CreateTeamRelation"
 	TeamRelationsService_GetRelationsByTeamLeadID_FullMethodName = "/order.TeamRelationsService/GetRelationsByTeamLeadID"
 	TeamRelationsService_UpdateRelationParams_FullMethodName     = "/order.TeamRelationsService/UpdateRelationParams"
+	TeamRelationsService_DeleteTeamRelationship_FullMethodName   = "/order.TeamRelationsService/DeleteTeamRelationship"
 )
 
 // TeamRelationsServiceClient is the client API for TeamRelationsService service.
@@ -1325,6 +1250,7 @@ type TeamRelationsServiceClient interface {
 	CreateTeamRelation(ctx context.Context, in *CreateTeamRelationRequest, opts ...grpc.CallOption) (*CreateTeamRelationResponse, error)
 	GetRelationsByTeamLeadID(ctx context.Context, in *GetRelationsByTeamLeadIDRequest, opts ...grpc.CallOption) (*GetRelationsByTeamLeadIDResponse, error)
 	UpdateRelationParams(ctx context.Context, in *UpdateRelationParamsRequest, opts ...grpc.CallOption) (*UpdateRelationParamsResponse, error)
+	DeleteTeamRelationship(ctx context.Context, in *DeleteTeamRelationshipRequest, opts ...grpc.CallOption) (*DeleteTeamRelationshipResponse, error)
 }
 
 type teamRelationsServiceClient struct {
@@ -1365,6 +1291,16 @@ func (c *teamRelationsServiceClient) UpdateRelationParams(ctx context.Context, i
 	return out, nil
 }
 
+func (c *teamRelationsServiceClient) DeleteTeamRelationship(ctx context.Context, in *DeleteTeamRelationshipRequest, opts ...grpc.CallOption) (*DeleteTeamRelationshipResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteTeamRelationshipResponse)
+	err := c.cc.Invoke(ctx, TeamRelationsService_DeleteTeamRelationship_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TeamRelationsServiceServer is the server API for TeamRelationsService service.
 // All implementations must embed UnimplementedTeamRelationsServiceServer
 // for forward compatibility.
@@ -1372,6 +1308,7 @@ type TeamRelationsServiceServer interface {
 	CreateTeamRelation(context.Context, *CreateTeamRelationRequest) (*CreateTeamRelationResponse, error)
 	GetRelationsByTeamLeadID(context.Context, *GetRelationsByTeamLeadIDRequest) (*GetRelationsByTeamLeadIDResponse, error)
 	UpdateRelationParams(context.Context, *UpdateRelationParamsRequest) (*UpdateRelationParamsResponse, error)
+	DeleteTeamRelationship(context.Context, *DeleteTeamRelationshipRequest) (*DeleteTeamRelationshipResponse, error)
 	mustEmbedUnimplementedTeamRelationsServiceServer()
 }
 
@@ -1390,6 +1327,9 @@ func (UnimplementedTeamRelationsServiceServer) GetRelationsByTeamLeadID(context.
 }
 func (UnimplementedTeamRelationsServiceServer) UpdateRelationParams(context.Context, *UpdateRelationParamsRequest) (*UpdateRelationParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateRelationParams not implemented")
+}
+func (UnimplementedTeamRelationsServiceServer) DeleteTeamRelationship(context.Context, *DeleteTeamRelationshipRequest) (*DeleteTeamRelationshipResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteTeamRelationship not implemented")
 }
 func (UnimplementedTeamRelationsServiceServer) mustEmbedUnimplementedTeamRelationsServiceServer() {}
 func (UnimplementedTeamRelationsServiceServer) testEmbeddedByValue()                              {}
@@ -1466,6 +1406,24 @@ func _TeamRelationsService_UpdateRelationParams_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TeamRelationsService_DeleteTeamRelationship_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTeamRelationshipRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TeamRelationsServiceServer).DeleteTeamRelationship(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TeamRelationsService_DeleteTeamRelationship_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TeamRelationsServiceServer).DeleteTeamRelationship(ctx, req.(*DeleteTeamRelationshipRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TeamRelationsService_ServiceDesc is the grpc.ServiceDesc for TeamRelationsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1484,6 +1442,10 @@ var TeamRelationsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateRelationParams",
 			Handler:    _TeamRelationsService_UpdateRelationParams_Handler,
+		},
+		{
+			MethodName: "DeleteTeamRelationship",
+			Handler:    _TeamRelationsService_DeleteTeamRelationship_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

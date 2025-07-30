@@ -53,14 +53,8 @@ func (h *HTTPWalletHandler) Freeze(traderID, orderID string, amount float64) err
 	}
 }
 
-func (h *HTTPWalletHandler) Release(traderID, merchantID, orderID string, rewardPercent, platformFee float64) error {
-	requestBodyBytes, err := json.Marshal(walletRequest.ReleaseRequest{
-		TraderID: traderID,
-		OrderID: orderID,
-		RewardPercent: rewardPercent,
-		MerchantID: merchantID,
-		PlatformFee: platformFee,
-	})
+func (h *HTTPWalletHandler) Release(releaseRequest walletRequest.ReleaseRequest) error {
+	requestBodyBytes, err := json.Marshal(releaseRequest)
 	if err != nil {
 		return err
 	}

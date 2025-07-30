@@ -74,3 +74,12 @@ func (h *TeamRelationsHandler) UpdateRelationParams(ctx context.Context, r *orde
 
 	return &orderpb.UpdateRelationParamsResponse{}, nil
 }
+
+func (h *TeamRelationsHandler) DeleteTeamRelationship(ctx context.Context, r *orderpb.DeleteTeamRelationshipRequest) (*orderpb.DeleteTeamRelationshipResponse, error) {
+	err := h.teamRelationsUc.DeleteTeamRelationship(r.RelationId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &orderpb.DeleteTeamRelationshipResponse{}, nil
+}
