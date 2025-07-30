@@ -6,8 +6,11 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/mappers"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
+	"github.com/jaevor/go-nanoid"
 	"gorm.io/gorm"
 )
+
+var nanoIDGenerator, _ = nanoid.CustomASCII("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 12)
 
 type DefaultTeamRelationsRepository struct {
 	DB *gorm.DB
@@ -20,6 +23,8 @@ func NewDefaultTeamRelationsRepository(db *gorm.DB) *DefaultTeamRelationsReposit
 }
 
 func (r *DefaultTeamRelationsRepository) CreateRelationship(relation *domain.TeamRelationship) error {
+	id := nanoIDGenerator()
+	relation.ID = id
 	model := mappers.ToGORMRelationship(relation)
 	return r.DB.Create(model).Error
 }
@@ -27,7 +32,7 @@ func (r *DefaultTeamRelationsRepository) CreateRelationship(relation *domain.Tea
 func (r *DefaultTeamRelationsRepository) GetRelationshipsByTeamLeadID(teamLeadID string) ([]*domain.TeamRelationship, error) {
 	var models []models.TeamRelationshipModel
 	if err := r.DB.
-		Where("team_lead_id = ? AND deleted_at IS NULL", teamLeadID).
+		Where("team_lead_id = ?", teamLeadID).
 		Find(&models).Error; err != nil {
 		return nil, err
 	}
