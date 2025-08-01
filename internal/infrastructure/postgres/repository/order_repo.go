@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/mappers"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -19,35 +20,16 @@ func NewDefaultOrderRepository(db *gorm.DB) *DefaultOrderRepository {
 	return &DefaultOrderRepository{DB: db}
 }
 
-func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) (string, error) {
-	orderModel := models.OrderModel{
-		ID: uuid.New().String(),
-		MerchantID: order.MerchantID,
-		AmountFiat: order.AmountFiat,
-		AmountCrypto: order.AmountCrypto,
-		Status: domain.StatusPending,
-		Currency: order.Currency,
-		Country: order.Country,
-		ClientID: order.ClientID,
-		PaymentSystem: order.PaymentSystem,
-		BankDetailsID: order.BankDetailsID,
-		ExpiresAt: order.ExpiresAt,
-		MerchantOrderID: order.MerchantOrderID,
-		Shuffle: order.Shuffle,
-		CallbackURL: order.CallbackURL,
-		TraderRewardPercent: order.TraderRewardPercent,
-		Recalculated: order.Recalculated,
-		CryptoRubRate: order.CryptoRubRate,
-		PlatformFee: order.PlatformFee,
-		Type: order.Type,
-	}
+func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) error {
+	orderModel := mappers.ToGORMOrder(order)
+	orderModel.ID = uuid.New().String()
 
-	if err := r.DB.Create(&orderModel).Error; err != nil {
-		return "", err
+	if err := r.DB.Create(orderModel).Error; err != nil {
+		return err
 	}
 
 	order.ID = orderModel.ID
-	return order.ID, nil
+	return nil
 }
 
 func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, error) {
@@ -58,55 +40,7 @@ func (r *DefaultOrderRepository) GetOrderByID(orderID string) (*domain.Order, er
 		return nil, err
 	}
 
-	return &domain.Order{
-		ID: order.ID,
-		MerchantID: order.MerchantID,
-		AmountFiat: order.AmountFiat,
-		AmountCrypto: order.AmountCrypto,
-		Currency: order.Currency,
-		Country: order.Country,
-		ClientID: order.ClientID,
-		Status: order.Status,
-		PaymentSystem: order.PaymentSystem,
-		BankDetailsID: order.BankDetailsID,
-		ExpiresAt: order.ExpiresAt,
-		CreatedAt: order.CreatedAt,
-		UpdatedAt: order.UpdatedAt,
-		MerchantOrderID: order.MerchantOrderID,
-		Shuffle: order.Shuffle,
-		CallbackURL: order.CallbackURL,
-		TraderRewardPercent: order.TraderRewardPercent,
-		Recalculated: order.Recalculated,
-		CryptoRubRate: order.CryptoRubRate,
-		PlatformFee: order.PlatformFee,
-		Type: order.Type,
-		BankDetail: &domain.BankDetail{
-			ID: order.BankDetail.ID,
-			TraderID: order.BankDetail.TraderID,
-			Country: order.BankDetail.Country,
-			Currency: order.BankDetail.Currency,
-			MinAmount: order.BankDetail.MinAmount,
-			MaxAmount: order.BankDetail.MaxAmount,
-			BankName: order.BankDetail.BankName,
-			PaymentSystem: order.BankDetail.PaymentSystem,
-			Delay: order.BankDetail.Delay,
-			Enabled: order.BankDetail.Enabled,
-			CardNumber: order.BankDetail.CardNumber,
-			Phone: order.BankDetail.Phone,
-			Owner: order.BankDetail.Owner,
-			MaxOrdersSimultaneosly: order.BankDetail.MaxOrdersSimultaneosly,
-			MaxAmountDay: order.BankDetail.MaxAmountDay,
-			MaxAmountMonth: order.BankDetail.MaxAmountMonth,
-			InflowCurrency: order.BankDetail.InflowCurrency,
-			BankCode: order.BankDetail.BankCode,
-			NspkCode: order.BankDetail.NspkCode,
-			DeviceID: order.BankDetail.DeviceID,
-			MaxQuantityDay: order.BankDetail.MaxQuantityDay,
-			MaxQuantityMonth: order.BankDetail.MaxQuantityMonth,
-			CreatedAt: order.BankDetail.CreatedAt,
-			UpdatedAt: order.BankDetail.UpdatedAt,
-		},
-	}, nil
+	return mappers.ToDomainOrder(&order), nil
 }
 
 func (r *DefaultOrderRepository) GetOrderByMerchantOrderID(merchantOrderID string) (*domain.Order, error) {
@@ -117,55 +51,7 @@ func (r *DefaultOrderRepository) GetOrderByMerchantOrderID(merchantOrderID strin
 		return nil, err
 	}
 
-	return &domain.Order{
-		ID: order.ID,
-		MerchantID: order.MerchantID,
-		AmountFiat: order.AmountFiat,
-		AmountCrypto: order.AmountCrypto,
-		Currency: order.Currency,
-		Country: order.Country,
-		ClientID: order.ClientID,
-		Status: order.Status,
-		PaymentSystem: order.PaymentSystem,
-		BankDetailsID: order.BankDetailsID,
-		ExpiresAt: order.ExpiresAt,
-		CreatedAt: order.CreatedAt,
-		UpdatedAt: order.UpdatedAt,
-		MerchantOrderID: order.MerchantOrderID,
-		Shuffle: order.Shuffle,
-		CallbackURL: order.CallbackURL,
-		TraderRewardPercent: order.TraderRewardPercent,
-		Recalculated: order.Recalculated,
-		CryptoRubRate: order.CryptoRubRate,
-		PlatformFee: order.PlatformFee,
-		Type: order.Type,
-		BankDetail: &domain.BankDetail{
-			ID: order.BankDetail.ID,
-			TraderID: order.BankDetail.TraderID,
-			Country: order.BankDetail.Country,
-			Currency: order.BankDetail.Currency,
-			MinAmount: order.BankDetail.MinAmount,
-			MaxAmount: order.BankDetail.MaxAmount,
-			BankName: order.BankDetail.BankName,
-			PaymentSystem: order.BankDetail.PaymentSystem,
-			Delay: order.BankDetail.Delay,
-			Enabled: order.BankDetail.Enabled,
-			CardNumber: order.BankDetail.CardNumber,
-			Phone: order.BankDetail.Phone,
-			Owner: order.BankDetail.Owner,
-			MaxOrdersSimultaneosly: order.BankDetail.MaxOrdersSimultaneosly,
-			MaxAmountDay: order.BankDetail.MaxAmountDay,
-			MaxAmountMonth: order.BankDetail.MaxAmountMonth,
-			InflowCurrency: order.BankDetail.InflowCurrency,
-			BankCode: order.BankDetail.BankCode,
-			NspkCode: order.BankDetail.NspkCode,
-			DeviceID: order.BankDetail.DeviceID,
-			MaxQuantityDay: order.BankDetail.MaxQuantityDay,
-			MaxQuantityMonth: order.BankDetail.MaxQuantityMonth,
-			CreatedAt: order.BankDetail.CreatedAt,
-			UpdatedAt: order.BankDetail.UpdatedAt,
-		},
-	}, nil
+	return mappers.ToDomainOrder(&order), nil
 }
 
 func (r *DefaultOrderRepository) UpdateOrderStatus(orderID string, newStatus domain.OrderStatus) error {
@@ -261,55 +147,7 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(
 
 	orders := make([]*domain.Order, len(orderModels))
 	for i, orderModel := range orderModels {
-		orders[i] = &domain.Order{
-			ID: orderModel.ID,
-			MerchantID: orderModel.MerchantID,
-			AmountFiat: orderModel.AmountFiat,
-			AmountCrypto: orderModel.AmountCrypto,
-			Currency: orderModel.Currency,
-			Country: orderModel.Country,
-			ClientID: orderModel.ClientID,
-			Status: orderModel.Status,
-			PaymentSystem: orderModel.PaymentSystem,
-			ExpiresAt: orderModel.ExpiresAt,
-			BankDetailsID: orderModel.BankDetailsID,
-			CreatedAt: orderModel.CreatedAt,
-			UpdatedAt: orderModel.UpdatedAt,
-			MerchantOrderID: orderModel.MerchantOrderID,
-			Shuffle: orderModel.Shuffle,
-			CallbackURL: orderModel.CallbackURL,
-			TraderRewardPercent: orderModel.TraderRewardPercent,
-			Recalculated: orderModel.Recalculated,
-			CryptoRubRate: orderModel.CryptoRubRate,
-			PlatformFee: orderModel.PlatformFee,
-			Type: orderModel.Type,
-			BankDetail: &domain.BankDetail{
-				ID: orderModel.BankDetail.ID,
-				TraderID: orderModel.BankDetail.TraderID,
-				Country: orderModel.BankDetail.Country,
-				Currency: orderModel.BankDetail.Currency,
-				MinAmount: orderModel.BankDetail.MinAmount,
-				MaxAmount: orderModel.BankDetail.MaxAmount,
-				BankName: orderModel.BankDetail.BankName,
-				PaymentSystem: orderModel.BankDetail.PaymentSystem,
-				Delay: orderModel.BankDetail.Delay,
-				Enabled: orderModel.BankDetail.Enabled,
-				CardNumber: orderModel.BankDetail.CardNumber,
-				Phone: orderModel.BankDetail.Phone,
-				Owner: orderModel.BankDetail.Owner,
-				MaxOrdersSimultaneosly: orderModel.BankDetail.MaxOrdersSimultaneosly,
-				MaxAmountDay: orderModel.BankDetail.MaxAmountDay,
-				MaxAmountMonth: orderModel.BankDetail.MaxAmountMonth,
-				InflowCurrency: orderModel.BankDetail.InflowCurrency,
-				BankCode: orderModel.BankDetail.BankCode,
-				NspkCode: orderModel.BankDetail.NspkCode,
-				MaxQuantityDay: orderModel.BankDetail.MaxQuantityDay,
-				MaxQuantityMonth: orderModel.BankDetail.MaxQuantityMonth,
-				DeviceID: orderModel.BankDetail.DeviceID,
-				CreatedAt: orderModel.BankDetail.CreatedAt,
-				UpdatedAt: orderModel.BankDetail.UpdatedAt,
-			},
-		}
+		orders[i] = mappers.ToDomainOrder(&orderModel)
 	}
 
 	return orders, total, nil
@@ -326,55 +164,7 @@ func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
 	
 	orders := make([]*domain.Order, len(orderModels))
 	for i, orderModel := range orderModels {
-		orders[i] = &domain.Order{
-			ID: orderModel.ID,
-			MerchantID: orderModel.MerchantID,
-			AmountFiat: orderModel.AmountFiat,
-			AmountCrypto: orderModel.AmountCrypto,
-			Currency: orderModel.Currency,
-			Country: orderModel.Country,
-			ClientID: orderModel.ClientID,
-			Status: orderModel.Status,
-			PaymentSystem: orderModel.PaymentSystem,
-			BankDetailsID: orderModel.BankDetailsID,
-			CreatedAt: orderModel.CreatedAt,
-			UpdatedAt: orderModel.UpdatedAt,
-			MerchantOrderID: orderModel.MerchantOrderID,
-			Shuffle: orderModel.Shuffle,
-			CallbackURL: orderModel.CallbackURL,
-			TraderRewardPercent: orderModel.TraderRewardPercent,
-			Recalculated: orderModel.Recalculated,
-			CryptoRubRate: orderModel.CryptoRubRate,
-			PlatformFee: orderModel.PlatformFee,
-			Type: orderModel.Type,
-			BankDetail: &domain.BankDetail{
-				ID: orderModel.BankDetail.ID,
-				TraderID: orderModel.BankDetail.TraderID,
-				Country: orderModel.BankDetail.Country,
-				Currency: orderModel.BankDetail.Currency,
-				MinAmount: orderModel.BankDetail.MinAmount,
-				MaxAmount: orderModel.BankDetail.MaxAmount,
-				BankName: orderModel.BankDetail.BankName,
-				PaymentSystem: orderModel.BankDetail.PaymentSystem,
-				Delay: orderModel.BankDetail.Delay,
-				Enabled: orderModel.BankDetail.Enabled,
-				CardNumber: orderModel.BankDetail.CardNumber,
-				Phone: orderModel.BankDetail.Phone,
-				Owner: orderModel.BankDetail.Owner,
-				MaxOrdersSimultaneosly: orderModel.BankDetail.MaxOrdersSimultaneosly,
-				MaxAmountDay: orderModel.BankDetail.MaxAmountDay,
-				MaxAmountMonth: orderModel.BankDetail.MaxAmountMonth,
-				InflowCurrency: orderModel.BankDetail.InflowCurrency,
-				BankCode: orderModel.BankDetail.BankCode,
-				NspkCode: orderModel.BankDetail.NspkCode,
-				MaxQuantityDay: orderModel.BankDetail.MaxQuantityDay,
-				MaxQuantityMonth: orderModel.BankDetail.MaxQuantityMonth,
-				DeviceID: orderModel.BankDetail.DeviceID,
-				CreatedAt: orderModel.BankDetail.CreatedAt,
-				UpdatedAt: orderModel.BankDetail.UpdatedAt,
-			},
-			ExpiresAt: orderModel.ExpiresAt,
-		}
+		orders[i] = mappers.ToDomainOrder(&orderModel)
 	}
 
 	return orders, nil
@@ -394,55 +184,7 @@ func (r *DefaultOrderRepository) GetOrdersByBankDetailID(bankDetailID string) ([
 
 	orders := make([]*domain.Order, len(orderModels))
 	for i, orderModel := range orderModels {
-		orders[i] = &domain.Order{
-			ID: orderModel.ID,
-			MerchantID: orderModel.MerchantID,
-			AmountFiat: orderModel.AmountFiat,
-			AmountCrypto: orderModel.AmountCrypto,
-			Currency: orderModel.Currency,
-			Country: orderModel.Country,
-			ClientID: orderModel.ClientID,
-			Status: orderModel.Status,
-			PaymentSystem: orderModel.PaymentSystem,
-			BankDetailsID: orderModel.BankDetailsID,
-			CreatedAt: orderModel.CreatedAt,
-			UpdatedAt: orderModel.UpdatedAt,
-			MerchantOrderID: orderModel.MerchantOrderID,
-			Shuffle: orderModel.Shuffle,
-			CallbackURL: orderModel.CallbackURL,
-			TraderRewardPercent: orderModel.TraderRewardPercent,
-			Recalculated: orderModel.Recalculated,
-			CryptoRubRate: orderModel.CryptoRubRate,
-			PlatformFee: orderModel.PlatformFee,
-			Type: orderModel.Type,
-			BankDetail: &domain.BankDetail{
-				ID: orderModel.BankDetail.ID,
-				TraderID: orderModel.BankDetail.TraderID,
-				Country: orderModel.BankDetail.Country,
-				Currency: orderModel.BankDetail.Currency,
-				MinAmount: orderModel.BankDetail.MinAmount,
-				MaxAmount: orderModel.BankDetail.MaxAmount,
-				BankName: orderModel.BankDetail.BankName,
-				PaymentSystem: orderModel.BankDetail.PaymentSystem,
-				Delay: orderModel.BankDetail.Delay,
-				Enabled: orderModel.BankDetail.Enabled,
-				CardNumber: orderModel.BankDetail.CardNumber,
-				Phone: orderModel.BankDetail.Phone,
-				Owner: orderModel.BankDetail.Owner,
-				MaxOrdersSimultaneosly: orderModel.BankDetail.MaxOrdersSimultaneosly,
-				MaxAmountDay: orderModel.BankDetail.MaxAmountDay,
-				MaxAmountMonth: orderModel.BankDetail.MaxAmountMonth,
-				InflowCurrency: orderModel.BankDetail.InflowCurrency,
-				BankCode: orderModel.BankDetail.BankCode,
-				NspkCode: orderModel.BankDetail.NspkCode,
-				MaxQuantityDay: orderModel.BankDetail.MaxQuantityDay,
-				MaxQuantityMonth: orderModel.BankDetail.MaxQuantityMonth,
-				DeviceID: orderModel.BankDetail.DeviceID,
-				CreatedAt: orderModel.BankDetail.CreatedAt,
-				UpdatedAt: orderModel.BankDetail.UpdatedAt,
-			},
-			ExpiresAt: orderModel.ExpiresAt,
-		}
+		orders[i] = mappers.ToDomainOrder(&orderModel)
 	}
 
 	return orders, nil
@@ -458,55 +200,7 @@ func (r *DefaultOrderRepository) GetCreatedOrdersByClientID(clientID string) ([]
 
 	orders := make([]*domain.Order, len(orderModels))
 	for i, orderModel := range orderModels {
-		orders[i] = &domain.Order{
-			ID: orderModel.ID,
-			MerchantID: orderModel.MerchantID,
-			AmountFiat: orderModel.AmountFiat,
-			AmountCrypto: orderModel.AmountCrypto,
-			Currency: orderModel.Currency,
-			Country: orderModel.Country,
-			ClientID: orderModel.ClientID,
-			Status: orderModel.Status,
-			PaymentSystem: orderModel.PaymentSystem,
-			BankDetailsID: orderModel.BankDetailsID,
-			CreatedAt: orderModel.CreatedAt,
-			UpdatedAt: orderModel.UpdatedAt,
-			MerchantOrderID: orderModel.MerchantOrderID,
-			Shuffle: orderModel.Shuffle,
-			CallbackURL: orderModel.CallbackURL,
-			TraderRewardPercent: orderModel.TraderRewardPercent,
-			Recalculated: orderModel.Recalculated,
-			CryptoRubRate: orderModel.CryptoRubRate,
-			PlatformFee: orderModel.PlatformFee,
-			Type: orderModel.Type,
-			BankDetail: &domain.BankDetail{
-				ID: orderModel.BankDetail.ID,
-				TraderID: orderModel.BankDetail.TraderID,
-				Country: orderModel.BankDetail.Country,
-				Currency: orderModel.BankDetail.Currency,
-				MinAmount: orderModel.BankDetail.MinAmount,
-				MaxAmount: orderModel.BankDetail.MaxAmount,
-				BankName: orderModel.BankDetail.BankName,
-				PaymentSystem: orderModel.BankDetail.PaymentSystem,
-				Delay: orderModel.BankDetail.Delay,
-				Enabled: orderModel.BankDetail.Enabled,
-				CardNumber: orderModel.BankDetail.CardNumber,
-				Phone: orderModel.BankDetail.Phone,
-				Owner: orderModel.BankDetail.Owner,
-				MaxOrdersSimultaneosly: orderModel.BankDetail.MaxOrdersSimultaneosly,
-				MaxAmountDay: orderModel.BankDetail.MaxAmountDay,
-				MaxAmountMonth: orderModel.BankDetail.MaxAmountMonth,
-				InflowCurrency: orderModel.BankDetail.InflowCurrency,
-				BankCode: orderModel.BankDetail.BankCode,
-				NspkCode: orderModel.BankDetail.NspkCode,
-				MaxQuantityDay: orderModel.BankDetail.MaxQuantityDay,
-				MaxQuantityMonth: orderModel.BankDetail.MaxQuantityMonth,
-				DeviceID: orderModel.BankDetail.DeviceID,
-				CreatedAt: orderModel.BankDetail.CreatedAt,
-				UpdatedAt: orderModel.BankDetail.UpdatedAt,
-			},
-			ExpiresAt: orderModel.ExpiresAt,
-		}
+		orders[i] = mappers.ToDomainOrder(&orderModel)
 	}
 
 	return orders, nil
@@ -624,55 +318,7 @@ func (r *DefaultOrderRepository) GetOrders(filter domain.Filter, sortField strin
 
     orders := make([]*domain.Order, len(orderModels))
     for i, orderModel := range orderModels {
-        orders[i] = &domain.Order{
-            ID:                 orderModel.ID,
-            MerchantID:         orderModel.MerchantID,
-            AmountFiat:         orderModel.AmountFiat,
-            AmountCrypto:       orderModel.AmountCrypto,
-            Currency:           orderModel.Currency,
-            Country:            orderModel.Country,
-            ClientID:           orderModel.ClientID,
-            Status:             orderModel.Status,
-            PaymentSystem:      orderModel.PaymentSystem,
-            BankDetailsID:      orderModel.BankDetailsID,
-            CreatedAt:          orderModel.CreatedAt,
-            UpdatedAt:          orderModel.UpdatedAt,
-            MerchantOrderID:    orderModel.MerchantOrderID,
-            Shuffle:            orderModel.Shuffle,
-            CallbackURL:        orderModel.CallbackURL,
-            TraderRewardPercent: orderModel.TraderRewardPercent,
-            Recalculated:       orderModel.Recalculated,
-            CryptoRubRate:      orderModel.CryptoRubRate,
-            PlatformFee:        orderModel.PlatformFee,
-            Type:               orderModel.Type,
-            BankDetail: &domain.BankDetail{
-                ID:          orderModel.BankDetail.ID,
-                TraderID:    orderModel.BankDetail.TraderID,
-                Country:     orderModel.BankDetail.Country,
-                Currency:    orderModel.BankDetail.Currency,
-                MinAmount:   orderModel.BankDetail.MinAmount,
-                MaxAmount:   orderModel.BankDetail.MaxAmount,
-                BankName:    orderModel.BankDetail.BankName,
-                PaymentSystem: orderModel.BankDetail.PaymentSystem,
-                Delay:       orderModel.BankDetail.Delay,
-                Enabled:     orderModel.BankDetail.Enabled,
-                CardNumber:  orderModel.BankDetail.CardNumber,
-                Phone:       orderModel.BankDetail.Phone,
-                Owner:       orderModel.BankDetail.Owner,
-                MaxOrdersSimultaneosly: orderModel.BankDetail.MaxOrdersSimultaneosly,
-                MaxAmountDay:           orderModel.BankDetail.MaxAmountDay,
-                MaxAmountMonth:         orderModel.BankDetail.MaxAmountMonth,
-                InflowCurrency:         orderModel.BankDetail.InflowCurrency,
-                BankCode:               orderModel.BankDetail.BankCode,
-                NspkCode:               orderModel.BankDetail.NspkCode,
-                MaxQuantityDay:         orderModel.BankDetail.MaxQuantityDay,
-                MaxQuantityMonth:       orderModel.BankDetail.MaxQuantityMonth,
-                DeviceID:               orderModel.BankDetail.DeviceID,
-                CreatedAt:              orderModel.BankDetail.CreatedAt,
-                UpdatedAt:              orderModel.BankDetail.UpdatedAt,
-            },
-            ExpiresAt: orderModel.ExpiresAt,
-        }
+        orders[i] = mappers.ToDomainOrder(&orderModel)
     }
 
     return orders, total, nil

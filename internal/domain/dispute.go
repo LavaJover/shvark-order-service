@@ -22,6 +22,8 @@ type Dispute struct {
 	Status 				DisputeStatus
 	Ttl					time.Duration
 	AutoAcceptAt		time.Time
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
 }
 
 type DisputeRepository interface {
@@ -30,16 +32,5 @@ type DisputeRepository interface {
 	GetDisputeByID(disputeID string) (*Dispute, error)
 	GetDisputeByOrderID(orderID string) (*Dispute, error)
 	FindExpiredDisputes() ([]*Dispute, error)
-	GetOrderDisputes(page, limit int64, status string) ([]*Dispute, int64, error)
-}
-
-type DisputeUsecase interface {
-	CreateDispute(dispute *Dispute) error
-	AcceptDispute(disputeID string) error
-	RejectDispute(disputeID string) error
-	FreezeDispute(disputeID string) error
-	GetDisputeByID(disputeID string) (*Dispute, error)
-	GetDisputeByOrderID(orderID string) (*Dispute, error)
-	AcceptExpiredDisputes() error
 	GetOrderDisputes(page, limit int64, status string) ([]*Dispute, int64, error)
 }

@@ -13,16 +13,37 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/bitwire/notifier"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
+	bankdetaildto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/bank_detail"
+	orderdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/order"
+	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+type OrderUsecase interface {
+	CreateOrder(input *orderdto.CreateOrderInput) (*orderdto.OrderOutput, error)
+	GetOrderByID(orderID string) (*orderdto.OrderOutput, error)
+	GetOrderByMerchantOrderID(merchantOrderID string) (*orderdto.OrderOutput, error)
+	GetOrdersByTraderID(
+		orderID string, page, 
+		limit int64, sortBy, 
+		sortOrder string, 
+		filters domain.OrderFilters,
+		) ([]*orderdto.OrderOutput, int64, error)
+	FindExpiredOrders() ([]*domain.Order, error)
+	CancelExpiredOrders(context.Context) error
+	ApproveOrder(orderID string) error
+	CancelOrder(orderID string) error
+	GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*domain.OrderStatistics, error)
+
+	GetOrders(filter domain.Filter, sortField string, page, size int) ([]*domain.Order, int64, error)
+}
 
 type DefaultOrderUsecase struct {
 	OrderRepo 			domain.OrderRepository
 	WalletHandler   	*handlers.HTTPWalletHandler
 	TrafficUsecase  	domain.TrafficUsecase
-	BankDetailUsecase 	domain.BankDetailUsecase
+	BankDetailUsecase 	BankDetailUsecase
 	TeamRelationsUsecase TeamRelationsUsecase
 	Publisher 			*kafka.KafkaPublisher
 }
@@ -31,7 +52,7 @@ func NewDefaultOrderUsecase(
 	orderRepo domain.OrderRepository, 
 	walletHandler *handlers.HTTPWalletHandler,
 	trafficUsecase domain.TrafficUsecase,
-	bankDetailUsecase domain.BankDetailUsecase,
+	bankDetailUsecase BankDetailUsecase,
 	kafkaPublisher *kafka.KafkaPublisher,
 	teamRelationsUsecase TeamRelationsUsecase) *DefaultOrderUsecase {
 
@@ -138,10 +159,10 @@ func (uc *DefaultOrderUsecase) FilterByMaxAmountDay(bankDetails []*domain.BankDe
 		startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		for _, order := range orders {
 			if (order.Status == domain.StatusCompleted || order.Status == domain.StatusPending) && (order.UpdatedAt.After(startOfToday)) {
-				ordersSucceedSummary += order.AmountFiat
+				ordersSucceedSummary += order.AmountInfo.AmountFiat
 			}
 		}
-		fmt.Printf("Max amount a day: %d. Current summary amount: %f\n", bankDetail.MaxAmountDay, ordersSucceedSummary)
+		fmt.Printf("Max amount a day: %f. Current summary amount: %f\n", bankDetail.MaxAmountDay, ordersSucceedSummary)
 		if ordersSucceedSummary + amountFiat <= float64(bankDetail.MaxAmountDay) {
 			result = append(result, bankDetail)
 		}
@@ -162,10 +183,10 @@ func (uc *DefaultOrderUsecase) FilterByMaxAmountMonth(bankDetails []*domain.Bank
 		startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 		for _, order := range orders {
 			if (order.Status == domain.StatusCompleted || order.Status == domain.StatusPending) && (order.UpdatedAt.After(startOfMonth)) {
-				ordersSucceedSummary += order.AmountFiat
+				ordersSucceedSummary += order.AmountInfo.AmountFiat
 			}
 		}
-		fmt.Printf("Max amount a month: %d. Current summary month: %f\n", bankDetail.MaxAmountMonth, ordersSucceedSummary)
+		fmt.Printf("Max amount a month: %f. Current summary month: %f\n", bankDetail.MaxAmountMonth, ordersSucceedSummary)
 		if ordersSucceedSummary + amountFiat <= float64(bankDetail.MaxAmountMonth) {
 			result = append(result, bankDetail)
 		}
@@ -280,7 +301,7 @@ func (uc *DefaultOrderUsecase)FilterByEqualAmountFiat(bankDetails []*domain.Bank
 		}
 		skipBankDetail := false
 		for _, order := range orders {
-			if order.Status == domain.StatusPending && order.AmountFiat == amountFiat {
+			if order.Status == domain.StatusPending && order.AmountInfo.AmountFiat == amountFiat {
 				// Пропускаем данный рек, тк есть созданная заявка на такую сумму фиата
 				skipBankDetail = true
 				fmt.Println("Обнаружена активная заявка с такой же суммой!")
@@ -295,8 +316,16 @@ func (uc *DefaultOrderUsecase)FilterByEqualAmountFiat(bankDetails []*domain.Bank
 	return result, nil
 }
 
-func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order) ([]*domain.BankDetail, error) {
-	bankDetails, err := uc.BankDetailUsecase.FindSuitableBankDetails(order)
+func (uc *DefaultOrderUsecase) FindEligibleBankDetails(input *orderdto.CreateOrderInput) ([]*domain.BankDetail, error) {
+	bankDetails, err := uc.BankDetailUsecase.FindSuitableBankDetails(
+		&bankdetaildto.FindSuitableBankDetailsInput{
+			AmountFiat: input.AmountFiat,
+			Currency: input.Currency,
+			PaymentSystem: input.PaymentSystem,
+			BankCode: input.BankInfo.BankCode,
+			NspkCode: input.BankInfo.NspkCode,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +334,7 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order) ([]*
 	}
 
 	// 0) Filter by Traffic
-	bankDetails, err = uc.FilterByTraffic(bankDetails, order.MerchantID)
+	bankDetails, err = uc.FilterByTraffic(bankDetails, input.MerchantParams.MerchantID)
 	if err != nil {
 		return nil, err
 	}
@@ -314,7 +343,7 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order) ([]*
 	}
 
 	// 1) Filter by Trader Available balances
-	bankDetails, err = uc.FilterByTraderBalance(bankDetails, order.AmountCrypto)
+	bankDetails, err = uc.FilterByTraderBalance(bankDetails, input.AmountCrypto)
 	if err != nil {
 		return nil, err
 	}
@@ -331,7 +360,7 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order) ([]*
 		log.Printf("Отсеились по одновременным сделкам\n")
 	}
 	// 3) Filter by MaxAmountDay
-	bankDetails, err = uc.FilterByMaxAmountDay(bankDetails, order.AmountFiat)
+	bankDetails, err = uc.FilterByMaxAmountDay(bankDetails, input.AmountFiat)
 	if err != nil {
 		return nil, err
 	}
@@ -339,7 +368,7 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order) ([]*
 		log.Printf("Отсеились по сумме в день\n")
 	}
 	// 4) Filter by MaxAmountMonth
-	bankDetails, err = uc.FilterByMaxAmountMonth(bankDetails, order.AmountFiat)
+	bankDetails, err = uc.FilterByMaxAmountMonth(bankDetails, input.AmountFiat)
 	if err != nil {
 		return nil, err
 	}
@@ -373,22 +402,22 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(order *domain.Order) ([]*
 	}
 
 	// 8) Filter by active order with equal amount fiat
-	tempBankDetails, err := uc.FilterByEqualAmountFiat(bankDetails, order.AmountFiat)
+	tempBankDetails, err := uc.FilterByEqualAmountFiat(bankDetails, input.AmountFiat)
 	if err != nil {
 		return nil, err
 	}
 	// Если shuffle не задан, то пропускаем сериб проверок с рекалькуляцией
-	for addFiat := range order.Shuffle {
-		tempBankDetails, err = uc.FilterByEqualAmountFiat(bankDetails, order.AmountFiat + float64(addFiat))
+	for addFiat := range input.AdvancedParams.Shuffle {
+		tempBankDetails, err = uc.FilterByEqualAmountFiat(bankDetails, input.AmountFiat + float64(addFiat))
 		if err != nil {
 			return nil, err
 		}
 		if len(tempBankDetails) != 0 {
-			order.AmountFiat += float64(addFiat)
+			input.AmountFiat += float64(addFiat)
 			if addFiat != 0 {
-				order.Recalculated = true
+				input.AdvancedParams.Recalculated = true
 			}else {
-				order.Recalculated = false
+				input.AdvancedParams.Recalculated = false
 			}
 			break
 		}
@@ -410,62 +439,76 @@ func (uc *DefaultOrderUsecase) CheckIdempotency(clientID string) error {
 	return nil
 }
 
-func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, error) {
-	// USD/RUB RATE
-	amountCrypto := float64(order.AmountFiat / usdt.UsdtRubRates)
-	order.AmountCrypto = amountCrypto
-	order.CryptoRubRate = usdt.UsdtRubRates
-
+func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrderInput) (*orderdto.OrderOutput, error) {
 	// check idempotency by client_id
-	if order.ClientID != "" {
-		if err := uc.CheckIdempotency(order.ClientID); err != nil {
+	if createOrderInput.ClientID != "" {
+		if err := uc.CheckIdempotency(createOrderInput.ClientID); err != nil {
 			return nil, err
 		}
 	}
 
 	// searching for eligible bank details due to order query parameters
-	bankDetails, err := uc.FindEligibleBankDetails(order)
+	bankDetails, err := uc.FindEligibleBankDetails(createOrderInput)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "no eligible bank detail" + err.Error())
 	}
 	if len(bankDetails) != 0 {
-		log.Printf("Реквизиты для заявки %s не найдены!\n", order.ID)
+		log.Printf("Реквизиты для заявки не найдены!\n")
 	}
-	log.Printf("Для заявки %s найдены доступные реквизиты!\n", order.ID)
-	if order.CallbackURL != "" {
+	log.Printf("Для заявки найдены доступные реквизиты!\n")
+	if createOrderInput.AdvancedParams.CallbackUrl != "" {
 		notifier.SendCallback(
-			order.CallbackURL,
-			order.MerchantOrderID,
+			createOrderInput.AdvancedParams.CallbackUrl,
+			createOrderInput.MerchantOrderID,
 			string(domain.StatusCreated),
 			0, 0, 0,
 		)
 	}
 
 	// business logic to pick best bank detail
-	chosenBankDetail, err := uc.PickBestBankDetail(bankDetails, order.MerchantID)
+	chosenBankDetail, err := uc.PickBestBankDetail(bankDetails, createOrderInput.MerchantID)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "failed to pick best bank detail for order: %s", order.ID)
+		return nil, status.Errorf(codes.NotFound, "failed to pick best bank detail for order")
 	}
 
-	// relate found bank detail and order
-	order.BankDetailsID = chosenBankDetail.ID
-
 	// Get trader reward percent and save to order
-	traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(chosenBankDetail.TraderID, order.MerchantID)
+	traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(chosenBankDetail.TraderID, createOrderInput.MerchantID)
 	if err != nil {
 		return nil, err
 	}
-	rewardPercent := traffic.TraderRewardPercent
+	traderReward := traffic.TraderRewardPercent
 	platformFee := traffic.PlatformFee
-	order.TraderRewardPercent = rewardPercent
-	order.PlatformFee = platformFee
-	orderID, err := uc.OrderRepo.CreateOrder(order)
+
+	order := domain.Order{
+		ID: uuid.New().String(),
+		Status: domain.StatusPending,
+		MerchantInfo: domain.MerchantInfo{
+			MerchantID: createOrderInput.MerchantID,
+			MerchantOrderID: createOrderInput.MerchantOrderID,
+			ClientID: createOrderInput.ClientID,
+		},
+		AmountInfo: domain.AmountInfo{
+			AmountFiat: createOrderInput.AmountFiat,
+			AmountCrypto: createOrderInput.AmountCrypto,
+			CryptoRate: createOrderInput.CryptoRate,
+			Currency: createOrderInput.Currency,
+		},
+		BankDetailID: chosenBankDetail.ID,
+		Type: createOrderInput.Type,
+		Recalculated: createOrderInput.Recalculated,
+		Shuffle: createOrderInput.Shuffle,
+		TraderReward: traderReward,
+		PlatformFee: platformFee,
+		CallbackUrl: createOrderInput.CallbackUrl,
+		ExpiresAt: createOrderInput.ExpiresAt,
+	}
+	err = uc.OrderRepo.CreateOrder(&order)
 	if err != nil {
 		return nil, err
 	}
 
 	// Freeze crypto
-	if err := uc.WalletHandler.Freeze(chosenBankDetail.TraderID, order.ID, amountCrypto); err != nil {
+	if err := uc.WalletHandler.Freeze(chosenBankDetail.TraderID, order.ID, createOrderInput.AmountCrypto); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -473,8 +516,8 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		OrderID: order.ID,
 		TraderID: chosenBankDetail.TraderID,
 		Status: "🔥Новая сделка",
-		AmountFiat: order.AmountFiat,
-		Currency: order.Currency,
+		AmountFiat: order.AmountInfo.AmountFiat,
+		Currency: order.AmountInfo.Currency,
 		BankName: chosenBankDetail.BankName,
 		Phone: chosenBankDetail.Phone,
 		CardNumber: chosenBankDetail.CardNumber,
@@ -483,71 +526,51 @@ func (uc *DefaultOrderUsecase) CreateOrder(order *domain.Order) (*domain.Order, 
 		slog.Error("failed to publish event", "error", err.Error())
 	}
 
-	if order.CallbackURL != "" {
+	if order.CallbackUrl != "" {
 		notifier.SendCallback(
-			order.CallbackURL,
-			order.MerchantOrderID,
+			order.CallbackUrl,
+			order.MerchantInfo.MerchantOrderID,
 			string(domain.StatusPending),
 			0, 0, 0,
 		)
 	}
 
-	return &domain.Order{
-		ID: orderID,
-		MerchantID: order.MerchantID,
-		AmountFiat: order.AmountFiat,
-		AmountCrypto: order.AmountCrypto,
-		Currency: order.Currency,
-		Country: order.Country,
-		ClientID: order.ClientID,
-		Status: order.Status,
-		PaymentSystem: order.PaymentSystem,
-		BankDetailsID: order.BankDetailsID,
-		ExpiresAt: order.ExpiresAt,
-		MerchantOrderID: order.MerchantOrderID,
-		Shuffle: order.Shuffle,
-		CallbackURL: order.CallbackURL,
-		TraderRewardPercent: order.TraderRewardPercent,
-		CreatedAt: order.CreatedAt,
-		UpdatedAt: order.UpdatedAt,
-		Recalculated: order.Recalculated,
-		CryptoRubRate: order.CryptoRubRate,
-		Type: order.Type,
-		BankDetail: &domain.BankDetail{
-			ID: chosenBankDetail.ID,
-			TraderID: chosenBankDetail.TraderID,
-			Country: chosenBankDetail.Country,
-			Currency: chosenBankDetail.Currency,
-			MinAmount: chosenBankDetail.MinAmount,
-			MaxAmount: chosenBankDetail.MaxAmount,
-			BankName: chosenBankDetail.BankName,
-			PaymentSystem: chosenBankDetail.PaymentSystem,
-			Delay: chosenBankDetail.Delay,
-			Enabled: chosenBankDetail.Enabled,
-			CardNumber: chosenBankDetail.CardNumber,
-			Phone: chosenBankDetail.Phone,
-			Owner: chosenBankDetail.Owner,
-			MaxOrdersSimultaneosly: chosenBankDetail.MaxOrdersSimultaneosly,
-			MaxAmountDay: chosenBankDetail.MaxAmountDay,
-			MaxAmountMonth: chosenBankDetail.MaxAmountMonth,
-			MaxQuantityDay: chosenBankDetail.MaxQuantityDay,
-			MaxQuantityMonth: chosenBankDetail.MaxQuantityMonth,
-			InflowCurrency: chosenBankDetail.InflowCurrency,
-			BankCode: chosenBankDetail.BankCode,
-			NspkCode: chosenBankDetail.NspkCode,
-			DeviceID: chosenBankDetail.DeviceID,
-			CreatedAt: chosenBankDetail.CreatedAt,
-			UpdatedAt: chosenBankDetail.UpdatedAt,
-		},
+	return &orderdto.OrderOutput{
+		Order: order,
+		BankDetail: *chosenBankDetail,
 	}, nil
 }
 
-func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*domain.Order, error) {
-	return uc.OrderRepo.GetOrderByID(orderID)
+func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*orderdto.OrderOutput, error) {
+	order, err := uc.OrderRepo.GetOrderByID(orderID)
+	if err != nil {
+		return nil, err
+	}
+	bankDetailID := order.BankDetailID
+	bankDetail, err := uc.BankDetailUsecase.GetBankDetailByID(bankDetailID)
+	if err != nil {
+		return nil, err
+	}
+	return &orderdto.OrderOutput{
+		Order: *order,
+		BankDetail: *bankDetail,
+	}, nil
 }
 
-func (uc *DefaultOrderUsecase) GetOrderByMerchantOrderID(merchantOrderID string) (*domain.Order, error) {
-	return uc.OrderRepo.GetOrderByMerchantOrderID(merchantOrderID)
+func (uc *DefaultOrderUsecase) GetOrderByMerchantOrderID(merchantOrderID string) (*orderdto.OrderOutput, error) {
+	order, err := uc.OrderRepo.GetOrderByMerchantOrderID(merchantOrderID)
+	if err != nil {
+		return nil, err
+	}
+	bankDetailID := order.BankDetailID
+	bankDetail, err := uc.BankDetailUsecase.GetBankDetailByID(bankDetailID)
+	if err != nil {
+		return nil, err
+	}
+	return &orderdto.OrderOutput{
+		Order: *order,
+		BankDetail: *bankDetail,
+	}, nil
 }
 
 func (uc *DefaultOrderUsecase) GetOrdersByTraderID(
@@ -555,7 +578,7 @@ func (uc *DefaultOrderUsecase) GetOrdersByTraderID(
 	limit int64, sortBy, 
 	sortOrder string,
 	filters domain.OrderFilters,
-) ([]*domain.Order, int64, error) {
+) ([]*orderdto.OrderOutput, int64, error) {
 
 	validStatuses := map[string]bool{
 		string(domain.StatusCompleted): true,
@@ -570,7 +593,7 @@ func (uc *DefaultOrderUsecase) GetOrdersByTraderID(
 		}
 	}
 
-	return uc.OrderRepo.GetOrdersByTraderID(
+	orders, total, err := uc.OrderRepo.GetOrdersByTraderID(
 		traderID, 
 		page, 
 		limit, 
@@ -578,6 +601,23 @@ func (uc *DefaultOrderUsecase) GetOrdersByTraderID(
 		sortOrder,
 		filters,
 	)
+	if err != nil {
+		return nil, 0, err
+	}
+	var orderOutputs []*orderdto.OrderOutput
+	for _, order := range orders {
+		bankDetailID := order.BankDetailID
+		bankDetail, err := uc.BankDetailUsecase.GetBankDetailByID(bankDetailID)
+		if err != nil {
+			return nil, 0, err
+		}
+		orderOutputs = append(orderOutputs, &orderdto.OrderOutput{
+			Order: *order,
+			BankDetail: *bankDetail,
+		})
+	}
+
+	return orderOutputs, total, nil
 }
 
 func (uc *DefaultOrderUsecase) FindExpiredOrders() ([]*domain.Order, error) {
@@ -591,14 +631,6 @@ func (uc *DefaultOrderUsecase) CancelExpiredOrders(ctx context.Context) error {
 	}
 
 	for _, order := range orders {
-		// if err := uc.WalletHandler.Release(order.BankDetail.TraderID, order.MerchantID, order.ID, float64(1.), 0); err != nil {
-		// 	log.Printf("Unfreeze failed for order %s: %v", order.ID, err)
-		// 	return status.Error(codes.Internal, err.Error())
-		// }
-		
-		// if err := uc.OrderRepo.UpdateOrderStatus(order.ID, domain.StatusCanceled); err != nil {
-		// 	return status.Error(codes.Internal, err.Error())
-		// }
 		err = uc.CancelOrder(order.ID)
 		if err != nil {
 			log.Printf("Failed to cancel order %s to timeout! Error: %v\n", order.ID, err)
@@ -617,7 +649,7 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		return err
 	}
 
-	if order.Status != domain.StatusPending {
+	if order.Order.Status != domain.StatusPending {
 		return domain.ErrResolveDisputeFailed
 	}
 
@@ -635,10 +667,10 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 	// make request to wallet-service to release order
 	releaseRequest := walletRequest.ReleaseRequest{
 		TraderID: order.BankDetail.TraderID,
-		MerchantID: order.MerchantID,
-		OrderID: order.ID,
-		RewardPercent: order.TraderRewardPercent,
-		PlatformFee: order.PlatformFee,
+		MerchantID: order.Order.MerchantInfo.MerchantID,
+		OrderID: order.Order.ID,
+		RewardPercent: order.Order.TraderReward,
+		PlatformFee: order.Order.PlatformFee,
 		CommissionUsers: commissionUsers,
 	}
 	if err := uc.WalletHandler.Release(releaseRequest); err != nil {
@@ -651,11 +683,11 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 	}
 
 	if err = uc.Publisher.Publish(kafka.OrderEvent{
-		OrderID: order.ID,
+		OrderID: order.Order.ID,
 		TraderID: order.BankDetail.TraderID,
 		Status: "✅Сделка закрыта",
-		AmountFiat: order.AmountFiat,
-		Currency: order.Currency,
+		AmountFiat: order.Order.AmountInfo.AmountFiat,
+		Currency: order.Order.AmountInfo.Currency,
 		BankName: order.BankDetail.BankName,
 		Phone: order.BankDetail.Phone,
 		CardNumber: order.BankDetail.CardNumber,
@@ -664,10 +696,10 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		slog.Error("failed to publish event", "error", err.Error())
 	}
 
-	if order.CallbackURL != "" {
+	if order.Order.CallbackUrl != "" {
 		notifier.SendCallback(
-			order.CallbackURL,
-			order.MerchantOrderID,
+			order.Order.CallbackUrl,
+			order.Order.MerchantInfo.MerchantOrderID,
 			string(domain.StatusCompleted),
 			0, 0, 0,
 		)
@@ -683,7 +715,7 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		return err
 	}
 
-	if order.Status != domain.StatusPending && order.Status != domain.StatusDisputeCreated{
+	if order.Order.Status != domain.StatusPending && order.Order.Status != domain.StatusDisputeCreated{
 		return domain.ErrCancelOrder
 	}
 
@@ -692,34 +724,23 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		return err
 	}
 	// Search for team relations to find commission users
-	var commissionUsers []walletRequest.CommissionUser
-	teamRelations, err := uc.TeamRelationsUsecase.GetRelationshipsByTraderID(order.BankDetail.TraderID)
-	if err == nil {
-		for _, teamRelation := range teamRelations {
-			commissionUsers = append(commissionUsers, walletRequest.CommissionUser{
-				UserID: teamRelation.TeamLeadID,
-				Commission: teamRelation.TeamRelationshipRapams.Commission,
-			})
-		}
-	}
 	releaseRequest := walletRequest.ReleaseRequest{
 		TraderID: order.BankDetail.TraderID,
-		MerchantID: order.MerchantID,
-		OrderID: order.ID,
+		MerchantID: order.Order.MerchantInfo.MerchantID,
+		OrderID: order.Order.ID,
 		RewardPercent: 1,
 		PlatformFee: 1,
-		// CommissionUsers: commissionUsers,
 	}
 	if err := uc.WalletHandler.Release(releaseRequest); err != nil {
 		return err
 	}
 
 	if err = uc.Publisher.Publish(kafka.OrderEvent{
-		OrderID: order.ID,
+		OrderID: order.Order.ID,
 		TraderID: order.BankDetail.TraderID,
 		Status: "⛔️Отмена сделки",
-		AmountFiat: order.AmountFiat,
-		Currency: order.Currency,
+		AmountFiat: order.Order.AmountInfo.AmountFiat,
+		Currency: order.Order.AmountInfo.Currency,
 		BankName: order.BankDetail.BankName,
 		Phone: order.BankDetail.Phone,
 		CardNumber: order.BankDetail.CardNumber,
@@ -728,10 +749,10 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		slog.Error("failed to publish event", "error", err.Error())
 	}
 
-	if order.CallbackURL != "" {
+	if order.Order.CallbackUrl != "" {
 		notifier.SendCallback(
-			order.CallbackURL,
-			order.MerchantOrderID,
+			order.Order.CallbackUrl,
+			order.Order.MerchantInfo.MerchantOrderID,
 			string(domain.StatusCanceled),
 			0, 0, 0,
 		)

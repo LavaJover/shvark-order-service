@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/mappers"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -18,18 +18,7 @@ func NewDefaultDisputeRepository(db *gorm.DB) *DefaultDisputeRepository {
 }
 
 func (r *DefaultDisputeRepository) CreateDispute(dispute *domain.Dispute) error {
-	disputeModel := models.DisputeModel{
-		ID: uuid.New().String(),
-		OrderID: dispute.OrderID,
-		ProofUrl: dispute.ProofUrl,
-		Reason: dispute.Reason,
-		Status: string(domain.DisputeOpened),
-		AutoAcceptAt: time.Now().Add(dispute.Ttl),
-		DisputeAmountFiat: dispute.DisputeAmountFiat,
-		DisputeAmountCrypto: dispute.DisputeAmountCrypto,
-		DisputeCryptoRate: dispute.DisputeCryptoRate,
-		Ttl: dispute.Ttl,
-	}
+	disputeModel := mappers.ToGORMDispute(dispute)
 	if err := r.db.Create(&disputeModel).Error; err != nil {
 		return err
 	}
@@ -47,18 +36,7 @@ func (r *DefaultDisputeRepository) GetDisputeByID(disputeID string) (*domain.Dis
 		return nil, err
 	}
 
-	return &domain.Dispute{
-		ID: disputeModel.ID,
-		OrderID: disputeModel.OrderID,
-		ProofUrl: disputeModel.ProofUrl,
-		Reason: disputeModel.Reason,
-		Status: domain.DisputeStatus(disputeModel.Status),
-		DisputeAmountFiat: disputeModel.DisputeAmountFiat,
-		DisputeAmountCrypto: disputeModel.DisputeAmountCrypto,
-		DisputeCryptoRate: disputeModel.DisputeCryptoRate,
-		Ttl: disputeModel.Ttl,
-		AutoAcceptAt: disputeModel.AutoAcceptAt,
-	}, nil
+	return mappers.ToDomainDispute(&disputeModel), nil
 }
 
 func (r *DefaultDisputeRepository) GetDisputeByOrderID(orderID string) (*domain.Dispute, error) {
@@ -67,18 +45,7 @@ func (r *DefaultDisputeRepository) GetDisputeByOrderID(orderID string) (*domain.
 		return nil, err
 	}
 
-	return &domain.Dispute{
-		ID: disputeModel.ID,
-		OrderID: disputeModel.OrderID,
-		ProofUrl: disputeModel.ProofUrl,
-		Reason: disputeModel.Reason,
-		Status: domain.DisputeStatus(disputeModel.Status),
-		DisputeAmountFiat: disputeModel.DisputeAmountFiat,
-		DisputeAmountCrypto: disputeModel.DisputeAmountCrypto,
-		DisputeCryptoRate: disputeModel.DisputeCryptoRate,
-		Ttl: disputeModel.Ttl,
-		AutoAcceptAt: disputeModel.AutoAcceptAt,
-	}, nil
+	return mappers.ToDomainDispute(&disputeModel), nil
 }
 
 func (r *DefaultDisputeRepository) FindExpiredDisputes() ([]*domain.Dispute, error) {
@@ -91,18 +58,7 @@ func (r *DefaultDisputeRepository) FindExpiredDisputes() ([]*domain.Dispute, err
 		}
 	disputes := make([]*domain.Dispute, len(disputeModels))
 	for i, disputeModel := range disputeModels {
-		disputes[i] = &domain.Dispute{
-			ID: disputeModel.ID,
-			OrderID: disputeModel.OrderID,
-			ProofUrl: disputeModel.ProofUrl,
-			Reason: disputeModel.Reason,
-			Status: domain.DisputeStatus(disputeModel.Reason),
-			DisputeAmountFiat: disputeModel.DisputeAmountFiat,
-			DisputeAmountCrypto: disputeModel.DisputeAmountCrypto,
-			DisputeCryptoRate: disputeModel.DisputeCryptoRate,
-			Ttl: disputeModel.Ttl,
-			AutoAcceptAt: disputeModel.AutoAcceptAt,
-		}
+		disputes[i] = mappers.ToDomainDispute(&disputeModel)
 	}
 
 	return disputes, nil
@@ -132,18 +88,7 @@ func (r *DefaultDisputeRepository) GetOrderDisputes(page, limit int64, status st
 
 	disputes := make([]*domain.Dispute, len(disputeModels))
 	for i, dm := range disputeModels {
-		disputes[i] = &domain.Dispute{
-			ID:                  dm.ID,
-			OrderID:             dm.OrderID,
-			DisputeAmountFiat:   dm.DisputeAmountFiat,
-			DisputeAmountCrypto: dm.DisputeAmountCrypto,
-			DisputeCryptoRate:   dm.DisputeCryptoRate,
-			ProofUrl:            dm.ProofUrl,
-			Reason:              dm.Reason,
-			Status:              domain.DisputeStatus(dm.Status),
-			Ttl:                 dm.Ttl,
-			AutoAcceptAt:        dm.AutoAcceptAt,
-		}
+		disputes[i] = mappers.ToDomainDispute(&dm)
 	}
 
 	return disputes, total, nil

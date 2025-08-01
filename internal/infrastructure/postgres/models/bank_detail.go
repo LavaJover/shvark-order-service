@@ -24,8 +24,8 @@ type BankDetailModel struct {
 	Phone 					string
 	Owner 					string
 	MaxOrdersSimultaneosly  int32
-	MaxAmountDay			int32
-	MaxAmountMonth			int32
+	MaxAmountDay			float64
+	MaxAmountMonth			float64
 	MaxQuantityDay			int32
 	MaxQuantityMonth		int32
 	DeviceID				string

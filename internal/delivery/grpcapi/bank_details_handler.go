@@ -5,51 +5,62 @@ import (
 	"math"
 	"time"
 
-	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/usecase"
+	bankdetaildto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/bank_detail"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 type BankDetailHandler struct {
-	bankDetailUsecase domain.BankDetailUsecase
+	bankDetailUsecase usecase.BankDetailUsecase
 	orderpb.UnimplementedBankDetailServiceServer
 }
 
-func NewBankDetailHandler(bankDetailUsecase domain.BankDetailUsecase) *BankDetailHandler {
+func NewBankDetailHandler(bankDetailUsecase usecase.BankDetailUsecase) *BankDetailHandler {
 	return &BankDetailHandler{bankDetailUsecase: bankDetailUsecase}
 }
 
 func (h *BankDetailHandler) CreateBankDetail(ctx context.Context, r *orderpb.CreateBankDetailRequest) (*orderpb.CreateBankDetailResponse, error) {
-	bankDetail := domain.BankDetail{
-		TraderID: r.TraderId,
+	createBankDetailInput := bankdetaildto.CreateBankDetailInput{
+		SearchParams: bankdetaildto.SearchParams{
+			MaxOrdersSimultaneosly: r.MaxOrdersSimultaneosly,
+			MaxAmountDay: r.MaxAmountDay,
+			MaxAmountMonth: r.MaxAmountMonth,
+			MaxQuantityDay: int32(r.MaxQuantityDay),
+			MaxQuantityMonth: int32(r.MaxQuantityMonth),
+			MinOrderAmount: float32(r.MinAmount),
+			MaxOrderAmount: float32(r.MaxAmount),
+			Delay: r.Delay.AsDuration(),
+			Enabled: r.Enabled,
+		},
+		DeviceInfo: bankdetaildto.DeviceInfo{
+			DeviceID: r.DeviceId,
+		},
+		TraderInfo: bankdetaildto.TraderInfo{
+			TraderID: r.TraderId,
+		},
+		PaymentDetails: bankdetaildto.PaymentDetails{
+			Phone: r.Phone,
+			CardNumber: r.CardNumber,
+			Owner: r.Owner,
+			PaymentSystem: r.PaymentSystem,
+			BankInfo: bankdetaildto.BankInfo{
+				BankCode: r.BankCode,
+				BankName: r.BankName,
+				NspkCode: r.NspkCode,
+			},
+		},
 		Country: r.Country,
 		Currency: r.Currency,
 		InflowCurrency: r.InflowCurrency,
-		MinAmount: float32(r.MinAmount),
-		MaxAmount: float32(r.MaxAmount),
-		BankName: r.BankName,
-		PaymentSystem: r.PaymentSystem,
-		Delay: r.Delay.AsDuration(),
-		Enabled: r.Enabled,
-		CardNumber: r.CardNumber,
-		Phone: r.Phone,
-		Owner: r.Owner,
-		MaxOrdersSimultaneosly: r.MaxOrdersSimultaneosly,
-		MaxAmountDay: int32(r.MaxAmountDay),
-		MaxAmountMonth: int32(r.MaxAmountMonth),
-		MaxQuantityDay: int32(r.MaxQuantityDay),
-		MaxQuantityMonth: int32(r.MaxQuantityMonth),
-		DeviceID: r.DeviceId,
-		BankCode: r.BankCode,
-		NspkCode: r.NspkCode,
 	}
 
-	bankDetailID, err := h.bankDetailUsecase.CreateBankDetail(&bankDetail)
+	err := h.bankDetailUsecase.CreateBankDetail(&createBankDetailInput)
 	if err != nil {
 		return nil, err
 	}
 	return &orderpb.CreateBankDetailResponse{
-		BankDetailId: bankDetailID,
+		BankDetailId: "",
 	}, nil
 }
 
@@ -57,36 +68,44 @@ func (h *BankDetailHandler) UpdateBankDetail(ctx context.Context, r *orderpb.Upd
 	if r.BankDetail.Delay == nil {
 		r.BankDetail.Delay = durationpb.New(0*time.Second)
 	}
-	bankDetail := domain.BankDetail{
+	updateBankDetailInput := bankdetaildto.UpdateBankDetailInput{
 		ID: r.BankDetail.BankDetailId,
-		TraderID: r.BankDetail.TraderId,
+		SearchParams: bankdetaildto.SearchParams{
+			MaxOrdersSimultaneosly: r.BankDetail.MaxOrdersSimultaneosly,
+			MaxAmountDay: r.BankDetail.MaxAmountDay,
+			MaxAmountMonth: r.BankDetail.MaxAmountMonth,
+			MaxQuantityDay: int32(r.BankDetail.MaxQuantityDay),
+			MaxQuantityMonth: int32(r.BankDetail.MaxQuantityMonth),
+			MinOrderAmount: float32(r.BankDetail.MinAmount),
+			MaxOrderAmount: float32(r.BankDetail.MaxAmount),
+			Delay: r.BankDetail.Delay.AsDuration(),
+			Enabled: r.BankDetail.Enabled,
+		},
+		DeviceInfo: bankdetaildto.DeviceInfo{
+			DeviceID: r.BankDetail.DeviceId,
+		},
+		TraderInfo: bankdetaildto.TraderInfo{
+			TraderID: r.BankDetail.TraderId,
+		},
+		PaymentDetails: bankdetaildto.PaymentDetails{
+			Phone: r.BankDetail.Phone,
+			CardNumber: r.BankDetail.CardNumber,
+			Owner: r.BankDetail.Owner,
+			PaymentSystem: r.BankDetail.PaymentSystem,
+			BankInfo: bankdetaildto.BankInfo{
+				BankCode: r.BankDetail.BankCode,
+				BankName: r.BankDetail.BankName,
+				NspkCode: r.BankDetail.NspkCode,
+			},
+		},
 		Country: r.BankDetail.Country,
 		Currency: r.BankDetail.Currency,
 		InflowCurrency: r.BankDetail.InflowCurrency,
-		MinAmount: float32(r.BankDetail.MinAmount),
-		MaxAmount: float32(r.BankDetail.MaxAmount),
-		BankName: r.BankDetail.BankName,
-		PaymentSystem: r.BankDetail.PaymentSystem,
-		Delay: r.BankDetail.Delay.AsDuration(),
-		Enabled: r.BankDetail.Enabled,
-		CardNumber: r.BankDetail.CardNumber,
-		Phone: r.BankDetail.Phone,
-		Owner: r.BankDetail.Owner,
-		MaxOrdersSimultaneosly: r.BankDetail.MaxOrdersSimultaneosly,
-		MaxAmountDay: int32(r.BankDetail.MaxAmountDay),
-		MaxAmountMonth: int32(r.BankDetail.MaxAmountMonth),
-		MaxQuantityDay: int32(r.BankDetail.MaxQuantityDay),
-		MaxQuantityMonth: int32(r.BankDetail.MaxQuantityMonth),
-		DeviceID: r.BankDetail.DeviceId,
-		BankCode: r.BankDetail.BankCode,
-		NspkCode: r.BankDetail.NspkCode,
 	}
-	err := h.bankDetailUsecase.UpdateBankDetail(&bankDetail)
+	err := h.bankDetailUsecase.UpdateBankDetail(&updateBankDetailInput)
 	if err != nil {
 		return nil, err
 	}
-
-	
 
 	return &orderpb.UpdateBankDetailResponse{}, nil
 }
@@ -114,8 +133,8 @@ func (h *BankDetailHandler) GetBankDetailByID(ctx context.Context, r *orderpb.Ge
 			TraderId: bankDetail.TraderID,
 			Currency: bankDetail.Currency,
 			Country: bankDetail.Country,
-			MinAmount: float64(bankDetail.MinAmount),
-			MaxAmount: float64(bankDetail.MaxAmount),
+			MinAmount: float64(bankDetail.MinOrderAmount),
+			MaxAmount: float64(bankDetail.MaxOrderAmount),
 			BankName: bankDetail.BankName,
 			PaymentSystem: bankDetail.PaymentSystem,
 			Enabled: bankDetail.Enabled,
@@ -156,8 +175,8 @@ func (h *BankDetailHandler) GetBankDetailsByTraderID(ctx context.Context, r *ord
 			TraderId: bankDetail.TraderID,
 			Currency: bankDetail.Currency,
 			Country: bankDetail.Country,
-			MinAmount: float64(bankDetail.MinAmount),
-			MaxAmount: float64(bankDetail.MaxAmount),
+			MinAmount: float64(bankDetail.MinOrderAmount),
+			MaxAmount: float64(bankDetail.MaxOrderAmount),
 			BankName: bankDetail.BankName,
 			PaymentSystem: bankDetail.PaymentSystem,
 			Enabled: bankDetail.Enabled,

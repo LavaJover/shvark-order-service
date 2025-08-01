@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"context"
 	"time"
 )
 
@@ -16,31 +15,62 @@ const (
 	StatusDisputeCreated  OrderStatus = "DISPUTE"
 )
 
+// type Order struct {
+// 	ID 			  		string +
+// 	MerchantID 	  		string +
+// 	AmountFiat 	  		float64 +
+// 	AmountCrypto  		float64 +
+// 	Currency 	  		string +
+// 	Country 	  		string - 
+// 	ClientID   			string +
+// 	Status 		  		OrderStatus +
+// 	PaymentSystem 		string +
+// 	BankDetailsID 		string +
+// 	BankDetail    		*BankDetail
+// 	ExpiresAt	  		time.Time +
+// 	CreatedAt 	  		time.Time +
+// 	UpdatedAt 	  		time.Time +
+// 	MerchantOrderID 	string +
+// 	Shuffle 			int32 +
+// 	CallbackURL 		string +
+// 	TraderRewardPercent float64 +
+// 	PlatformFee 		float64 +
+// 	Recalculated 		bool +
+// 	CryptoRubRate		float64 +
+// 	BankCode 			string +
+// 	NspkCode 			string +
+// 	Type 				string +
+// }
+
 type Order struct {
-	ID 			  		string
-	MerchantID 	  		string
-	AmountFiat 	  		float64
-	AmountCrypto  		float64
-	Currency 	  		string
-	Country 	  		string
-	ClientID   			string
-	Status 		  		OrderStatus
-	PaymentSystem 		string
-	BankDetailsID 		string
-	BankDetail    		*BankDetail
-	ExpiresAt	  		time.Time
-	CreatedAt 	  		time.Time
-	UpdatedAt 	  		time.Time
-	MerchantOrderID 	string
-	Shuffle 			int32
-	CallbackURL 		string
-	TraderRewardPercent float64
-	PlatformFee 		float64
-	Recalculated 		bool
-	CryptoRubRate		float64
-	BankCode 			string
-	NspkCode 			string
-	Type 				string
+	ID 				string
+	Status 			OrderStatus
+	MerchantInfo	MerchantInfo
+	AmountInfo 		AmountInfo
+	BankDetailID 	string
+	Type 			string
+	Recalculated 	bool
+	Shuffle 		int32
+	TraderReward 	float64
+	PlatformFee		float64
+	CallbackUrl 	string
+
+	ExpiresAt 		time.Time
+	CreatedAt 		time.Time
+	UpdatedAt 		time.Time
+}
+
+type MerchantInfo struct {
+	MerchantID 		string
+	MerchantOrderID string
+	ClientID 		string
+}
+
+type AmountInfo struct {
+	AmountFiat 		float64
+	AmountCrypto 	float64
+	CryptoRate 		float64
+	Currency 		string
 }
 
 type OrderFilters struct {
@@ -65,25 +95,6 @@ type OrderStatistics struct {
 	IncomeCrypto 			float64
 }
 
-type OrderUsecase interface {
-	CreateOrder(order *Order) (*Order, error)
-	GetOrderByID(orderID string) (*Order, error)
-	GetOrderByMerchantOrderID(merchantOrderID string) (*Order, error)
-	GetOrdersByTraderID(
-		orderID string, page, 
-		limit int64, sortBy, 
-		sortOrder string, 
-		filters OrderFilters,
-		) ([]*Order, int64, error)
-	FindExpiredOrders() ([]*Order, error)
-	CancelExpiredOrders(context.Context) error
-	ApproveOrder(orderID string) error
-	CancelOrder(orderID string) error
-	GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*OrderStatistics, error)
-
-	GetOrders(filter Filter, sortField string, page, size int) ([]*Order, int64, error)
-}
-
 type Filter struct {
 	DealID  *string
 	Type             *string
@@ -96,7 +107,7 @@ type Filter struct {
 }
 
 type OrderRepository interface {
-	CreateOrder(order *Order) (string, error)
+	CreateOrder(order *Order) error
 	UpdateOrderStatus(orderID string, newStatus OrderStatus) error
 	GetOrderByID(orderID string) (*Order, error)
 	GetOrderByMerchantOrderID(merchantOrderID string) (*Order, error)

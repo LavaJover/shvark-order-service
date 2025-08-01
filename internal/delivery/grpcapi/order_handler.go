@@ -7,52 +7,86 @@ import (
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/bitwire/notifier"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
+	"github.com/LavaJover/shvark-order-service/internal/usecase"
+	disputedto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/dispute"
+	orderdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/order"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type OrderHandler struct {
-	uc domain.OrderUsecase
-	disputeUc domain.DisputeUsecase
+	uc usecase.OrderUsecase
+	disputeUc usecase.DisputeUsecase
+	bankDetailUc usecase.BankDetailUsecase
 	orderpb.UnimplementedOrderServiceServer
 }
 
 func NewOrderHandler(
-	uc domain.OrderUsecase,
-	disputeUc domain.DisputeUsecase,
+	uc usecase.OrderUsecase,
+	disputeUc usecase.DisputeUsecase,
+	bankDetailUc usecase.BankDetailUsecase,
 	) *OrderHandler {
 	return &OrderHandler{
 		uc: uc,
 		disputeUc: disputeUc,
+		bankDetailUc: bankDetailUc,
 	}
 }
 
 func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRequest) (*orderpb.CreateOrderResponse, error) {
 
-	orderRequest := domain.Order{
-		MerchantID: r.MerchantId,
-		AmountFiat: r.AmountFiat,
-		Currency: r.Currency,
-		Country: r.Country,
-		ClientID: r.ClientId,
-		Status: domain.StatusPending,
-		PaymentSystem: r.PaymentSystem,
-		MerchantOrderID: r.MerchantOrderId,
-		Shuffle: r.Shuffle,
+	// orderRequest := domain.Order{
+	// 	MerchantID: r.MerchantId,
+	// 	AmountFiat: r.AmountFiat,
+	// 	Currency: r.Currency,
+	// 	Country: r.Country,
+	// 	ClientID: r.ClientId,
+	// 	Status: domain.StatusPending,
+	// 	PaymentSystem: r.PaymentSystem,
+	// 	MerchantOrderID: r.MerchantOrderId,
+	// 	Shuffle: r.Shuffle,
+	// 	ExpiresAt: r.ExpiresAt.AsTime(),
+	// 	CallbackURL: r.CallbackUrl,
+	// 	BankCode: r.BankCode,
+	// 	NspkCode: r.NspkCode,
+	// 	Type: r.Type,
+	// }
+
+	amountCrypto := r.AmountFiat / usdt.UsdtRubRates
+
+	createOrderInput := orderdto.CreateOrderInput{
+		MerchantParams: orderdto.MerchantParams{
+			MerchantID: r.MerchantId,
+			MerchantOrderID: r.MerchantOrderId,
+			ClientID: r.ClientId,
+		},
+		PaymentSearchParams: orderdto.PaymentSearchParams{
+			AmountFiat: r.AmountFiat,
+			AmountCrypto: amountCrypto,
+			Currency: r.Currency,
+			CryptoRate: usdt.UsdtRubRates,
+			PaymentSystem: r.PaymentSystem,
+			BankInfo: orderdto.BankInfo{
+				BankCode: r.BankCode,
+				NspkCode: r.NspkCode,
+			},
+		},
+		AdvancedParams: orderdto.AdvancedParams{
+			Shuffle: r.Shuffle,
+			CallbackUrl: r.CallbackUrl,
+		},
+		Type: "DEPOSIT",
 		ExpiresAt: r.ExpiresAt.AsTime(),
-		CallbackURL: r.CallbackUrl,
-		BankCode: r.BankCode,
-		NspkCode: r.NspkCode,
-		Type: r.Type,
 	}
 	
-	savedOrder, err := h.uc.CreateOrder(&orderRequest)
+	createOrderOutput, err := h.uc.CreateOrder(&createOrderInput)
 	if err != nil {
-		if orderRequest.CallbackURL != ""{
+		if createOrderInput.AdvancedParams.CallbackUrl != ""{
 			notifier.SendCallback(
-				orderRequest.CallbackURL,
-				orderRequest.MerchantOrderID,
+				createOrderInput.AdvancedParams.CallbackUrl,
+				createOrderInput.MerchantParams.MerchantOrderID,
 				string(domain.StatusFailed),
 				0, 0, 0,
 			)
@@ -62,45 +96,38 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 
 	return &orderpb.CreateOrderResponse{
 		Order: &orderpb.Order{
-			OrderId: savedOrder.ID,
-			Status: string(savedOrder.Status),
-			Type: savedOrder.Type,
+			OrderId: createOrderOutput.Order.ID,
+			Status: string(createOrderOutput.Order.Status),
+			Type: createOrderOutput.Order.Type,
 			BankDetail: &orderpb.BankDetail{
-				BankDetailId: savedOrder.BankDetail.ID,
-				TraderId: savedOrder.BankDetail.TraderID,
-				Currency: savedOrder.BankDetail.Currency,
-				Country: savedOrder.BankDetail.Country, 
-				MinAmount: float64(savedOrder.BankDetail.MinAmount),
-				MaxAmount: float64(savedOrder.BankDetail.MaxAmount),
-				BankName: savedOrder.BankDetail.BankName,
-				PaymentSystem: savedOrder.BankDetail.PaymentSystem,
-				Enabled: savedOrder.BankDetail.Enabled,
-				Delay: durationpb.New(savedOrder.BankDetail.Delay),
-				Owner: savedOrder.BankDetail.Owner,
-				CardNumber: savedOrder.BankDetail.CardNumber,
-				Phone: savedOrder.BankDetail.Phone,
-				MaxOrdersSimultaneosly: savedOrder.BankDetail.MaxOrdersSimultaneosly,
-				MaxAmountDay: float64(savedOrder.BankDetail.MaxAmountDay),
-				MaxAmountMonth: float64(savedOrder.BankDetail.MaxAmountMonth),
-				MaxQuantityDay: float64(savedOrder.BankDetail.MaxQuantityDay),
-				MaxQuantityMonth: float64(savedOrder.BankDetail.MaxQuantityMonth),
-				DeviceId: savedOrder.BankDetail.DeviceID,
-				InflowCurrency: savedOrder.BankDetail.InflowCurrency,
-				BankCode: savedOrder.BankDetail.BankCode,
-				NspkCode: savedOrder.BankDetail.NspkCode,
+				BankDetailId: createOrderOutput.BankDetail.ID,
+				TraderId: createOrderOutput.BankDetail.TraderInfo.TraderID,
+				Currency: createOrderOutput.Order.AmountInfo.Currency,
+				Country: createOrderOutput.BankDetail.Country, 
+				MinAmount: float64(createOrderOutput.BankDetail.MinOrderAmount),
+				MaxAmount: float64(createOrderOutput.BankDetail.MaxOrderAmount),
+				BankName: createOrderOutput.BankDetail.BankName,
+				PaymentSystem: createOrderOutput.BankDetail.PaymentSystem,
+				Owner: createOrderOutput.BankDetail.PaymentDetails.Owner,
+				CardNumber: createOrderOutput.BankDetail.PaymentDetails.CardNumber,
+				Phone: createOrderOutput.BankDetail.PaymentDetails.Phone,
+				DeviceId: createOrderOutput.BankDetail.DeviceInfo.DeviceID,
+				InflowCurrency: createOrderOutput.BankDetail.InflowCurrency,
+				BankCode: createOrderOutput.BankDetail.PaymentDetails.BankCode,
+				NspkCode: createOrderOutput.BankDetail.PaymentDetails.NspkCode,
 			},
-			AmountFiat: float64(savedOrder.AmountFiat),
-			AmountCrypto: float64(savedOrder.AmountCrypto),
-			ExpiresAt: timestamppb.New(savedOrder.ExpiresAt),
-			Shuffle: savedOrder.Shuffle,
-			MerchantOrderId: savedOrder.MerchantOrderID,
-			ClientId: savedOrder.ClientID,
-			CallbackUrl: savedOrder.CallbackURL,
-			TraderRewardPercent: savedOrder.TraderRewardPercent,
-			CreatedAt: timestamppb.New(savedOrder.CreatedAt),
-			UpdatedAt: timestamppb.New(savedOrder.UpdatedAt),
-			Recalculated: savedOrder.Recalculated,
-			CryptoRubRate: savedOrder.CryptoRubRate,
+			AmountFiat: float64(createOrderOutput.Order.AmountInfo.AmountFiat),
+			AmountCrypto: createOrderOutput.Order.AmountInfo.AmountCrypto,
+			ExpiresAt: timestamppb.New(createOrderOutput.Order.ExpiresAt),
+			Shuffle: createOrderOutput.Order.Shuffle,
+			MerchantOrderId: createOrderOutput.Order.MerchantInfo.MerchantOrderID,
+			ClientId: createOrderOutput.Order.MerchantInfo.ClientID,
+			CallbackUrl: createOrderOutput.Order.CallbackUrl,
+			TraderRewardPercent: createOrderOutput.Order.TraderReward,
+			CreatedAt: timestamppb.New(createOrderOutput.Order.CreatedAt),
+			UpdatedAt: timestamppb.New(createOrderOutput.Order.UpdatedAt),
+			Recalculated: createOrderOutput.Order.Recalculated,
+			CryptoRubRate: createOrderOutput.Order.AmountInfo.CryptoRate,
 		},
 	}, nil
 }
@@ -128,15 +155,15 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 	return &orderpb.GetOrderByIDResponse{
 		Order: &orderpb.Order{
 			OrderId: orderID,
-			Status: string(orderResponse.Status),
-			Type: orderResponse.Type,
+			Status: string(orderResponse.Order.Status),
+			Type: orderResponse.Order.Type,
 			BankDetail: &orderpb.BankDetail{
 				BankDetailId: orderResponse.BankDetail.ID,
 				TraderId: orderResponse.BankDetail.TraderID,
 				Currency: orderResponse.BankDetail.Currency,
 				Country: orderResponse.BankDetail.Country,
-				MinAmount: float64(orderResponse.BankDetail.MinAmount),
-				MaxAmount: float64(orderResponse.BankDetail.MaxAmount),
+				MinAmount: float64(orderResponse.BankDetail.MinOrderAmount),
+				MaxAmount: float64(orderResponse.BankDetail.MaxOrderAmount),
 				BankName: orderResponse.BankDetail.BankName,
 				PaymentSystem: orderResponse.BankDetail.PaymentSystem,
 				Enabled: orderResponse.BankDetail.Enabled,
@@ -148,19 +175,19 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 				NspkCode: orderResponse.BankDetail.NspkCode,
 				InflowCurrency: orderResponse.BankDetail.InflowCurrency,
 			},
-			AmountFiat: float64(orderResponse.AmountFiat),
-			AmountCrypto: float64(orderResponse.AmountCrypto),
-			ExpiresAt: timestamppb.New(orderResponse.ExpiresAt),
-			MerchantOrderId: orderResponse.MerchantOrderID,
-			Shuffle: orderResponse.Shuffle,
-			ClientId: orderResponse.ClientID,
-			CallbackUrl: orderResponse.CallbackURL,
-			TraderRewardPercent: orderResponse.TraderRewardPercent,
-			CreatedAt: timestamppb.New(orderResponse.CreatedAt),
-			UpdatedAt: timestamppb.New(orderResponse.UpdatedAt),
-			Recalculated: orderResponse.Recalculated,
-			CryptoRubRate: orderResponse.CryptoRubRate,
-			MerchantId: orderResponse.MerchantID,
+			AmountFiat: float64(orderResponse.Order.AmountInfo.AmountFiat),
+			AmountCrypto: float64(orderResponse.Order.AmountInfo.AmountCrypto),
+			ExpiresAt: timestamppb.New(orderResponse.Order.ExpiresAt),
+			MerchantOrderId: orderResponse.Order.MerchantInfo.MerchantOrderID,
+			Shuffle: orderResponse.Order.Shuffle,
+			ClientId: orderResponse.Order.MerchantInfo.ClientID,
+			CallbackUrl: orderResponse.Order.CallbackUrl,
+			TraderRewardPercent: orderResponse.Order.TraderReward,
+			CreatedAt: timestamppb.New(orderResponse.Order.CreatedAt),
+			UpdatedAt: timestamppb.New(orderResponse.Order.UpdatedAt),
+			Recalculated: orderResponse.Order.Recalculated,
+			CryptoRubRate: orderResponse.Order.AmountInfo.CryptoRate,
+			MerchantId: orderResponse.Order.MerchantInfo.MerchantID,
 		},
 	}, nil
 }
@@ -174,16 +201,16 @@ func (h *OrderHandler) GetOrderByMerchantOrderID(ctx context.Context, r *orderpb
 
 	return &orderpb.GetOrderByMerchantOrderIDResponse{
 		Order: &orderpb.Order{
-			OrderId: orderResponse.ID,
-			Status: string(orderResponse.Status),
-			Type: orderResponse.Type,
+			OrderId: orderResponse.Order.ID,
+			Status: string(orderResponse.Order.Status),
+			Type: orderResponse.Order.Type,
 			BankDetail: &orderpb.BankDetail{
 				BankDetailId: orderResponse.BankDetail.ID,
 				TraderId: orderResponse.BankDetail.TraderID,
 				Currency: orderResponse.BankDetail.Currency,
 				Country: orderResponse.BankDetail.Country,
-				MinAmount: float64(orderResponse.BankDetail.MinAmount),
-				MaxAmount: float64(orderResponse.BankDetail.MaxAmount),
+				MinAmount: float64(orderResponse.BankDetail.MinOrderAmount),
+				MaxAmount: float64(orderResponse.BankDetail.MaxOrderAmount),
 				BankName: orderResponse.BankDetail.BankName,
 				PaymentSystem: orderResponse.BankDetail.PaymentSystem,
 				Enabled: orderResponse.BankDetail.Enabled,
@@ -195,19 +222,19 @@ func (h *OrderHandler) GetOrderByMerchantOrderID(ctx context.Context, r *orderpb
 				NspkCode: orderResponse.BankDetail.NspkCode,
 				InflowCurrency: orderResponse.BankDetail.InflowCurrency,
 			},
-			AmountFiat: float64(orderResponse.AmountFiat),
-			AmountCrypto: float64(orderResponse.AmountCrypto),
-			ExpiresAt: timestamppb.New(orderResponse.ExpiresAt),
-			MerchantOrderId: orderResponse.MerchantOrderID,
-			Shuffle: orderResponse.Shuffle,
-			ClientId: orderResponse.ClientID,
-			CallbackUrl: orderResponse.CallbackURL,
-			TraderRewardPercent: orderResponse.TraderRewardPercent,
-			CreatedAt: timestamppb.New(orderResponse.CreatedAt),
-			UpdatedAt: timestamppb.New(orderResponse.UpdatedAt),
-			Recalculated: orderResponse.Recalculated,
-			CryptoRubRate: orderResponse.CryptoRubRate,
-			MerchantId: orderResponse.MerchantID,
+			AmountFiat: float64(orderResponse.Order.AmountInfo.AmountFiat),
+			AmountCrypto: float64(orderResponse.Order.AmountInfo.AmountCrypto),
+			ExpiresAt: timestamppb.New(orderResponse.Order.ExpiresAt),
+			MerchantOrderId: orderResponse.Order.MerchantInfo.MerchantOrderID,
+			Shuffle: orderResponse.Order.Shuffle,
+			ClientId: orderResponse.Order.MerchantInfo.ClientID,
+			CallbackUrl: orderResponse.Order.CallbackUrl,
+			TraderRewardPercent: orderResponse.Order.TraderReward,
+			CreatedAt: timestamppb.New(orderResponse.Order.CreatedAt),
+			UpdatedAt: timestamppb.New(orderResponse.Order.UpdatedAt),
+			Recalculated: orderResponse.Order.Recalculated,
+			CryptoRubRate: orderResponse.Order.AmountInfo.CryptoRate,
+			MerchantId: orderResponse.Order.MerchantInfo.MerchantID,
 		},
 	}, nil
 }
@@ -260,16 +287,16 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 	orders := make([]*orderpb.Order, len(ordersResponse))
 	for i, order := range ordersResponse {
 		orders[i] = &orderpb.Order{
-			OrderId: order.ID,
-			Status: string(order.Status),
-			Type: order.Type,
+			OrderId: order.Order.ID,
+			Status: string(order.Order.Status),
+			Type: order.Order.Type,
 			BankDetail: &orderpb.BankDetail{
 				BankDetailId: order.BankDetail.ID,
 				TraderId: order.BankDetail.TraderID,
 				Currency: order.BankDetail.Currency,
 				Country: order.BankDetail.Country,
-				MinAmount: float64(order.BankDetail.MinAmount),
-				MaxAmount: float64(order.BankDetail.MaxAmount),
+				MinAmount: float64(order.BankDetail.MinOrderAmount),
+				MaxAmount: float64(order.BankDetail.MaxOrderAmount),
 				BankName: order.BankDetail.BankName,
 				PaymentSystem: order.BankDetail.PaymentSystem,
 				Enabled: order.BankDetail.Enabled,
@@ -280,19 +307,19 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 				BankCode: order.BankDetail.BankCode,
 				NspkCode: order.BankDetail.NspkCode,
 			},
-			AmountFiat: float64(order.AmountFiat),
-			AmountCrypto: float64(order.AmountCrypto),
-			ExpiresAt: timestamppb.New(order.ExpiresAt),
-			MerchantOrderId: order.MerchantOrderID,
-			Shuffle: order.Shuffle,
-			ClientId: order.ClientID,
-			CallbackUrl: order.CallbackURL,
-			TraderRewardPercent: order.TraderRewardPercent,
-			CreatedAt: timestamppb.New(order.CreatedAt),
-			UpdatedAt: timestamppb.New(order.UpdatedAt),
-			Recalculated: order.Recalculated,
-			CryptoRubRate: order.CryptoRubRate,
-			MerchantId: order.MerchantID,
+			AmountFiat: float64(order.Order.AmountInfo.AmountFiat),
+			AmountCrypto: float64(order.Order.AmountInfo.AmountCrypto),
+			ExpiresAt: timestamppb.New(order.Order.ExpiresAt),
+			MerchantOrderId: order.Order.MerchantInfo.MerchantOrderID,
+			Shuffle: order.Order.Shuffle,
+			ClientId: order.Order.MerchantInfo.ClientID,
+			CallbackUrl: order.Order.CallbackUrl,
+			TraderRewardPercent: order.Order.TraderReward,
+			CreatedAt: timestamppb.New(order.Order.CreatedAt),
+			UpdatedAt: timestamppb.New(order.Order.UpdatedAt),
+			Recalculated: order.Order.Recalculated,
+			CryptoRubRate: order.Order.AmountInfo.CryptoRate,
+			MerchantId: order.Order.MerchantInfo.MerchantID,
 		}
 	}
 
@@ -305,7 +332,6 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 			ItemsPerPage: r.Limit,
 		},
 	}, nil
-
 }
 
 func (h *OrderHandler) CancelOrder(ctx context.Context, r *orderpb.CancelOrderRequest) (*orderpb.CancelOrderResponse, error) {
@@ -322,18 +348,20 @@ func (h *OrderHandler) CancelOrder(ctx context.Context, r *orderpb.CancelOrderRe
 }
 
 func (h *OrderHandler) CreateOrderDispute(ctx context.Context, r *orderpb.CreateOrderDisputeRequest) (*orderpb.CreateOrderDisputeResponse, error) {
-	dispute := &domain.Dispute{
+	createDisputeInput := disputedto.CreateDisputeInput{
 		OrderID: r.OrderId,
 		ProofUrl: r.ProofUrl,
-		Reason: r.DisputeReason,
 		Ttl: r.Ttl.AsDuration(),
-		DisputeAmountFiat: float64(r.DisputeAmountFiat),
+		DisputeAmountFiat: r.DisputeAmountFiat,
+		DisputeAmountCrypto: r.DisputeAmountFiat / usdt.UsdtRubRates,
+		DisputeCryptoRate: usdt.UsdtRubRates,
+		Reason: r.DisputeReason,
 	}
-	if err := h.disputeUc.CreateDispute(dispute); err != nil {
+	if err := h.disputeUc.CreateDispute(&createDisputeInput); err != nil {
 		return nil, err
 	}
 	return &orderpb.CreateOrderDisputeResponse{
-		DisputeId: dispute.ID,
+		DisputeId: "",
 	}, nil
 }
 
@@ -414,17 +442,17 @@ func (h *OrderHandler) GetOrderDisputes(ctx context.Context, r *orderpb.GetOrder
 			DisputeCryptoRate: dispute.DisputeCryptoRate,
 			AcceptAt: timestamppb.New(dispute.AutoAcceptAt),
 			Order: &orderpb.Order{
-				OrderId: order.ID,
-				Status: string(order.Status),
-				AmountFiat: order.AmountFiat,
-				AmountCrypto: order.AmountCrypto,
-				ExpiresAt: timestamppb.New(order.ExpiresAt),
-				MerchantOrderId: order.MerchantID,
-				TraderRewardPercent: order.TraderRewardPercent,
-				CreatedAt: timestamppb.New(order.CreatedAt),
-				UpdatedAt: timestamppb.New(order.UpdatedAt),
-				CryptoRubRate: order.CryptoRubRate,
-				Type: order.Type,
+				OrderId: order.Order.ID,
+				Status: string(order.Order.Status),
+				AmountFiat: order.Order.AmountInfo.AmountFiat,
+				AmountCrypto: order.Order.AmountInfo.AmountCrypto,
+				ExpiresAt: timestamppb.New(order.Order.ExpiresAt),
+				MerchantOrderId: order.Order.MerchantInfo.MerchantOrderID,
+				TraderRewardPercent: order.Order.TraderReward,
+				CreatedAt: timestamppb.New(order.Order.CreatedAt),
+				UpdatedAt: timestamppb.New(order.Order.UpdatedAt),
+				CryptoRubRate: order.Order.AmountInfo.CryptoRate,
+				Type: order.Order.Type,
 				BankDetail: &orderpb.BankDetail{
 					BankDetailId: order.BankDetail.ID,
 					TraderId: order.BankDetail.TraderID,
@@ -437,8 +465,8 @@ func (h *OrderHandler) GetOrderDisputes(ctx context.Context, r *orderpb.GetOrder
 					DeviceId: order.BankDetail.DeviceID,
 					BankCode: order.BankDetail.BankCode,
 					Country: order.BankDetail.Country,
-					MinAmount: float64(order.BankDetail.MinAmount),
-					MaxAmount: float64(order.BankDetail.MaxAmount),
+					MinAmount: float64(order.BankDetail.MinOrderAmount),
+					MaxAmount: float64(order.BankDetail.MaxOrderAmount),
 					Enabled: order.BankDetail.Enabled,
 					Delay: durationpb.New(order.BankDetail.Delay),
 					MaxOrdersSimultaneosly: order.BankDetail.MaxOrdersSimultaneosly,
@@ -531,6 +559,11 @@ func (h *OrderHandler) GetOrders(ctx context.Context, r *orderpb.GetOrdersReques
     content := make([]*orderpb.OrderResponse, 0, len(orders))
     for _, o := range orders {
         // ИСПРАВЛЕНО: используем реальные данные из модели
+		bankDetailID := o.BankDetailID
+		bankDetail, err := h.bankDetailUc.GetBankDetailByID(bankDetailID)
+		if err != nil {
+			return nil, err
+		}
         response := &orderpb.OrderResponse{
             Id:           o.ID,
             TimeOpening:  timestamppb.New(o.CreatedAt),
@@ -539,20 +572,20 @@ func (h *OrderHandler) GetOrders(ctx context.Context, r *orderpb.GetOrdersReques
             StoreName:    "UNKNOWN", // TODO: заменить на реальное значение
             Type:         o.Type,    // ИСПРАВЛЕНО: берем из модели
             Status:       string(o.Status),
-            CurrencyRate: o.CryptoRubRate,
+            CurrencyRate: o.AmountInfo.CryptoRate,
             SumInvoice: &orderpb.Amount{
-                Amount:   o.AmountFiat,
-                Currency: o.Currency,
+                Amount:   o.AmountInfo.AmountFiat,
+                Currency: o.AmountInfo.Currency,
             },
             SumDeal: &orderpb.Amount{
-                Amount:   o.AmountCrypto - o.AmountCrypto * o.PlatformFee, // ИСПРАВЛЕНО: используем AmountCrypto
+                Amount:   o.AmountInfo.AmountCrypto - o.AmountInfo.AmountCrypto * o.PlatformFee, // ИСПРАВЛЕНО: используем AmountCrypto
                 Currency: "USDT",
             },
             Requisites: &orderpb.Requisites{
-                Issuer:      o.BankDetail.BankCode,
-                HolderName:  o.BankDetail.Owner,
-                PhoneNumber: o.BankDetail.Phone,
-				CardNumber: o.BankDetail.CardNumber,
+                Issuer:      bankDetail.BankCode,
+                HolderName:  bankDetail.Owner,
+                PhoneNumber: bankDetail.Phone,
+				CardNumber: bankDetail.CardNumber,
             },
             Email: "email", // TODO: заменить на реальное значение
         }

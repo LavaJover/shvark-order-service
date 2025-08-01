@@ -67,11 +67,12 @@ func main() {
 		trafficRepo,
 		disputeKafkaPublisher,
 		teamRelationsUsecase,
+		bankDetailRepo,
 	)
 
 	// Creating gRPC server
 	grpcServer := grpc.NewServer()
-	orderHandler := grpcapi.NewOrderHandler(uc, disputeUc)
+	orderHandler := grpcapi.NewOrderHandler(uc, disputeUc, bankDetailUsecase)
 	trafficHandler := grpcapi.NewTrafficHandler(trafficUsecase)
 	bankDetailHandler := grpcapi.NewBankDetailHandler(bankDetailUsecase)
 	teamRelationsHandler := grpcapi.NewTeamRelationsHandler(teamRelationsUsecase)

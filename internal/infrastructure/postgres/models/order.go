@@ -7,7 +7,7 @@ import (
 )
 
 type OrderModel struct {
-	ID 			  		string  			`gorm:"primaryKey;type:uuid"`
+	ID 			  		string  			`gorm:"primaryKey"`
 	MerchantID 	  		string  			
 	AmountFiat 	  		float64				`gorm:"index:idx_amount"`
 	AmountCrypto  		float64	
@@ -15,7 +15,6 @@ type OrderModel struct {
 	Country 	  		string
 	ClientID   	  		string
 	Status 		  		domain.OrderStatus	`gorm:"index:idx_status_expires"`
-	PaymentSystem 		string
 	BankDetailsID 		string  			`gorm:"type:uuid"`	
 	BankDetail 	  		BankDetailModel   	`gorm:"foreignKey:BankDetailsID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 	ExpiresAt  	  		time.Time			`gorm:"index:idx_status_expires"`

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/mappers"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -19,94 +20,25 @@ func NewDefaultBankDetailRepo(db *gorm.DB) *DefaultBankDetailRepo {
 }
 
 func (r *DefaultBankDetailRepo) SaveBankDetail(bankDetail *domain.BankDetail) error {
-	bankDetailModel := models.BankDetailModel{
-		ID: bankDetail.ID,
-		TraderID: bankDetail.TraderID,
-		Country: bankDetail.Country,
-		Currency: bankDetail.Currency,
-		MinAmount: bankDetail.MinAmount,
-		MaxAmount: bankDetail.MaxAmount,
-		BankName: bankDetail.BankName,
-		PaymentSystem: bankDetail.PaymentSystem,
-		Delay: bankDetail.Delay,
-		Enabled: bankDetail.Enabled,
-		CardNumber: bankDetail.CardNumber,
-		Phone: bankDetail.Phone,
-		Owner: bankDetail.Owner,
-		MaxOrdersSimultaneosly: bankDetail.MaxOrdersSimultaneosly,
-		MaxAmountDay: bankDetail.MaxAmountDay,
-		MaxAmountMonth: bankDetail.MaxAmountMonth,
-		MaxQuantityDay: bankDetail.MaxQuantityDay,
-		MaxQuantityMonth: bankDetail.MaxQuantityMonth,
-		InflowCurrency: bankDetail.InflowCurrency,
-		BankCode: bankDetail.BankCode,
-		NspkCode: bankDetail.NspkCode,
-		DeviceID: bankDetail.DeviceID,
-	}
-
-	return r.DB.Save(&bankDetailModel).Error
+	bankDetailModel := mappers.ToGORMBankDetail(bankDetail)
+	return r.DB.Save(bankDetailModel).Error
 }
 
-func (r *DefaultBankDetailRepo) CreateBankDetail(bankDetail *domain.BankDetail) (string, error) {
-	bankDetailModel := &models.BankDetailModel{
-		ID: uuid.New().String(),
-		TraderID: bankDetail.TraderID,
-		Country: bankDetail.Country,
-		Currency: bankDetail.Currency,
-		InflowCurrency: bankDetail.InflowCurrency,
-		MinAmount: bankDetail.MinAmount,
-		MaxAmount: bankDetail.MaxAmount,
-		BankName: bankDetail.BankName,
-		PaymentSystem: bankDetail.PaymentSystem,
-		Delay: bankDetail.Delay,
-		Enabled: bankDetail.Enabled,
-		CardNumber: bankDetail.CardNumber,
-		Phone: bankDetail.Phone,
-		Owner: bankDetail.Owner,
-		MaxOrdersSimultaneosly: bankDetail.MaxOrdersSimultaneosly,
-		MaxAmountDay: bankDetail.MaxAmountDay,
-		MaxAmountMonth: bankDetail.MaxAmountMonth,
-		MaxQuantityDay: bankDetail.MaxQuantityDay,
-		MaxQuantityMonth: bankDetail.MaxAmountMonth,
-		DeviceID: bankDetail.DeviceID,
-		BankCode: bankDetail.BankCode,
-		NspkCode: bankDetail.NspkCode,
-	}
+func (r *DefaultBankDetailRepo) CreateBankDetail(bankDetail *domain.BankDetail) error {
+	bankDetailModel := mappers.ToGORMBankDetail(bankDetail)
+	bankDetailModel.ID = uuid.New().String()
 
 	if err := r.DB.Create(bankDetailModel).Error; err != nil {
-		return "", err
+		return err
 	}
 
 	bankDetail.ID = bankDetailModel.ID
 
-	return bankDetail.ID, nil
+	return nil
 }
 
 func (r *DefaultBankDetailRepo) UpdateBankDetail(bankDetail *domain.BankDetail) error {
-	bankDetailModel := &models.BankDetailModel{
-		ID: bankDetail.ID,
-		TraderID: bankDetail.TraderID,
-		Country: bankDetail.Country,
-		Currency: bankDetail.Currency,
-		MinAmount: bankDetail.MinAmount,
-		MaxAmount: bankDetail.MaxAmount,
-		BankName: bankDetail.BankName,
-		PaymentSystem: bankDetail.PaymentSystem,
-		Delay: bankDetail.Delay,
-		Enabled: bankDetail.Enabled,
-		CardNumber: bankDetail.CardNumber,
-		Phone: bankDetail.Phone,
-		Owner: bankDetail.Owner,
-		MaxOrdersSimultaneosly: bankDetail.MaxOrdersSimultaneosly,
-		MaxAmountDay: bankDetail.MaxAmountDay,
-		MaxAmountMonth: bankDetail.MaxAmountMonth,
-		MaxQuantityDay: bankDetail.MaxQuantityDay,
-		MaxQuantityMonth: bankDetail.MaxAmountMonth,
-		InflowCurrency: bankDetail.InflowCurrency,
-		DeviceID: bankDetail.DeviceID,
-		BankCode: bankDetail.BankCode,
-		NspkCode: bankDetail.NspkCode,
-	}
+	bankDetailModel := mappers.ToGORMBankDetail(bankDetail)
 
 	if err := r.DB.Model(&models.BankDetailModel{}).Where("id = ?", bankDetailModel.ID).Updates(bankDetailModel).Error; err != nil {
 		return err
@@ -131,32 +63,7 @@ func (r *DefaultBankDetailRepo) GetBankDetailByID(bankDetailID string) (*domain.
 	if err := r.DB.Where("id = ?", bankDetailID).Find(&bankDetailModel).Error; err != nil {
 		return nil, err
 	}
-	return &domain.BankDetail{
-		ID: bankDetailModel.ID,
-		TraderID: bankDetailModel.TraderID,
-		Country: bankDetailModel.Country,
-		Currency: bankDetailModel.Currency,
-		InflowCurrency: bankDetailModel.InflowCurrency,
-		MinAmount: bankDetailModel.MinAmount,
-		MaxAmount: bankDetailModel.MaxAmount,
-		BankName: bankDetailModel.BankName,
-		PaymentSystem: bankDetailModel.PaymentSystem,
-		Delay: bankDetailModel.Delay,
-		Enabled: bankDetailModel.Enabled,
-		CardNumber: bankDetailModel.CardNumber,
-		Phone: bankDetailModel.Phone,
-		Owner: bankDetailModel.Owner,
-		MaxOrdersSimultaneosly: bankDetailModel.MaxOrdersSimultaneosly,
-		MaxAmountDay: bankDetailModel.MaxAmountDay,
-		MaxAmountMonth: bankDetailModel.MaxAmountMonth,
-		MaxQuantityDay: bankDetailModel.MaxQuantityDay,
-		MaxQuantityMonth: bankDetailModel.MaxQuantityMonth,
-		DeviceID: bankDetailModel.DeviceID,
-		BankCode: bankDetailModel.BankCode,
-		NspkCode: bankDetailModel.NspkCode,
-		CreatedAt: bankDetailModel.CreatedAt,
-		UpdatedAt: bankDetailModel.UpdatedAt,
-	}, nil
+	return mappers.ToDomainBankDetail(&bankDetailModel), nil
 }
 
 func (r *DefaultBankDetailRepo) GetBankDetailsByTraderID(
@@ -211,52 +118,27 @@ func (r *DefaultBankDetailRepo) GetBankDetailsByTraderID(
 
 	bankDetails := make([]*domain.BankDetail, len(bankDetailModels))
 	for i, bankDetailModel := range bankDetailModels{
-		bankDetails[i] = &domain.BankDetail{
-			ID: bankDetailModel.ID,
-			TraderID: bankDetailModel.TraderID,
-			Country: bankDetailModel.Country,
-			Currency: bankDetailModel.Currency,
-			InflowCurrency: bankDetailModel.InflowCurrency,
-			MinAmount: bankDetailModel.MinAmount,
-			MaxAmount: bankDetailModel.MaxAmount,
-			BankName: bankDetailModel.BankName,
-			PaymentSystem: bankDetailModel.PaymentSystem,
-			Delay: bankDetailModel.Delay,
-			Enabled: bankDetailModel.Enabled,
-			CardNumber: bankDetailModel.CardNumber,
-			Phone: bankDetailModel.Phone,
-			Owner: bankDetailModel.Owner,
-			MaxOrdersSimultaneosly: bankDetailModel.MaxOrdersSimultaneosly,
-			MaxAmountDay: bankDetailModel.MaxAmountDay,
-			MaxAmountMonth: bankDetailModel.MaxAmountMonth,
-			MaxQuantityDay: bankDetailModel.MaxQuantityDay,
-			MaxQuantityMonth: bankDetailModel.MaxQuantityMonth,
-			DeviceID: bankDetailModel.DeviceID,
-			BankCode: bankDetailModel.BankCode,
-			NspkCode: bankDetailModel.NspkCode,
-			CreatedAt: bankDetailModel.CreatedAt,
-			UpdatedAt: bankDetailModel.UpdatedAt,
-		}
+		bankDetails[i] = mappers.ToDomainBankDetail(bankDetailModel)
 	}
 
 	return bankDetails, total, nil
 }
 
-func (r *DefaultBankDetailRepo) FindSuitableBankDetails(order *domain.Order) ([]*domain.BankDetail, error) {
+func (r *DefaultBankDetailRepo) FindSuitableBankDetails(searchQuery *domain.SuitablleBankDetailsQuery) ([]*domain.BankDetail, error) {
 	var candidates []models.BankDetailModel
 
 	query := r.DB.
 		Where("enabled = ?", true).
-		Where("min_amount <= ? AND max_amount >= ?", order.AmountFiat, order.AmountFiat).
-		Where("payment_system = ?", order.PaymentSystem).
-		Where("currency = ?", order.Currency)
+		Where("min_amount <= ? AND max_amount >= ?", searchQuery.AmountFiat, searchQuery.AmountFiat).
+		Where("payment_system = ?", searchQuery.PaymentSystem).
+		Where("currency = ?", searchQuery.Currency)
 
-	if order.BankCode != "" {
-		query = query.Where("bank_code = ?", order.BankCode)
+	if searchQuery.BankCode != "" {
+		query = query.Where("bank_code = ?", searchQuery.BankCode)
 	}
 
-	if order.NspkCode != "" {
-		query = query.Where("nspk_code = ?", order.NspkCode)
+	if searchQuery.NspkCode != "" {
+		query = query.Where("nspk_code = ?", searchQuery.NspkCode)
 	}
 
 	if err := query.Find(&candidates).Error; err != nil {
@@ -265,32 +147,7 @@ func (r *DefaultBankDetailRepo) FindSuitableBankDetails(order *domain.Order) ([]
 
 	bankDetails := make([]*domain.BankDetail, len(candidates))
 	for i, bankDetail := range candidates {
-		bankDetails[i] = &domain.BankDetail{
-			ID: bankDetail.ID,
-			TraderID: bankDetail.TraderID,
-			Country: bankDetail.Country,
-			Currency: bankDetail.Currency,
-			InflowCurrency: bankDetail.InflowCurrency,
-			MinAmount: bankDetail.MinAmount,
-			MaxAmount: bankDetail.MaxAmount,
-			BankName: bankDetail.BankName,
-			PaymentSystem: bankDetail.PaymentSystem,
-			Delay: bankDetail.Delay,
-			Enabled: bankDetail.Enabled,
-			CardNumber: bankDetail.CardNumber,
-			Phone: bankDetail.Phone,
-			Owner: bankDetail.Owner,
-			MaxOrdersSimultaneosly: bankDetail.MaxOrdersSimultaneosly,
-			MaxAmountDay: bankDetail.MaxAmountDay,
-			MaxAmountMonth: bankDetail.MaxAmountMonth,
-			MaxQuantityDay: bankDetail.MaxQuantityDay,
-			MaxQuantityMonth: bankDetail.MaxQuantityMonth,
-			DeviceID: bankDetail.DeviceID,
-			BankCode: bankDetail.BankCode,
-			NspkCode: bankDetail.NspkCode,
-			CreatedAt: bankDetail.CreatedAt,
-			UpdatedAt: bankDetail.UpdatedAt,
-		}
+		bankDetails[i] = mappers.ToDomainBankDetail(&bankDetail)
 	}
 
 	return bankDetails, nil

@@ -2,15 +2,29 @@ package usecase
 
 import (
 	"log"
+	"time"
 
 	walletRequest "github.com/LavaJover/shvark-order-service/internal/delivery/http/dto/wallet/request"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/bitwire/notifier"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
+	disputedto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/dispute"
+	"github.com/jaevor/go-nanoid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+type DisputeUsecase interface {
+	CreateDispute(input *disputedto.CreateDisputeInput) error
+	AcceptDispute(disputeID string) error
+	RejectDispute(disputeID string) error
+	FreezeDispute(disputeID string) error
+	GetDisputeByID(disputeID string) (*domain.Dispute, error)
+	GetDisputeByOrderID(orderID string) (*domain.Dispute, error)
+	AcceptExpiredDisputes() error
+	GetOrderDisputes(page, limit int64, status string) ([]*domain.Dispute, int64, error)
+}
 
 type DefaultDisputeUsecase struct {
 	disputeRepo domain.DisputeRepository
@@ -19,6 +33,7 @@ type DefaultDisputeUsecase struct {
 	trafficRepo domain.TrafficRepository
 	kafkaPublisher *kafka.KafkaPublisher
 	teamRelationsUsecase TeamRelationsUsecase
+	bankDetailRepo domain.BankDetailRepository
 }
 
 func NewDefaultDisputeUsecase(
@@ -28,6 +43,7 @@ func NewDefaultDisputeUsecase(
 	trafficRepo domain.TrafficRepository,
 	kafkaPublisher *kafka.KafkaPublisher,
 	teamRelationsUsecase TeamRelationsUsecase,
+	bankDetailRepo domain.BankDetailRepository,
 	) *DefaultDisputeUsecase {
 	return &DefaultDisputeUsecase{
 		disputeRepo: disputeRepo,
@@ -36,13 +52,14 @@ func NewDefaultDisputeUsecase(
 		trafficRepo: trafficRepo,
 		kafkaPublisher: kafkaPublisher,
 		teamRelationsUsecase: teamRelationsUsecase,
+		bankDetailRepo: bankDetailRepo,
 	}
 }
 
 // Диспут открыт -> запись в БД со статусом DISPUTE_OPENED
 // AutoAcceptAt -> в данное время система автоматически одобрит диспут
-func (disputeUc *DefaultDisputeUsecase) CreateDispute(dispute *domain.Dispute) error {
-	order, err := disputeUc.orderRepo.GetOrderByID(dispute.OrderID)
+func (disputeUc *DefaultDisputeUsecase) CreateDispute(input *disputedto.CreateDisputeInput) error {
+	order, err := disputeUc.orderRepo.GetOrderByID(input.OrderID)
 	if err != nil {
 		return err
 	}
@@ -50,27 +67,47 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(dispute *domain.Dispute) e
 	if order.Status != domain.StatusCanceled {
 		return status.Error(codes.FailedPrecondition, "order is not even canceled")
 	}
-	dispute.DisputeCryptoRate = order.CryptoRubRate
-	dispute.DisputeAmountCrypto = dispute.DisputeAmountFiat / dispute.DisputeCryptoRate
-	err = disputeUc.disputeRepo.CreateDispute(dispute)
+	idGenerator, err := nanoid.Standard(15)
+	if err != nil {
+		return err
+	}
+	dispute := domain.Dispute{
+		ID: idGenerator(),
+		OrderID: input.OrderID,
+		DisputeAmountFiat: input.DisputeAmountFiat,
+		DisputeAmountCrypto: input.DisputeAmountCrypto,
+		DisputeCryptoRate: input.DisputeCryptoRate,
+		ProofUrl: input.ProofUrl,
+		Reason: input.Reason,
+		Status: domain.DisputeOpened,
+		Ttl: input.Ttl,
+		AutoAcceptAt: time.Now().Add(input.Ttl),
+	}
+
+	bankDetailID := order.BankDetailID
+	bankDetail, err := disputeUc.bankDetailRepo.GetBankDetailByID(bankDetailID)
+	if err != nil {
+		return err
+	}
+	err = disputeUc.disputeRepo.CreateDispute(&dispute)
 	if err != nil {
 		return err
 	}
 	disputeUc.kafkaPublisher.PublishDispute(kafka.DisputeEvent{
 		DisputeID: dispute.ID,
 		OrderID: dispute.OrderID,
-		TraderID: order.BankDetail.TraderID,
-		OrderAmountFiat: order.AmountFiat,
+		TraderID: bankDetail.TraderID,
+		OrderAmountFiat: order.AmountInfo.AmountFiat,
 		DisputeAmountFiat: dispute.DisputeAmountFiat,
 		ProofUrl: dispute.ProofUrl,
 		Reason: dispute.Reason,
 		Status: "🆘Открыт диспут",
-		BankName: order.BankDetail.BankName,
-		Phone: order.BankDetail.Phone,
-		CardNumber: order.BankDetail.CardNumber,
-		Owner: order.BankDetail.Owner,
+		BankName: bankDetail.BankName,
+		Phone: bankDetail.Phone,
+		CardNumber: bankDetail.CardNumber,
+		Owner: bankDetail.Owner,
 	})
-	err = disputeUc.walletHandler.Freeze(order.BankDetail.TraderID, dispute.OrderID, dispute.DisputeAmountCrypto)
+	err = disputeUc.walletHandler.Freeze(bankDetail.TraderID, dispute.OrderID, dispute.DisputeAmountCrypto)
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
@@ -78,10 +115,10 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(dispute *domain.Dispute) e
 	if err != nil {
 		return err
 	}
-	if order.CallbackURL != "" {
+	if order.CallbackUrl != "" {
 		notifier.SendCallback(
-			order.CallbackURL,
-			order.MerchantOrderID,
+			order.CallbackUrl,
+			order.MerchantInfo.MerchantOrderID,
 			string(domain.StatusDisputeCreated),
 			0, 0, 0,
 		)
@@ -102,13 +139,18 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	traffic, err := disputeUc.trafficRepo.GetTrafficByTraderMerchant(order.BankDetail.TraderID, order.MerchantID)
+	bankDetailID := order.BankDetailID
+	bankDetail, err := disputeUc.bankDetailRepo.GetBankDetailByID(bankDetailID)
+	if err != nil {
+		return err
+	}
+	traffic, err := disputeUc.trafficRepo.GetTrafficByTraderMerchant(bankDetail.TraderID, order.MerchantInfo.MerchantID)
 	if err != nil {
 		return err
 	}
 	// Search for team relations to find commission users
 	var commissionUsers []walletRequest.CommissionUser
-	teamRelations, err := disputeUc.teamRelationsUsecase.GetRelationshipsByTraderID(order.BankDetail.TraderID)
+	teamRelations, err := disputeUc.teamRelationsUsecase.GetRelationshipsByTraderID(bankDetail.TraderID)
 	if err == nil {
 		for _, teamRelation := range teamRelations {
 			commissionUsers = append(commissionUsers, walletRequest.CommissionUser{
@@ -118,8 +160,8 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 		}
 	}
 	releaseRequest := walletRequest.ReleaseRequest{
-		TraderID: order.BankDetail.TraderID,
-		MerchantID: order.MerchantID,
+		TraderID: bankDetail.TraderID,
+		MerchantID: order.MerchantInfo.MerchantID,
 		OrderID: order.ID,
 		RewardPercent: traffic.TraderRewardPercent,
 		PlatformFee: traffic.PlatformFee,
@@ -133,10 +175,10 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	if order.CallbackURL != "" {
+	if order.CallbackUrl != "" {
 		notifier.SendCallback(
-			order.CallbackURL,
-			order.MerchantOrderID,
+			order.CallbackUrl,
+			order.MerchantInfo.MerchantOrderID,
 			string(domain.StatusCompleted),
 			dispute.DisputeAmountCrypto, dispute.DisputeAmountFiat, dispute.DisputeCryptoRate,
 		)
@@ -157,24 +199,17 @@ func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	// Search for team relations to find commission users
-	var commissionUsers []walletRequest.CommissionUser
-	teamRelations, err := disputeUc.teamRelationsUsecase.GetRelationshipsByTraderID(order.BankDetail.TraderID)
-	if err == nil {
-		for _, teamRelation := range teamRelations {
-			commissionUsers = append(commissionUsers, walletRequest.CommissionUser{
-				UserID: teamRelation.TeamLeadID,
-				Commission: teamRelation.TeamRelationshipRapams.Commission,
-			})
-		}
+	bankDetailID := order.BankDetailID
+	bankDetail, err := disputeUc.bankDetailRepo.GetBankDetailByID(bankDetailID)
+	if err != nil {
+		return err
 	}
 	releaseRequest := walletRequest.ReleaseRequest{
-		TraderID: order.BankDetail.TraderID,
-		MerchantID: order.MerchantID,
+		TraderID: bankDetail.TraderID,
+		MerchantID: order.MerchantInfo.MerchantID,
 		OrderID: order.ID,
 		RewardPercent: 1,
 		PlatformFee: 1,
-		// CommissionUsers: commissionUsers,
 	}
 	err = disputeUc.walletHandler.Release(releaseRequest)
 	if err != nil {
@@ -184,10 +219,10 @@ func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	if order.CallbackURL != "" {
+	if order.CallbackUrl != "" {
 		notifier.SendCallback(
-			order.CallbackURL,
-			order.MerchantOrderID,
+			order.CallbackUrl,
+			order.MerchantInfo.MerchantOrderID,
 			string(domain.StatusCanceled),
 			0, 0, 0,
 		)
