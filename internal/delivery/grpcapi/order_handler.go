@@ -565,7 +565,7 @@ func (h *OrderHandler) GetOrders(ctx context.Context, r *orderpb.GetOrdersReques
 			return nil, err
 		}
         response := &orderpb.OrderResponse{
-            Id:           o.ID,
+            Id:           o.MerchantInfo.MerchantOrderID,
             TimeOpening:  timestamppb.New(o.CreatedAt),
             TimeExpires:  timestamppb.New(o.ExpiresAt),
             TimeComplete: timestamppb.New(o.UpdatedAt),
@@ -589,6 +589,9 @@ func (h *OrderHandler) GetOrders(ctx context.Context, r *orderpb.GetOrdersReques
             },
             Email: "email", // TODO: заменить на реальное значение
         }
+		if o.Status != domain.StatusCompleted {
+			response.TimeComplete = nil
+		}
         content = append(content, response)
     }
 
