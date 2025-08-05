@@ -8,7 +8,6 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/mappers"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -22,13 +21,9 @@ func NewDefaultOrderRepository(db *gorm.DB) *DefaultOrderRepository {
 
 func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) error {
 	orderModel := mappers.ToGORMOrder(order)
-	orderModel.ID = uuid.New().String()
-
 	if err := r.DB.Create(orderModel).Error; err != nil {
 		return err
 	}
-
-	order.ID = orderModel.ID
 	return nil
 }
 

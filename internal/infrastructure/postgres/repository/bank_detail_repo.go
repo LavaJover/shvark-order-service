@@ -55,12 +55,12 @@ func (r *DefaultBankDetailRepo) UpdateBankDetail(bankDetail *domain.BankDetail) 
 }
 
 func (r *DefaultBankDetailRepo) DeleteBankDetail(bankDetailID string) error {
-	return r.DB.Delete(&models.BankDetailModel{ID: bankDetailID}).Error
+	return r.DB.Where("id = ?", bankDetailID).Delete(&models.BankDetailModel{}).Error
 }
 
 func (r *DefaultBankDetailRepo) GetBankDetailByID(bankDetailID string) (*domain.BankDetail, error) {
 	var bankDetailModel models.BankDetailModel
-	if err := r.DB.Where("id = ?", bankDetailID).Find(&bankDetailModel).Error; err != nil {
+	if err := r.DB.Unscoped().Where("id = ?", bankDetailID).Find(&bankDetailModel).Error; err != nil {
 		return nil, err
 	}
 	return mappers.ToDomainBankDetail(&bankDetailModel), nil

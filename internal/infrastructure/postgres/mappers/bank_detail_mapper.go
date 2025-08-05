@@ -47,5 +47,28 @@ func ToDomainBankDetail(model *models.BankDetailModel) *domain.BankDetail {
 func ToGORMBankDetail(bankDetail *domain.BankDetail) *models.BankDetailModel {
 	return &models.BankDetailModel{
 		ID: bankDetail.ID,
+		TraderID: bankDetail.TraderID,
+		Country: bankDetail.Country,
+		Currency: bankDetail.Currency,
+		InflowCurrency: bankDetail.InflowCurrency,
+		MinAmount: bankDetail.MinOrderAmount,
+		MaxAmount: bankDetail.MaxOrderAmount,
+		BankName: bankDetail.BankName,
+		BankCode: bankDetail.BankCode,
+		NspkCode: bankDetail.NspkCode,
+		PaymentSystem: bankDetail.PaymentSystem,
+		Delay: bankDetail.Delay,
+		Enabled: bankDetail.Enabled,
+		CardNumber: bankDetail.CardNumber,
+		Phone: bankDetail.Phone,
+		Owner: bankDetail.Owner,
+		MaxOrdersSimultaneosly: bankDetail.MaxOrdersSimultaneosly,
+		MaxAmountDay: bankDetail.MaxAmountDay,
+		MaxAmountMonth: bankDetail.MaxAmountMonth,
+		MaxQuantityDay: bankDetail.MaxQuantityDay,
+		MaxQuantityMonth: bankDetail.MaxQuantityMonth,
+		DeviceID: bankDetail.DeviceID,
+		CreatedAt: bankDetail.CreatedAt,
+		UpdatedAt: bankDetail.UpdatedAt,
 	}
 }
