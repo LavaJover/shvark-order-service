@@ -7,6 +7,17 @@ type OrderOutput struct {
 	BankDetail domain.BankDetail
 }
 
+type GetAllOrdersOutput struct {
+	Orders []*domain.Order
+	Pagination Pagination
+}
+
+type Pagination struct {
+	CurrentPage int32
+	TotalPages	int32
+	TotalItems	int32
+	ItemsPerPage int32
+}
 
 // Order: &orderpb.Order{
 // 	OrderId: savedOrder.ID,

@@ -342,3 +342,100 @@ func MapSortField(input string) string {
         return "created_at"
     }
 }
+
+func (r *DefaultOrderRepository) GetAllOrders(
+    filter *domain.AllOrdersFilters, 
+    sort string,
+    page, limit int32,
+) ([]*domain.Order, int64, error) { // Добавляем возврат общего количества
+    var orders []models.OrderModel
+    var total int64
+
+    // Базовый запрос с JOIN банковских данных
+    query := r.DB.Model(&models.OrderModel{}).
+        Joins("JOIN bank_detail_models ON bank_detail_models.id = order_models.bank_details_id")
+
+    // Применяем фильтры
+    if filter.TraderID != "" {
+        query = query.Where("bank_detail_models.trader_id = ?", filter.TraderID)
+    }
+    if filter.MerchantID != "" {
+        query = query.Where("order_models.merchant_id = ?", filter.MerchantID)
+    }
+    if filter.OrderID != "" {
+        query = query.Where("order_models.id = ?", filter.OrderID)
+    }
+    if filter.MerchantOrderID != "" {
+        query = query.Where("order_models.merchant_order_id = ?", filter.MerchantOrderID)
+    }
+    if filter.Status != "" {
+        query = query.Where("order_models.status = ?", filter.Status)
+    }
+    if filter.BankCode != "" {
+        query = query.Where("bank_detail_models.bank_code = ?", filter.BankCode)
+    }
+    if !filter.TimeOpeningStart.IsZero() {
+        query = query.Where("order_models.created_at >= ?", filter.TimeOpeningStart)
+    }
+    if !filter.TimeOpeningEnd.IsZero() {
+        query = query.Where("order_models.created_at <= ?", filter.TimeOpeningEnd)
+    }
+    if filter.AmountFiatMin > 0 {
+        query = query.Where("order_models.amount_fiat >= ?", filter.AmountFiatMin)
+    }
+    if filter.AmountFiatMax > 0 {
+        query = query.Where("order_models.amount_fiat <= ?", filter.AmountFiatMax)
+    }
+    if filter.Type != "" {
+        query = query.Where("order_models.type = ?", filter.Type)
+    }
+    if filter.DeviceID != "" {
+        query = query.Where("bank_detail_models.device_id = ?", filter.DeviceID)
+    }
+
+    // Сортировка (безопасная проверка полей)
+    safeSort := "order_models.created_at DESC" // значение по умолчанию
+    if sort != "" {
+        allowedSorts := map[string]bool{
+            "amount_fiat": true,
+            "created_at":  true,
+            "expires_at":  true,
+        }
+        
+        sortParts := strings.Split(sort, " ")
+        if len(sortParts) == 2 {
+            field := strings.ToLower(sortParts[0])
+            order := strings.ToUpper(sortParts[1])
+            
+            if allowedSorts[field] && (order == "ASC" || order == "DESC") {
+                safeSort = fmt.Sprintf("order_models.%s %s", field, order)
+            }
+        }
+    }
+    query = query.Order(safeSort)
+
+    // Пагинация
+    offset := (page - 1) * limit
+    err := query.
+        Offset(int(offset)).
+        Limit(int(limit)).
+        Preload("BankDetail"). // Подгружаем связанные банковские данные
+        Find(&orders).Error
+        
+    if err != nil {
+        return nil, 0, err
+    }
+
+    // Получаем общее количество записей (без лимита)
+    if err := query.Offset(-1).Limit(-1).Count(&total).Error; err != nil {
+        return nil, 0, err
+    }
+
+    // Преобразуем в доменные объекты
+    domainOrders := make([]*domain.Order, len(orders))
+    for i, order := range orders {
+        domainOrders[i] = mappers.ToDomainOrder(&order)
+    }
+
+    return domainOrders, total, nil
+}

@@ -12,6 +12,8 @@ import (
 	disputedto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/dispute"
 	orderdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/order"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -632,4 +634,103 @@ func (h *OrderHandler) GetOrders(ctx context.Context, r *orderpb.GetOrdersReques
         },
         Empty: len(content) == 0,
     }, nil
+}
+
+func (h *OrderHandler) GetAllOrders(
+    ctx context.Context, 
+    r *orderpb.GetAllOrdersRequest,
+) (*orderpb.GetAllOrdersResponse, error) {
+    // Преобразуем protobuf в DTO
+    input := &orderdto.GetAllOrdersInput{
+        TraderID:        r.GetTraderId(),
+        MerchantID:      r.GetMerchantId(),
+        OrderID:         r.GetOrderId(),
+        MerchantOrderID: r.GetMerchantOrderId(),
+        Status:          r.GetStatus(),
+        BankCode:        r.GetBankCode(),
+        AmountFiatMin:   r.GetAmountMin(),
+        AmountFiatMax:   r.GetAmountMax(),
+        Type:            r.GetType(),
+        DeviceID:        r.GetDeviceId(),
+        Page:            r.GetPage(),
+        Limit:           r.GetLimit(),
+        Sort:            r.GetSort(),
+    }
+
+    // Обрабатываем временные метки
+    if r.TimeOpeningStart != nil {
+        input.TimeOpeningStart = r.TimeOpeningStart.AsTime()
+    }
+    if r.TimeOpeningEnd != nil {
+        input.TimeOpeningEnd = r.TimeOpeningEnd.AsTime()
+    }
+
+    // Вызываем usecase
+    output, err := h.uc.GetAllOrders(input)
+    if err != nil {
+        return nil, status.Error(codes.Internal, err.Error())
+    }
+
+    // Преобразуем результат в protobuf
+    res := &orderpb.GetAllOrdersResponse{
+        Orders: make([]*orderpb.Order, len(output.Orders)),
+        Pagination: &orderpb.Pagination{
+            CurrentPage:  int64(output.Pagination.CurrentPage),
+            TotalPages:   int64(output.Pagination.TotalPages),
+            TotalItems:   int64(output.Pagination.TotalItems),
+            ItemsPerPage: int64(output.Pagination.ItemsPerPage),
+        },
+    }
+
+    for i, order := range output.Orders {
+        // Здесь используем ваш маппинг в protobuf
+		bankDetail, err := h.bankDetailUc.GetBankDetailByID(order.BankDetailID)
+		if err != nil {
+			return nil, err
+		}
+        res.Orders[i] = &orderpb.Order{
+			OrderId: order.ID,
+			Status: string(order.Status),
+			BankDetail: &orderpb.BankDetail{
+				BankDetailId: bankDetail.ID,
+				TraderId: bankDetail.TraderID,
+				Currency: bankDetail.Currency,
+				Country: bankDetail.Country,
+				MinAmount: float64(bankDetail.MinOrderAmount),
+				MaxAmount: float64(bankDetail.MaxOrderAmount),
+				BankName: bankDetail.BankName,
+				PaymentSystem: bankDetail.PaymentSystem,
+				Enabled: bankDetail.Enabled,
+				Delay: durationpb.New(bankDetail.Delay),
+				CardNumber: bankDetail.CardNumber,
+				Phone: bankDetail.Phone,
+				Owner: bankDetail.Owner,
+				MaxOrdersSimultaneosly: bankDetail.MaxOrdersSimultaneosly,
+				MaxAmountDay: bankDetail.MaxAmountDay,
+				MaxAmountMonth: bankDetail.MaxAmountMonth,
+				MaxQuantityDay: float64(bankDetail.MaxQuantityDay),
+				MaxQuantityMonth: float64(bankDetail.MaxQuantityMonth),
+				DeviceId: bankDetail.DeviceID,
+				InflowCurrency: bankDetail.InflowCurrency,
+				BankCode: bankDetail.BankCode,
+				NspkCode: bankDetail.NspkCode,
+			},
+			AmountFiat: order.AmountInfo.AmountFiat,
+			AmountCrypto: order.AmountInfo.AmountCrypto,
+			ExpiresAt: timestamppb.New(order.ExpiresAt),
+			MerchantOrderId: order.MerchantInfo.MerchantOrderID,
+			Shuffle: order.Shuffle,
+			ClientId: order.MerchantInfo.ClientID,
+			CallbackUrl: order.CallbackUrl,
+			TraderRewardPercent: order.TraderReward,
+			CreatedAt: timestamppb.New(order.CreatedAt),
+			UpdatedAt: timestamppb.New(order.UpdatedAt),
+			Recalculated: order.Recalculated,
+			CryptoRubRate: order.AmountInfo.CryptoRate,
+			MerchantId: order.MerchantInfo.MerchantID,
+			Type: order.Type,
+		}
+    }
+
+    return res, nil
 }

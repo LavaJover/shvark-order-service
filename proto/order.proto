@@ -24,6 +24,32 @@ service OrderService {
 
     rpc GetOrderStatistics (GetOrderStatisticsRequest) returns (GetOrderStatisticsResponse);
     rpc GetOrders (GetOrdersRequest) returns (GetOrdersResponse);
+    
+    rpc GetAllOrders (GetAllOrdersRequest) returns (GetAllOrdersResponse);
+}
+
+message GetAllOrdersRequest {
+    optional string trader_id = 1;
+    optional string merchant_id = 2;
+    optional string order_id = 3;
+    optional string merchant_order_id = 4;
+    optional string status = 5;
+    optional string bank_code = 6;
+    optional google.protobuf.Timestamp time_opening_start = 7;
+    optional google.protobuf.Timestamp time_opening_end = 8;
+    optional double amount_min = 9;
+    optional double amount_max = 10;
+    optional string type = 11;
+    optional string payment_system = 12;
+    int32 page = 13;
+    int32 limit = 14;
+    optional string device_id = 15;
+    optional string sort = 16;
+}
+
+message GetAllOrdersResponse {
+    repeated Order orders = 1;
+    Pagination pagination = 2;
 }
 
 message GetOrdersRequest {

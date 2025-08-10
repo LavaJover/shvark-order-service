@@ -52,3 +52,21 @@ type AdvancedParams struct {
 // 	NspkCode: r.NspkCode,
 // 	Type: r.Type,
 // }
+
+type GetAllOrdersInput struct {
+    TraderID          string
+    MerchantID        string
+    OrderID           string
+    MerchantOrderID   string
+    Status            string
+    BankCode          string
+    TimeOpeningStart  time.Time
+    TimeOpeningEnd    time.Time
+    AmountFiatMin     float64
+    AmountFiatMax     float64
+    Type              string
+    DeviceID          string
+    Page              int32
+    Limit             int32
+    Sort              string
+}

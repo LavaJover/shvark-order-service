@@ -37,6 +37,8 @@ type OrderUsecase interface {
 	GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*domain.OrderStatistics, error)
 
 	GetOrders(filter domain.Filter, sortField string, page, size int) ([]*domain.Order, int64, error)
+
+	GetAllOrders(input *orderdto.GetAllOrdersInput) (*orderdto.GetAllOrdersOutput, error)
 }
 
 type DefaultOrderUsecase struct {
@@ -767,4 +769,52 @@ func (uc *DefaultOrderUsecase) GetOrderStatistics(traderID string, dateFrom, dat
 
 func (uc *DefaultOrderUsecase) GetOrders(filter domain.Filter, sortField string, page, size int) ([]*domain.Order, int64, error) {
 	return uc.OrderRepo.GetOrders(filter, sortField, page, size)
+}
+
+func (uc *DefaultOrderUsecase) GetAllOrders(input *orderdto.GetAllOrdersInput) (*orderdto.GetAllOrdersOutput, error) {
+    // Валидация пагинации
+    if input.Page < 1 {
+        input.Page = 1
+    }
+    if input.Limit < 1 || input.Limit > 100 {
+        input.Limit = 50 // дефолтное значение
+    }
+
+    // Преобразуем в фильтры репозитория
+    filters := &domain.AllOrdersFilters{
+        TraderID:         input.TraderID,
+        MerchantID:       input.MerchantID,
+        OrderID:          input.OrderID,
+        MerchantOrderID:  input.MerchantOrderID,
+        Status:           input.Status,
+        BankCode:         input.BankCode,
+        TimeOpeningStart: input.TimeOpeningStart,
+        TimeOpeningEnd:   input.TimeOpeningEnd,
+        AmountFiatMin:    input.AmountFiatMin,
+        AmountFiatMax:    input.AmountFiatMax,
+        Type:             input.Type,
+        DeviceID:         input.DeviceID,
+    }
+
+    // Вызываем репозиторий
+    orders, total, err := uc.OrderRepo.GetAllOrders(filters, input.Sort, input.Page, input.Limit)
+    if err != nil {
+        return nil, err
+    }
+
+    // Рассчитываем данные пагинации
+    totalPages := int32(total) / input.Limit
+    if int32(total)%input.Limit > 0 {
+        totalPages++
+    }
+
+    return &orderdto.GetAllOrdersOutput{
+        Orders: orders,
+        Pagination: orderdto.Pagination{
+            CurrentPage:  input.Page,
+            TotalPages:   totalPages,
+            TotalItems:   int32(total),
+            ItemsPerPage: input.Limit,
+        },
+    }, nil
 }

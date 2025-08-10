@@ -106,6 +106,21 @@ type Filter struct {
 	MerchantID       string
 }
 
+type AllOrdersFilters struct {
+	TraderID 			string
+	MerchantID 			string
+	OrderID				string
+	MerchantOrderID 	string
+	Status 				string
+	BankCode 			string
+	TimeOpeningStart 	time.Time
+	TimeOpeningEnd 		time.Time
+	AmountFiatMin 		float64
+	AmountFiatMax 		float64
+	Type 				string
+	DeviceID 			string
+}
+
 type OrderRepository interface {
 	CreateOrder(order *Order) error
 	UpdateOrderStatus(orderID string, newStatus OrderStatus) error
@@ -123,4 +138,6 @@ type OrderRepository interface {
 	GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*OrderStatistics, error)
 
 	GetOrders(filter Filter, sortField string, page, size int) ([]*Order, int64, error)
+
+	GetAllOrders(filter *AllOrdersFilters, sort string, page, limit int32) ([]*Order, int64, error)
 }
