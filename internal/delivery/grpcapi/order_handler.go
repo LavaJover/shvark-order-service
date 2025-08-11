@@ -655,6 +655,7 @@ func (h *OrderHandler) GetAllOrders(
         Page:            r.GetPage(),
         Limit:           r.GetLimit(),
         Sort:            r.GetSort(),
+		PaymentSystem: 	 r.GetPaymentSystem(),
     }
 
     // Обрабатываем временные метки

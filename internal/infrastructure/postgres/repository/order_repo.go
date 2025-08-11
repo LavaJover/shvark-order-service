@@ -392,6 +392,9 @@ func (r *DefaultOrderRepository) GetAllOrders(
     if filter.DeviceID != "" {
         query = query.Where("bank_detail_models.device_id = ?", filter.DeviceID)
     }
+    if filter.PaymentSystem != "" {
+        query = query.Where("bank_detail_models.payment_system = ?", filter.PaymentSystem)
+    }
 
     // Сортировка (безопасная проверка полей)
     safeSort := "order_models.created_at DESC" // значение по умолчанию

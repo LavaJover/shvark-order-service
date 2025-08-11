@@ -69,4 +69,5 @@ type GetAllOrdersInput struct {
     Page              int32
     Limit             int32
     Sort              string
+	PaymentSystem 	  string
 }

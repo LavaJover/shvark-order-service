@@ -119,6 +119,7 @@ type AllOrdersFilters struct {
 	AmountFiatMax 		float64
 	Type 				string
 	DeviceID 			string
+	PaymentSystem		string
 }
 
 type OrderRepository interface {

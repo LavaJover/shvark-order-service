@@ -794,6 +794,7 @@ func (uc *DefaultOrderUsecase) GetAllOrders(input *orderdto.GetAllOrdersInput) (
         AmountFiatMax:    input.AmountFiatMax,
         Type:             input.Type,
         DeviceID:         input.DeviceID,
+		PaymentSystem: 	  input.PaymentSystem,
     }
 
     // Вызываем репозиторий
