@@ -6,18 +6,22 @@ import (
 	"log"
 	"log/slog"
 	"net"
+	"net/http"
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/config"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/logger"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/metrics"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 )
 
@@ -55,8 +59,18 @@ func main() {
 	bankDetailUsecase := usecase.NewDefaultBankDetailUsecase(bankDetailRepo)
 	// Init team relations usecase
 	teamRelationsUsecase := usecase.NewDefaultTeamRelationsUsecase(teamRelationsRepo)
+	// Init order event logger
+	orderEventLogger := logger.NewPGOrderEventLogger(db)
 	// Init order usecase
-	uc := usecase.NewDefaultOrderUsecase(orderRepo, httpWalletHandler, trafficUsecase, bankDetailUsecase, orderKafkaPublisher, teamRelationsUsecase)
+	uc := usecase.NewDefaultOrderUsecase(
+		orderRepo, 
+		httpWalletHandler, 
+		trafficUsecase, 
+		bankDetailUsecase, 
+		orderKafkaPublisher, 
+		teamRelationsUsecase,
+		orderEventLogger,
+	)
 
 	// dispute
 	disputeRepo := repository.NewDefaultDisputeRepository(db)
@@ -125,6 +139,10 @@ func main() {
 			}
 		}
 	}()
+
+	metrics.Init()
+	http.Handle("/metrics", promhttp.Handler())
+	go http.ListenAndServe(":9090", nil)
 
 	log.Printf("gRPC server started on %s:%s\n", cfg.GRPCServer.Host, cfg.GRPCServer.Port)
 	if err := grpcServer.Serve(lis); err != nil {

@@ -39,23 +39,6 @@ func NewOrderHandler(
 
 func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRequest) (*orderpb.CreateOrderResponse, error) {
 
-	// orderRequest := domain.Order{
-	// 	MerchantID: r.MerchantId,
-	// 	AmountFiat: r.AmountFiat,
-	// 	Currency: r.Currency,
-	// 	Country: r.Country,
-	// 	ClientID: r.ClientId,
-	// 	Status: domain.StatusPending,
-	// 	PaymentSystem: r.PaymentSystem,
-	// 	MerchantOrderID: r.MerchantOrderId,
-	// 	Shuffle: r.Shuffle,
-	// 	ExpiresAt: r.ExpiresAt.AsTime(),
-	// 	CallbackURL: r.CallbackUrl,
-	// 	BankCode: r.BankCode,
-	// 	NspkCode: r.NspkCode,
-	// 	Type: r.Type,
-	// }
-
 	amountCrypto := r.AmountFiat / usdt.UsdtRubRates
 
 	createOrderInput := orderdto.CreateOrderInput{

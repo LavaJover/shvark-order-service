@@ -13,6 +13,8 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/bitwire/notifier"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/logger"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/metrics"
 	bankdetaildto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/bank_detail"
 	orderdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/order"
 	"github.com/google/uuid"
@@ -48,6 +50,7 @@ type DefaultOrderUsecase struct {
 	BankDetailUsecase 	BankDetailUsecase
 	TeamRelationsUsecase TeamRelationsUsecase
 	Publisher 			*kafka.KafkaPublisher
+	OrderEventLogger 		logger.OrderEventLogger
 }
 
 func NewDefaultOrderUsecase(
@@ -56,7 +59,8 @@ func NewDefaultOrderUsecase(
 	trafficUsecase domain.TrafficUsecase,
 	bankDetailUsecase BankDetailUsecase,
 	kafkaPublisher *kafka.KafkaPublisher,
-	teamRelationsUsecase TeamRelationsUsecase) *DefaultOrderUsecase {
+	teamRelationsUsecase TeamRelationsUsecase,
+	orderEventLogger logger.OrderEventLogger) *DefaultOrderUsecase {
 
 	return &DefaultOrderUsecase{
 		OrderRepo: orderRepo,
@@ -65,6 +69,7 @@ func NewDefaultOrderUsecase(
 		BankDetailUsecase: bankDetailUsecase,
 		Publisher: kafkaPublisher,
 		TeamRelationsUsecase: teamRelationsUsecase,
+		OrderEventLogger: orderEventLogger,
 	}
 }
 
@@ -452,6 +457,19 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 	// searching for eligible bank details due to order query parameters
 	bankDetails, err := uc.FindEligibleBankDetails(createOrderInput)
 	if err != nil {
+		metrics.IncOrder("failed", err.Error())
+		uc.OrderEventLogger.LogOrderFailed(
+			context.Background(),
+			logger.OrderFailedEvent{
+				MerchantID: createOrderInput.MerchantID,
+				Reason: err.Error(),
+				AmountFiat: createOrderInput.AmountFiat,
+				Currency: createOrderInput.Currency,
+				BankCode: createOrderInput.BankInfo.BankCode,
+				PaymentSystem: createOrderInput.PaymentSystem,
+				Timestamp: time.Now(),
+			},
+		)
 		return nil, status.Error(codes.NotFound, "no eligible bank detail" + err.Error())
 	}
 	if len(bankDetails) != 0 {
@@ -470,12 +488,38 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 	// business logic to pick best bank detail
 	chosenBankDetail, err := uc.PickBestBankDetail(bankDetails, createOrderInput.MerchantID)
 	if err != nil {
+		metrics.IncOrder("failed", err.Error())
+		uc.OrderEventLogger.LogOrderFailed(
+			context.Background(),
+			logger.OrderFailedEvent{
+				MerchantID: createOrderInput.MerchantID,
+				Reason: err.Error(),
+				AmountFiat: createOrderInput.AmountFiat,
+				Currency: createOrderInput.Currency,
+				BankCode: createOrderInput.BankInfo.BankCode,
+				PaymentSystem: createOrderInput.PaymentSystem,
+				Timestamp: time.Now(),
+			},
+		)
 		return nil, status.Errorf(codes.NotFound, "failed to pick best bank detail for order")
 	}
 
 	// Get trader reward percent and save to order
 	traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(chosenBankDetail.TraderID, createOrderInput.MerchantID)
 	if err != nil {
+		metrics.IncOrder("failed", err.Error())
+		uc.OrderEventLogger.LogOrderFailed(
+			context.Background(),
+			logger.OrderFailedEvent{
+				MerchantID: createOrderInput.MerchantID,
+				Reason: err.Error(),
+				AmountFiat: createOrderInput.AmountFiat,
+				Currency: createOrderInput.Currency,
+				BankCode: createOrderInput.BankInfo.BankCode,
+				PaymentSystem: createOrderInput.PaymentSystem,
+				Timestamp: time.Now(),
+			},
+		)
 		return nil, err
 	}
 	traderReward := traffic.TraderRewardPercent
@@ -511,6 +555,19 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 
 	// Freeze crypto
 	if err := uc.WalletHandler.Freeze(chosenBankDetail.TraderID, order.ID, createOrderInput.AmountCrypto); err != nil {
+		metrics.IncOrder("failed", err.Error())
+		uc.OrderEventLogger.LogOrderFailed(
+			context.Background(),
+			logger.OrderFailedEvent{
+				MerchantID: createOrderInput.MerchantID,
+				Reason: err.Error(),
+				AmountFiat: createOrderInput.AmountFiat,
+				Currency: createOrderInput.Currency,
+				BankCode: createOrderInput.BankInfo.BankCode,
+				PaymentSystem: createOrderInput.PaymentSystem,
+				Timestamp: time.Now(),
+			},
+		)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -536,6 +593,25 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 			0, 0, 0,
 		)
 	}
+
+	metrics.IncOrder("success", "")
+
+	uc.OrderEventLogger.LogOrderCreated(
+		context.Background(),
+		logger.OrderCreatedEvent{
+			MerchantID: createOrderInput.MerchantID,
+			OrderID: order.ID,
+			TraderID: chosenBankDetail.TraderID,
+			AmountFiat: createOrderInput.AmountFiat,
+			Currency: createOrderInput.Currency,
+			BankName: chosenBankDetail.BankName,
+			BankCode: chosenBankDetail.BankCode,
+			PaymentSystem: chosenBankDetail.PaymentSystem,
+			Phone: chosenBankDetail.Phone,
+			CardNumber: chosenBankDetail.CardNumber,
+			Timestamp: time.Now(),
+		},
+	)
 
 	return &orderdto.OrderOutput{
 		Order: order,
