@@ -11,7 +11,7 @@ type DefaultDeviceRepository struct {
 	DB *gorm.DB
 }
 
-func NewDeviceRepository(db *gorm.DB) *DefaultDeviceRepository {
+func NewDefaultDeviceRepository(db *gorm.DB) *DefaultDeviceRepository {
 	return &DefaultDeviceRepository{
 		DB: db,
 	}

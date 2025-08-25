@@ -42,6 +42,8 @@ func main() {
 	trafficRepo := repository.NewDefaultTrafficRepository(db)
 	// Init team relations repo
 	teamRelationsRepo := repository.NewDefaultTeamRelationsRepository(db)
+	// Init device repo
+	deviceRepo := repository.NewDefaultDeviceRepository(db)
 
 	// Init wallet handler
 	httpWalletHandler, err := handlers.NewHTTPWalletHandler(fmt.Sprintf("%s:%s", cfg.WalletService.Host, cfg.WalletService.Port))
@@ -57,6 +59,8 @@ func main() {
 	teamRelationsUsecase := usecase.NewDefaultTeamRelationsUsecase(teamRelationsRepo)
 	// Init order usecase
 	uc := usecase.NewDefaultOrderUsecase(orderRepo, httpWalletHandler, trafficUsecase, bankDetailUsecase, orderKafkaPublisher, teamRelationsUsecase)
+	// Init device usecase
+	deviceUsecase := usecase.NewDefaultDeviceUsecase(deviceRepo)
 
 	// dispute
 	disputeRepo := repository.NewDefaultDisputeRepository(db)
@@ -76,11 +80,13 @@ func main() {
 	trafficHandler := grpcapi.NewTrafficHandler(trafficUsecase)
 	bankDetailHandler := grpcapi.NewBankDetailHandler(bankDetailUsecase)
 	teamRelationsHandler := grpcapi.NewTeamRelationsHandler(teamRelationsUsecase)
+	deviceHandler := grpcapi.NewDeviceHandler(deviceUsecase)
 
 	orderpb.RegisterOrderServiceServer(grpcServer, orderHandler)
 	orderpb.RegisterTrafficServiceServer(grpcServer, trafficHandler)
 	orderpb.RegisterBankDetailServiceServer(grpcServer, bankDetailHandler)
 	orderpb.RegisterTeamRelationsServiceServer(grpcServer, teamRelationsHandler)
+	orderpb.RegisterDeviceServiceServer(grpcServer, deviceHandler)
 
 	// Start
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", cfg.GRPCServer.Host, cfg.GRPCServer.Port))

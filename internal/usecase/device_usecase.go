@@ -17,7 +17,7 @@ type DefaultDeviceUsecase struct {
 	deviceRepo domain.DeviceRepository
 }
 
-func NewDeviceUsecase(deviceRepo domain.DeviceRepository) *DefaultDeviceUsecase {
+func NewDefaultDeviceUsecase(deviceRepo domain.DeviceRepository) *DefaultDeviceUsecase {
 	return &DefaultDeviceUsecase{
 		deviceRepo: deviceRepo,
 	}
