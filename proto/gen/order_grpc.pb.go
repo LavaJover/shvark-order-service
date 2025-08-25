@@ -1489,3 +1489,219 @@ var TeamRelationsService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "order.proto",
 }
+
+const (
+	DeviceService_CreateDevice_FullMethodName     = "/order.DeviceService/CreateDevice"
+	DeviceService_GetTraderDevices_FullMethodName = "/order.DeviceService/GetTraderDevices"
+	DeviceService_DeleteDevice_FullMethodName     = "/order.DeviceService/DeleteDevice"
+	DeviceService_EditDevice_FullMethodName       = "/order.DeviceService/EditDevice"
+)
+
+// DeviceServiceClient is the client API for DeviceService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type DeviceServiceClient interface {
+	CreateDevice(ctx context.Context, in *CreateDeviceRequest, opts ...grpc.CallOption) (*CreateDeviceResponse, error)
+	GetTraderDevices(ctx context.Context, in *GetTraderDevicesRequest, opts ...grpc.CallOption) (*GetTraderDevicesResponse, error)
+	DeleteDevice(ctx context.Context, in *DeleteDeviceRequest, opts ...grpc.CallOption) (*DeleteDeviceResponse, error)
+	EditDevice(ctx context.Context, in *EditDeviceRequest, opts ...grpc.CallOption) (*EditDeviceResponse, error)
+}
+
+type deviceServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewDeviceServiceClient(cc grpc.ClientConnInterface) DeviceServiceClient {
+	return &deviceServiceClient{cc}
+}
+
+func (c *deviceServiceClient) CreateDevice(ctx context.Context, in *CreateDeviceRequest, opts ...grpc.CallOption) (*CreateDeviceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateDeviceResponse)
+	err := c.cc.Invoke(ctx, DeviceService_CreateDevice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deviceServiceClient) GetTraderDevices(ctx context.Context, in *GetTraderDevicesRequest, opts ...grpc.CallOption) (*GetTraderDevicesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTraderDevicesResponse)
+	err := c.cc.Invoke(ctx, DeviceService_GetTraderDevices_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deviceServiceClient) DeleteDevice(ctx context.Context, in *DeleteDeviceRequest, opts ...grpc.CallOption) (*DeleteDeviceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteDeviceResponse)
+	err := c.cc.Invoke(ctx, DeviceService_DeleteDevice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deviceServiceClient) EditDevice(ctx context.Context, in *EditDeviceRequest, opts ...grpc.CallOption) (*EditDeviceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EditDeviceResponse)
+	err := c.cc.Invoke(ctx, DeviceService_EditDevice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// DeviceServiceServer is the server API for DeviceService service.
+// All implementations must embed UnimplementedDeviceServiceServer
+// for forward compatibility.
+type DeviceServiceServer interface {
+	CreateDevice(context.Context, *CreateDeviceRequest) (*CreateDeviceResponse, error)
+	GetTraderDevices(context.Context, *GetTraderDevicesRequest) (*GetTraderDevicesResponse, error)
+	DeleteDevice(context.Context, *DeleteDeviceRequest) (*DeleteDeviceResponse, error)
+	EditDevice(context.Context, *EditDeviceRequest) (*EditDeviceResponse, error)
+	mustEmbedUnimplementedDeviceServiceServer()
+}
+
+// UnimplementedDeviceServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedDeviceServiceServer struct{}
+
+func (UnimplementedDeviceServiceServer) CreateDevice(context.Context, *CreateDeviceRequest) (*CreateDeviceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateDevice not implemented")
+}
+func (UnimplementedDeviceServiceServer) GetTraderDevices(context.Context, *GetTraderDevicesRequest) (*GetTraderDevicesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTraderDevices not implemented")
+}
+func (UnimplementedDeviceServiceServer) DeleteDevice(context.Context, *DeleteDeviceRequest) (*DeleteDeviceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteDevice not implemented")
+}
+func (UnimplementedDeviceServiceServer) EditDevice(context.Context, *EditDeviceRequest) (*EditDeviceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EditDevice not implemented")
+}
+func (UnimplementedDeviceServiceServer) mustEmbedUnimplementedDeviceServiceServer() {}
+func (UnimplementedDeviceServiceServer) testEmbeddedByValue()                       {}
+
+// UnsafeDeviceServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to DeviceServiceServer will
+// result in compilation errors.
+type UnsafeDeviceServiceServer interface {
+	mustEmbedUnimplementedDeviceServiceServer()
+}
+
+func RegisterDeviceServiceServer(s grpc.ServiceRegistrar, srv DeviceServiceServer) {
+	// If the following call pancis, it indicates UnimplementedDeviceServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&DeviceService_ServiceDesc, srv)
+}
+
+func _DeviceService_CreateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateDeviceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeviceServiceServer).CreateDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeviceService_CreateDevice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeviceServiceServer).CreateDevice(ctx, req.(*CreateDeviceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeviceService_GetTraderDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTraderDevicesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeviceServiceServer).GetTraderDevices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeviceService_GetTraderDevices_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeviceServiceServer).GetTraderDevices(ctx, req.(*GetTraderDevicesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeviceService_DeleteDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteDeviceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeviceServiceServer).DeleteDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeviceService_DeleteDevice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeviceServiceServer).DeleteDevice(ctx, req.(*DeleteDeviceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeviceService_EditDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EditDeviceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeviceServiceServer).EditDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeviceService_EditDevice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeviceServiceServer).EditDevice(ctx, req.(*EditDeviceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// DeviceService_ServiceDesc is the grpc.ServiceDesc for DeviceService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var DeviceService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "order.DeviceService",
+	HandlerType: (*DeviceServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateDevice",
+			Handler:    _DeviceService_CreateDevice_Handler,
+		},
+		{
+			MethodName: "GetTraderDevices",
+			Handler:    _DeviceService_GetTraderDevices_Handler,
+		},
+		{
+			MethodName: "DeleteDevice",
+			Handler:    _DeviceService_DeleteDevice_Handler,
+		},
+		{
+			MethodName: "EditDevice",
+			Handler:    _DeviceService_EditDevice_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "order.proto",
+}
