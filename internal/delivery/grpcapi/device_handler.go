@@ -6,6 +6,8 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	devicedto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/device"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type DeviceHandler struct {
@@ -71,6 +73,11 @@ func (h *DeviceHandler) DeleteDevice(ctx context.Context, r *orderpb.DeleteDevic
 }
 
 func (h *DeviceHandler) EditDevice(ctx context.Context, r *orderpb.EditDeviceRequest) (*orderpb.EditDeviceResponse, error) {
+
+	if r.Params == nil {
+		return nil, status.Error(codes.InvalidArgument, "params must be provided")
+	}
+
 	editDeviceInput := devicedto.EditDeviceInput{
 		DeviceID: r.DeviceId,
 		DeviceName: r.Params.DeviceName,

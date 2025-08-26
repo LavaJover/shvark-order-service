@@ -24,7 +24,7 @@ func (r *DefaultDeviceRepository) CreateDevice(device *domain.Device) error {
 
 func (r *DefaultDeviceRepository) GetTraderDevices(traderID string) ([]*domain.Device, error) {
 	var deviceModels []*models.DeviceModel
-	if err := r.DB.Model(&models.DeviceModel{}).Where("traderID = ?", traderID).Find(&deviceModels).Error; err != nil {
+	if err := r.DB.Model(&models.DeviceModel{}).Where("trader_id = ?", traderID).Find(&deviceModels).Error; err != nil {
 		return nil, err
 	}
 

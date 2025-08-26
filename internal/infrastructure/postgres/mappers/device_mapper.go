@@ -8,7 +8,7 @@ import (
 func ToGORMDevice(device *domain.Device) *models.DeviceModel {
 	return &models.DeviceModel{
 		ID: device.DeviceID,
-		Name: device.DeviceID,
+		Name: device.DeviceName,
 		TraderID: device.TraderID,
 		Enabled: device.Enabled,
 	}
