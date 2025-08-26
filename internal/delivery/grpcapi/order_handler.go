@@ -2,6 +2,7 @@ package grpcapi
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"time"
 
@@ -137,6 +138,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 func (h *OrderHandler) ApproveOrder(ctx context.Context, r *orderpb.ApproveOrderRequest) (*orderpb.ApproveOrderResponse, error) {
 	orderID := r.OrderId
 	if err := h.uc.ApproveOrder(orderID); err != nil {
+		fmt.Println("Ошибка подтверждения сделки: ", err.Error())
 		return &orderpb.ApproveOrderResponse{
 			Message: "failed to approve order",
 		}, err

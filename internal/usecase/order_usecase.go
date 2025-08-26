@@ -69,6 +69,9 @@ func NewDefaultOrderUsecase(
 }
 
 func (uc *DefaultOrderUsecase) PickBestBankDetail(bankDetails []*domain.BankDetail, merchantID string) (*domain.BankDetail, error) {
+	if len(bankDetails) == 0 {
+		return nil, fmt.Errorf("no available bank details provided to pick the best")
+	}
 	type Trader struct {
 		TraderID 		string
 		Priority 		float64
@@ -81,6 +84,7 @@ func (uc *DefaultOrderUsecase) PickBestBankDetail(bankDetails []*domain.BankDeta
 		traderID := bankDetail.TraderID
 		traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(traderID, merchantID)
 		if err != nil {
+			fmt.Println("Error while picking trader: " + err.Error())
 			return nil, err
 		}
 		traders = append(traders, &Trader{
@@ -331,10 +335,16 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(input *orderdto.CreateOrd
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println(len(bankDetails))
+
+	for _, bankDetail := range bankDetails {
+		fmt.Println(bankDetail)
+	}
+
 	if len(bankDetails) == 0 {
 		log.Printf("Отсеились по статическим параметрам\n")
 	}
-
 	// 0) Filter by Traffic
 	bankDetails, err = uc.FilterByTraffic(bankDetails, input.MerchantParams.MerchantID)
 	if err != nil {
@@ -353,81 +363,81 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(input *orderdto.CreateOrd
 		log.Printf("Отсеились по балансу трейдеров\n")
 	}
 
-	// 2) Filter by MaxOrdersSimultaneosly
-	bankDetails, err = uc.FilterByMaxOrdersSimulateosly(bankDetails)
-	if err != nil {
-		return nil, err
-	}
-	if len(bankDetails) == 0 {
-		log.Printf("Отсеились по одновременным сделкам\n")
-	}
-	// 3) Filter by MaxAmountDay
-	bankDetails, err = uc.FilterByMaxAmountDay(bankDetails, input.AmountFiat)
-	if err != nil {
-		return nil, err
-	}
-	if len(bankDetails) == 0 {
-		log.Printf("Отсеились по сумме в день\n")
-	}
-	// 4) Filter by MaxAmountMonth
-	bankDetails, err = uc.FilterByMaxAmountMonth(bankDetails, input.AmountFiat)
-	if err != nil {
-		return nil, err
-	}
-	if len(bankDetails) == 0 {
-		log.Printf("Отсеились по сумме в месяц\n")
-	}
-	// 5) Filter by delay
-	bankDetails, err = uc.FilterByDelay(bankDetails)
-	if err != nil {
-		return nil, err
-	}
-	if len(bankDetails) == 0 {
-		log.Printf("Отсеились по задержке\n")
-	}
-	// 6) Filter by MaxQuantityDay
-	bankDetails, err = uc.FilterByMaxQuantityDay(bankDetails)
-	if err != nil {
-		return nil, err
-	}
-	if len(bankDetails) == 0 {
-		log.Printf("Отсеились по количеству в день\n")
-	}
+	// // 2) Filter by MaxOrdersSimultaneosly
+	// bankDetails, err = uc.FilterByMaxOrdersSimulateosly(bankDetails)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if len(bankDetails) == 0 {
+	// 	log.Printf("Отсеились по одновременным сделкам\n")
+	// }
+	// // 3) Filter by MaxAmountDay
+	// bankDetails, err = uc.FilterByMaxAmountDay(bankDetails, input.AmountFiat)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if len(bankDetails) == 0 {
+	// 	log.Printf("Отсеились по сумме в день\n")
+	// }
+	// // 4) Filter by MaxAmountMonth
+	// bankDetails, err = uc.FilterByMaxAmountMonth(bankDetails, input.AmountFiat)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if len(bankDetails) == 0 {
+	// 	log.Printf("Отсеились по сумме в месяц\n")
+	// }
+	// // 5) Filter by delay
+	// bankDetails, err = uc.FilterByDelay(bankDetails)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if len(bankDetails) == 0 {
+	// 	log.Printf("Отсеились по задержке\n")
+	// }
+	// // 6) Filter by MaxQuantityDay
+	// bankDetails, err = uc.FilterByMaxQuantityDay(bankDetails)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if len(bankDetails) == 0 {
+	// 	log.Printf("Отсеились по количеству в день\n")
+	// }
 
-	// 7) Filter by MaxQuantityMonth
-	bankDetails, err = uc.FilterByMaxQuantityMonth(bankDetails)
-	if err != nil {
-		return nil, err
-	}
-	if len(bankDetails) == 0 {
-		log.Printf("Отсеились по количеству в месяц\n")
-	}
+	// // 7) Filter by MaxQuantityMonth
+	// bankDetails, err = uc.FilterByMaxQuantityMonth(bankDetails)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if len(bankDetails) == 0 {
+	// 	log.Printf("Отсеились по количеству в месяц\n")
+	// }
 
-	// 8) Filter by active order with equal amount fiat
-	tempBankDetails, err := uc.FilterByEqualAmountFiat(bankDetails, input.AmountFiat)
-	if err != nil {
-		return nil, err
-	}
-	// Если shuffle не задан, то пропускаем сериб проверок с рекалькуляцией
-	for addFiat := range input.AdvancedParams.Shuffle {
-		tempBankDetails, err = uc.FilterByEqualAmountFiat(bankDetails, input.AmountFiat + float64(addFiat))
-		if err != nil {
-			return nil, err
-		}
-		if len(tempBankDetails) != 0 {
-			input.AmountFiat += float64(addFiat)
-			if addFiat != 0 {
-				input.AdvancedParams.Recalculated = true
-			}else {
-				input.AdvancedParams.Recalculated = false
-			}
-			break
-		}
-	}
-	bankDetails = tempBankDetails
-	if len(bankDetails) == 0 {
-		return nil, domain.ErrNoAvailableBankDetails
-	}
+	// // 8) Filter by active order with equal amount fiat
+	// tempBankDetails, err := uc.FilterByEqualAmountFiat(bankDetails, input.AmountFiat)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// // Если shuffle не задан, то пропускаем сериб проверок с рекалькуляцией
+	// for addFiat := range input.AdvancedParams.Shuffle {
+	// 	tempBankDetails, err = uc.FilterByEqualAmountFiat(bankDetails, input.AmountFiat + float64(addFiat))
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	if len(tempBankDetails) != 0 {
+	// 		input.AmountFiat += float64(addFiat)
+	// 		if addFiat != 0 {
+	// 			input.AdvancedParams.Recalculated = true
+	// 		}else {
+	// 			input.AdvancedParams.Recalculated = false
+	// 		}
+	// 		break
+	// 	}
+	// }
+	// bankDetails = tempBankDetails
+	// if len(bankDetails) == 0 {
+	// 	return nil, domain.ErrNoAvailableBankDetails
+	// }
 
 	return bankDetails, nil
 }
@@ -454,8 +464,9 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "no eligible bank detail" + err.Error())
 	}
-	if len(bankDetails) != 0 {
+	if len(bankDetails) == 0 {
 		log.Printf("Реквизиты для заявки не найдены!\n")
+		return nil, fmt.Errorf("no available bank details")
 	}
 	log.Printf("Для заявки найдены доступные реквизиты!\n")
 	if createOrderInput.AdvancedParams.CallbackUrl != "" {
