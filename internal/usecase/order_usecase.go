@@ -336,12 +336,6 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(input *orderdto.CreateOrd
 		return nil, err
 	}
 
-	fmt.Println(len(bankDetails))
-
-	for _, bankDetail := range bankDetails {
-		fmt.Println(bankDetail)
-	}
-
 	if len(bankDetails) == 0 {
 		log.Printf("Отсеились по статическим параметрам\n")
 	}

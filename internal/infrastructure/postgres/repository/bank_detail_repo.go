@@ -138,12 +138,14 @@ func (r *DefaultBankDetailRepo) FindSuitableBankDetails(searchQuery *domain.Suit
         Where("payment_system = ?", searchQuery.PaymentSystem).
         Where("currency = ?", searchQuery.Currency).
         Where("bank_detail_models.deleted_at IS NULL").
+        // Подзапрос для подсчета активных PENDING заявок
         Joins("LEFT JOIN (?) AS pending_orders ON pending_orders.bank_details_id = bank_detail_models.id",
             r.DB.Model(&models.OrderModel{}).
                 Select("bank_details_id, COUNT(*) as count").
                 Where("status = ?", domain.StatusPending).
                 Group("bank_details_id"),
         ).
+        // Подзапрос для статистики за день
         Joins("LEFT JOIN (?) AS day_stats ON day_stats.bank_details_id = bank_detail_models.id",
             r.DB.Model(&models.OrderModel{}).
                 Select("bank_details_id, COUNT(*) as count, COALESCE(SUM(amount_fiat), 0) as amount").
@@ -151,6 +153,7 @@ func (r *DefaultBankDetailRepo) FindSuitableBankDetails(searchQuery *domain.Suit
                 Where("created_at >= ?", startOfDay).
                 Group("bank_details_id"),
         ).
+        // Подзапрос для статистики за месяц
         Joins("LEFT JOIN (?) AS month_stats ON month_stats.bank_details_id = bank_detail_models.id",
             r.DB.Model(&models.OrderModel{}).
                 Select("bank_details_id, COUNT(*) as count, COALESCE(SUM(amount_fiat), 0) as amount").
@@ -158,19 +161,21 @@ func (r *DefaultBankDetailRepo) FindSuitableBankDetails(searchQuery *domain.Suit
                 Where("created_at >= ?", startOfMonth).
                 Group("bank_details_id"),
         ).
+        // Подзапрос для времени последней COMPLETED заявки
         Joins("LEFT JOIN (?) AS last_completed ON last_completed.bank_details_id = bank_detail_models.id",
             r.DB.Model(&models.OrderModel{}).
                 Select("bank_details_id, MAX(created_at) as last_time").
                 Where("status = ?", domain.StatusCompleted).
                 Group("bank_details_id"),
         ).
-        Where("COALESCE(pending_orders.count, 0) < bank_detail_models.max_orders_simultaneosly").
-        Where("COALESCE(day_stats.count, 0) < bank_detail_models.max_quantity_day").
-        Where("COALESCE(day_stats.amount, 0) < bank_detail_models.max_amount_day").
-        Where("COALESCE(month_stats.count, 0) < bank_detail_models.max_quantity_month").
-        Where("COALESCE(month_stats.amount, 0) < bank_detail_models.max_amount_month").
-        Where("last_completed.last_time IS NULL OR last_completed.last_time <= NOW() - (bank_detail_models.delay / 1000000000.0) * INTERVAL '1 SECOND'").
-        Where("NOT EXISTS (?)",
+        // Проверка ограничений
+        Where("COALESCE(pending_orders.count, 0) < bank_detail_models.max_orders_simultaneosly"). // Максимальное количество активных заявок
+        Where("COALESCE(day_stats.count, 0) + 1 <= bank_detail_models.max_quantity_day").         // Дневной лимит количества (+1 для новой заявки)
+        Where("COALESCE(day_stats.amount, 0) + ? <= bank_detail_models.max_amount_day", searchQuery.AmountFiat). // Дневной лимит суммы (+новая сумма)
+        Where("COALESCE(month_stats.count, 0) + 1 <= bank_detail_models.max_quantity_month").     // Месячный лимит количества (+1 для новой заявки)
+        Where("COALESCE(month_stats.amount, 0) + ? <= bank_detail_models.max_amount_month", searchQuery.AmountFiat). // Месячный лимит суммы (+новая сумма)
+        Where("last_completed.last_time IS NULL OR last_completed.last_time <= NOW() - (bank_detail_models.delay / 1000000000.0) * INTERVAL '1 SECOND'"). // Задержка после завершенной заявки
+        Where("NOT EXISTS (?)", // Проверка на уникальность суммы для активных заявок
             r.DB.Model(&models.OrderModel{}).
                 Select("1").
                 Where("bank_details_id = bank_detail_models.id").
@@ -178,6 +183,7 @@ func (r *DefaultBankDetailRepo) FindSuitableBankDetails(searchQuery *domain.Suit
                 Where("amount_fiat = ?", searchQuery.AmountFiat),
         )
 
+    // Дополнительные фильтры
     if searchQuery.BankCode != "" {
         query = query.Where("bank_detail_models.bank_code = ?", searchQuery.BankCode)
     }
@@ -190,6 +196,7 @@ func (r *DefaultBankDetailRepo) FindSuitableBankDetails(searchQuery *domain.Suit
         return nil, err
     }
 
+    // Преобразование в доменные объекты
     bankDetails := make([]*domain.BankDetail, len(candidates))
     for i, bankDetail := range candidates {
         bankDetails[i] = mappers.ToDomainBankDetail(&bankDetail)
