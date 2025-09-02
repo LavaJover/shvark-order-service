@@ -509,8 +509,9 @@ message GetBankDetailsRequest {
     optional string bank_code = 2;
     optional bool enabled = 3;
     optional string payment_system = 4;
-    int32 page = 5;
-    int32 limit = 6;
+    optional string bank_detail_id = 5;
+    int32 page = 6;
+    int32 limit = 7;
 }
 
 message GetBankDetailsResponse {

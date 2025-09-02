@@ -98,6 +98,7 @@ type GetBankDetailsFilter struct {
 	BankCode 		*string
 	Enabled  		*bool
 	PaymentSystem 	*string
+	BankDetailID 	*string
 	Page 			int
 	Limit 			int
 }

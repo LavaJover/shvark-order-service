@@ -4510,8 +4510,9 @@ type GetBankDetailsRequest struct {
 	BankCode      *string                `protobuf:"bytes,2,opt,name=bank_code,json=bankCode,proto3,oneof" json:"bank_code,omitempty"`
 	Enabled       *bool                  `protobuf:"varint,3,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`
 	PaymentSystem *string                `protobuf:"bytes,4,opt,name=payment_system,json=paymentSystem,proto3,oneof" json:"payment_system,omitempty"`
-	Page          int32                  `protobuf:"varint,5,opt,name=page,proto3" json:"page,omitempty"`
-	Limit         int32                  `protobuf:"varint,6,opt,name=limit,proto3" json:"limit,omitempty"`
+	BankDetailId  *string                `protobuf:"bytes,5,opt,name=bank_detail_id,json=bankDetailId,proto3,oneof" json:"bank_detail_id,omitempty"`
+	Page          int32                  `protobuf:"varint,6,opt,name=page,proto3" json:"page,omitempty"`
+	Limit         int32                  `protobuf:"varint,7,opt,name=limit,proto3" json:"limit,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4570,6 +4571,13 @@ func (x *GetBankDetailsRequest) GetEnabled() bool {
 func (x *GetBankDetailsRequest) GetPaymentSystem() string {
 	if x != nil && x.PaymentSystem != nil {
 		return *x.PaymentSystem
+	}
+	return ""
+}
+
+func (x *GetBankDetailsRequest) GetBankDetailId() string {
+	if x != nil && x.BankDetailId != nil {
+		return *x.BankDetailId
 	}
 	return ""
 }
@@ -5957,21 +5965,23 @@ const file_order_proto_rawDesc = "" +
 	"$GetBankDetailsStatsByTraderIDRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\"h\n" +
 	"%GetBankDetailsStatsByTraderIDResponse\x12?\n" +
-	"\x10bank_detail_stat\x18\x01 \x03(\v2\x15.order.BankDetailStatR\x0ebankDetailStat\"\x8b\x02\n" +
+	"\x10bank_detail_stat\x18\x01 \x03(\v2\x15.order.BankDetailStatR\x0ebankDetailStat\"\xc9\x02\n" +
 	"\x15GetBankDetailsRequest\x12 \n" +
 	"\ttrader_id\x18\x01 \x01(\tH\x00R\btraderId\x88\x01\x01\x12 \n" +
 	"\tbank_code\x18\x02 \x01(\tH\x01R\bbankCode\x88\x01\x01\x12\x1d\n" +
 	"\aenabled\x18\x03 \x01(\bH\x02R\aenabled\x88\x01\x01\x12*\n" +
-	"\x0epayment_system\x18\x04 \x01(\tH\x03R\rpaymentSystem\x88\x01\x01\x12\x12\n" +
-	"\x04page\x18\x05 \x01(\x05R\x04page\x12\x14\n" +
-	"\x05limit\x18\x06 \x01(\x05R\x05limitB\f\n" +
+	"\x0epayment_system\x18\x04 \x01(\tH\x03R\rpaymentSystem\x88\x01\x01\x12)\n" +
+	"\x0ebank_detail_id\x18\x05 \x01(\tH\x04R\fbankDetailId\x88\x01\x01\x12\x12\n" +
+	"\x04page\x18\x06 \x01(\x05R\x04page\x12\x14\n" +
+	"\x05limit\x18\a \x01(\x05R\x05limitB\f\n" +
 	"\n" +
 	"_trader_idB\f\n" +
 	"\n" +
 	"_bank_codeB\n" +
 	"\n" +
 	"\b_enabledB\x11\n" +
-	"\x0f_payment_system\"\x81\x01\n" +
+	"\x0f_payment_systemB\x11\n" +
+	"\x0f_bank_detail_id\"\x81\x01\n" +
 	"\x16GetBankDetailsResponse\x124\n" +
 	"\fbank_details\x18\x01 \x03(\v2\x11.order.BankDetailR\vbankDetails\x121\n" +
 	"\n" +

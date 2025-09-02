@@ -69,7 +69,8 @@ type GetBankDetailsInput struct {
 	TraderID 		*string
 	PaymentSystem 	*string
 	BankCode 		*string
-	Enabled			*bool		
+	Enabled			*bool
+	BankDetailID    *string		
 	Page 			int
 	Limit 			int	
 }

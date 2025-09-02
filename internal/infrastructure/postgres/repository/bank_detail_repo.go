@@ -268,6 +268,9 @@ func (r *DefaultBankDetailRepo) GetBankDetails(filter domain.GetBankDetailsFilte
 	if filter.PaymentSystem != nil {
 		query = query.Where("payment_system = ?", *filter.PaymentSystem)
 	}
+	if filter.BankDetailID != nil {
+		query = query.Where("id = ?", *filter.BankDetailID)
+	}
 
 	var total int64
 	if err := r.DB.Count(&total).Error; err != nil {
