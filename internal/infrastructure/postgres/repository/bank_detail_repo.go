@@ -273,14 +273,12 @@ func (r *DefaultBankDetailRepo) GetBankDetails(filter domain.GetBankDetailsFilte
 	}
 
 	var total int64
-	if err := r.DB.Count(&total).Error; err != nil {
+	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("count failed: %w", err)
 	}
 
-	if filter.Limit > 0 {
-		offset := filter.Page * filter.Limit
-		query = query.Offset(offset).Limit(filter.Limit)
-	}
+	offset := (filter.Page - 1) * filter.Limit
+	query = query.Offset(offset).Limit(filter.Limit)
 
 	var bankDetailModels []models.BankDetailModel
 	if err := query.Find(&bankDetailModels).Error; err != nil {
@@ -293,5 +291,4 @@ func (r *DefaultBankDetailRepo) GetBankDetails(filter domain.GetBankDetailsFilte
 	}
 
 	return bankDetails, total, nil
-
 }

@@ -142,6 +142,13 @@ func (uc *DefaultBankDetailUsecase) GetBankDetailsStatsByTraderID(traderID strin
 }
 
 func (uc *DefaultBankDetailUsecase) GetBankDetails(input *bankdetaildto.GetBankDetailsInput) (*bankdetaildto.GetBankDetailsOutput, error) {
+	if input.Page < 1 {
+		input.Page = 1
+	}
+	if input.Limit < 1 || input.Limit > 100 {
+		input.Limit = 50
+	}
+
 	filter := domain.GetBankDetailsFilter{
 		TraderID: input.TraderID,
 		BankCode: input.BankCode,
@@ -157,7 +164,7 @@ func (uc *DefaultBankDetailUsecase) GetBankDetails(input *bankdetaildto.GetBankD
 	}
 
 	totalPages := total / int64(input.Limit)
-	if total%int64(input.Limit) != 0 {
+	if total%int64(input.Limit) > 0 {
 		totalPages++
 	}
 
