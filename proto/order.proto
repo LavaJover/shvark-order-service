@@ -398,6 +398,7 @@ service BankDetailService {
     rpc GetBankDetailByID (GetBankDetailByIDRequest) returns (GetBankDetailByIDResponse);
     rpc GetBankDetailsByTraderID (GetBankDetailsByTraderIDRequest) returns (GetBankDetailsByTraderIDResponse);
     rpc GetBankDetailsStatsByTraderID (GetBankDetailsStatsByTraderIDRequest) returns (GetBankDetailsStatsByTraderIDResponse);
+    rpc GetBankDetails (GetBankDetailsRequest) returns (GetBankDetailsResponse);
 }
 
 message BankDetail {
@@ -501,6 +502,20 @@ message GetBankDetailsStatsByTraderIDRequest {
 
 message GetBankDetailsStatsByTraderIDResponse {
     repeated BankDetailStat bank_detail_stat = 1;
+}
+
+message GetBankDetailsRequest {
+    optional string trader_id = 1;
+    optional string bank_code = 2;
+    optional bool enabled = 3;
+    optional string payment_system = 4;
+    int32 page = 5;
+    int32 limit = 6;
+}
+
+message GetBankDetailsResponse {
+    repeated BankDetail bank_details = 1;
+    Pagination pagination = 2;
 }
 
 service TeamRelationsService {

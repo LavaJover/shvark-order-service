@@ -252,3 +252,43 @@ func (r *DefaultBankDetailRepo) GetBankDetailsStatsByTraderID(traderID string) (
 
 	return stats, nil
 }
+
+func (r *DefaultBankDetailRepo) GetBankDetails(filter domain.GetBankDetailsFilter) ([]*domain.BankDetail, int64, error) {
+	query := r.DB.Model(&models.BankDetailModel{})
+
+	if filter.TraderID != nil {
+		query = query.Where("trader_id = ?", *filter.TraderID)
+	}
+	if filter.BankCode != nil {
+		query = query.Where("bank_code = ?", *filter.BankCode)
+	}
+	if filter.Enabled != nil {
+		query = query.Where("enabled = ?", *filter.Enabled)
+	}
+	if filter.PaymentSystem != nil {
+		query = query.Where("payment_system = ?", *filter.PaymentSystem)
+	}
+
+	var total int64
+	if err := r.DB.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("count failed: %w", err)
+	}
+
+	if filter.Limit > 0 {
+		offset := filter.Page * filter.Limit
+		query = query.Offset(offset).Limit(filter.Limit)
+	}
+
+	var bankDetailModels []models.BankDetailModel
+	if err := query.Find(&bankDetailModels).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to find bank detail models: %w", err)
+	}
+
+	bankDetails := make([]*domain.BankDetail, len(bankDetailModels))
+	for i, bankDetailModel := range bankDetailModels {
+		bankDetails[i] = mappers.ToDomainBankDetail(&bankDetailModel)
+	}
+
+	return bankDetails, total, nil
+
+}

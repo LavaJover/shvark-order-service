@@ -64,3 +64,12 @@ type FindSuitableBankDetailsInput struct {
 	BankCode string
 	NspkCode string
 }
+
+type GetBankDetailsInput struct {
+	TraderID 		*string
+	PaymentSystem 	*string
+	BankCode 		*string
+	Enabled			*bool		
+	Page 			int
+	Limit 			int	
+}

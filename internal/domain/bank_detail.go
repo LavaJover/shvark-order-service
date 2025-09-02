@@ -2,33 +2,6 @@ package domain
 
 import "time"
 
-// type BankDetail struct {
-// 	ID 						string +
-// 	TraderID 				string +
-// 	Country 				string +
-// 	Currency 				string +
-// 	InflowCurrency			string +
-// 	MinAmount 				float32 +
-// 	MaxAmount 				float32 +
-// 	BankName 				string +
-// 	BankCode 				string +
-// 	NspkCode 				string +
-// 	PaymentSystem 			string +
-// 	Delay					time.Duration +
-// 	Enabled 				bool +
-// 	CardNumber 				string +
-// 	Phone 					string +
-// 	Owner 					string +
-// 	MaxOrdersSimultaneosly  int32 +
-// 	MaxAmountDay			int32+
-// 	MaxAmountMonth  		int32+
-// 	MaxQuantityDay			int32+
-// 	MaxQuantityMonth		int32+
-// 	DeviceID				string +
-// 	CreatedAt 				time.Time +
-// 	UpdatedAt				time.Time +
-// }
-
 type BankDetail struct {
 	ID 				string
 	SearchParams
@@ -117,4 +90,14 @@ type BankDetailRepository interface {
 	) ([]*BankDetail, int64, error)
 	FindSuitableBankDetails(query *SuitablleBankDetailsQuery) ([]*BankDetail, error)
 	GetBankDetailsStatsByTraderID(traderID string) ([]*BankDetailStat, error)
+	GetBankDetails(filter GetBankDetailsFilter) ([]*BankDetail, int64, error)
+}
+
+type GetBankDetailsFilter struct {
+	TraderID 		*string
+	BankCode 		*string
+	Enabled  		*bool
+	PaymentSystem 	*string
+	Page 			int
+	Limit 			int
 }

@@ -5,6 +5,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi/mappers"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	bankdetaildto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/bank_detail"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
@@ -228,4 +229,35 @@ func (h *BankDetailHandler) GetBankDetailsStatsByTraderID(ctx context.Context, r
 	return &orderpb.GetBankDetailsStatsByTraderIDResponse{
 		BankDetailStat: bankDetailsStats,
 	}, nil
+}
+
+func (h *BankDetailHandler) GetBankDetails(ctx context.Context, r *orderpb.GetBankDetailsRequest) (*orderpb.GetBankDetailsResponse, error) {
+	input := bankdetaildto.GetBankDetailsInput{
+		TraderID: r.TraderId,
+		PaymentSystem: r.PaymentSystem,
+		BankCode: r.BankCode,
+		Enabled: r.Enabled,
+		Page: int(r.Page),
+		Limit: int(r.Limit),
+	}
+	output, err := h.bankDetailUsecase.GetBankDetails(&input)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &orderpb.GetBankDetailsResponse{
+		BankDetails: make([]*orderpb.BankDetail, len(output.BankDetails)),
+		Pagination: &orderpb.Pagination{
+			CurrentPage: int64(output.Pagination.CurrentPage),
+			TotalPages: int64(output.Pagination.TotalPages),
+			TotalItems: int64(output.Pagination.TotalItems),
+			ItemsPerPage: int64(output.Pagination.ItemsPerPage),
+		},
+	}
+
+	for i, bankDetail := range output.BankDetails {
+		response.BankDetails[i] = mappers.ToProtoBankDetail(bankDetail)
+	}
+
+	return response, nil
 }

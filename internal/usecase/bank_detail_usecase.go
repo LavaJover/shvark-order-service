@@ -18,6 +18,7 @@ type BankDetailUsecase interface {
 	) ([]*domain.BankDetail, int64, error)
 	FindSuitableBankDetails(input *bankdetaildto.FindSuitableBankDetailsInput) ([]*domain.BankDetail, error)
 	GetBankDetailsStatsByTraderID(traderID string) ([]*domain.BankDetailStat, error)
+	GetBankDetails(input *bankdetaildto.GetBankDetailsInput) (*bankdetaildto.GetBankDetailsOutput, error)
 }
 
 type DefaultBankDetailUsecase struct {
@@ -138,4 +139,35 @@ func (uc *DefaultBankDetailUsecase) FindSuitableBankDetails(input *bankdetaildto
 
 func (uc *DefaultBankDetailUsecase) GetBankDetailsStatsByTraderID(traderID string) ([]*domain.BankDetailStat, error) {
 	return uc.bankDetailRepo.GetBankDetailsStatsByTraderID(traderID)
+}
+
+func (uc *DefaultBankDetailUsecase) GetBankDetails(input *bankdetaildto.GetBankDetailsInput) (*bankdetaildto.GetBankDetailsOutput, error) {
+	filter := domain.GetBankDetailsFilter{
+		TraderID: input.TraderID,
+		BankCode: input.BankCode,
+		Enabled: input.Enabled,
+		PaymentSystem: input.PaymentSystem,
+		Page: input.Page,
+		Limit: input.Limit,
+	}
+
+	bankDetails, total, err := uc.bankDetailRepo.GetBankDetails(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := total / int64(input.Limit)
+	if total%int64(input.Limit) != 0 {
+		totalPages++
+	}
+
+	return &bankdetaildto.GetBankDetailsOutput{
+		BankDetails: bankDetails,
+		Pagination: bankdetaildto.Pagination{
+			CurrentPage: int32(input.Page),
+			TotalPages: int32(totalPages),
+			TotalItems: int32(total),
+			ItemsPerPage: int32(input.Limit),
+		},
+	}, nil
 }
