@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
@@ -64,32 +65,47 @@ func (r *DefaultDisputeRepository) FindExpiredDisputes() ([]*domain.Dispute, err
 	return disputes, nil
 }
 
-func (r *DefaultDisputeRepository) GetOrderDisputes(page, limit int64, status string) ([]*domain.Dispute, int64, error) {
-	var (
-		disputeModels []models.DisputeModel
-		total         int64
-	)
-
-	query := r.db.Model(&models.DisputeModel{})
-
-	if status != "" {
-		query = query.Where("status = ?", status)
-	}
-
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	offset := (page - 1) * limit
-
-	if err := query.Order("created_at DESC").Offset(int(offset)).Limit(int(limit)).Find(&disputeModels).Error; err != nil {
-		return nil, 0, err
-	}
-
-	disputes := make([]*domain.Dispute, len(disputeModels))
-	for i, dm := range disputeModels {
-		disputes[i] = mappers.ToDomainDispute(&dm)
-	}
-
-	return disputes, total, nil
+func (r *DefaultDisputeRepository) GetOrderDisputes(filter domain.GetDisputesFilter) ([]*domain.Dispute, int64, error) {
+    query := r.db.Model(&models.DisputeModel{}).
+        Joins("JOIN order_models ON order_models.id = dispute_models.order_id").
+        Joins("JOIN bank_detail_models ON bank_detail_models.id = order_models.bank_details_id")
+    
+    if filter.DisputeID != nil {
+        query = query.Where("dispute_models.id = ?", *filter.DisputeID)
+    }
+    if filter.TraderID != nil {
+        query = query.Where("bank_detail_models.trader_id = ?", *filter.TraderID)
+    }
+    if filter.OrderID != nil {
+        query = query.Where("dispute_models.order_id = ?", *filter.OrderID)
+    }
+    if filter.MerchantID != nil {
+        query = query.Where("order_models.merchant_id = ?", *filter.MerchantID)
+    }
+    if filter.Status != nil {
+        query = query.Where("dispute_models.status = ?", *filter.Status)
+    }
+    
+    var total int64
+    if err := query.Count(&total).Error; err != nil {
+        return nil, 0, fmt.Errorf("count failed: %w", err)
+    }
+    
+    offset := (filter.Page - 1) * filter.Limit
+    query = query.Offset(offset).Limit(filter.Limit)
+    
+    var disputeModels []models.DisputeModel
+    if err := query.
+        Preload("Order").
+        Preload("Order.BankDetail").
+        Find(&disputeModels).Error; err != nil {
+        return nil, 0, fmt.Errorf("failed to find dispute models: %w", err)
+    }
+    
+    disputes := make([]*domain.Dispute, len(disputeModels))
+    for i, disputeModel := range disputeModels {
+        disputes[i] = mappers.ToDomainDispute(&disputeModel)
+    }
+    
+    return disputes, total, nil
 }

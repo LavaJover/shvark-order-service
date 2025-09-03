@@ -1055,7 +1055,11 @@ type GetOrderDisputesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Page          int64                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
 	Limit         int64                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	Status        *string                `protobuf:"bytes,3,opt,name=status,proto3,oneof" json:"status,omitempty"`
+	TraderId      *string                `protobuf:"bytes,4,opt,name=trader_id,json=traderId,proto3,oneof" json:"trader_id,omitempty"`
+	DisputeId     *string                `protobuf:"bytes,5,opt,name=dispute_id,json=disputeId,proto3,oneof" json:"dispute_id,omitempty"`
+	MerchantId    *string                `protobuf:"bytes,6,opt,name=merchant_id,json=merchantId,proto3,oneof" json:"merchant_id,omitempty"`
+	OrderId       *string                `protobuf:"bytes,7,opt,name=order_id,json=orderId,proto3,oneof" json:"order_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1105,8 +1109,36 @@ func (x *GetOrderDisputesRequest) GetLimit() int64 {
 }
 
 func (x *GetOrderDisputesRequest) GetStatus() string {
-	if x != nil {
-		return x.Status
+	if x != nil && x.Status != nil {
+		return *x.Status
+	}
+	return ""
+}
+
+func (x *GetOrderDisputesRequest) GetTraderId() string {
+	if x != nil && x.TraderId != nil {
+		return *x.TraderId
+	}
+	return ""
+}
+
+func (x *GetOrderDisputesRequest) GetDisputeId() string {
+	if x != nil && x.DisputeId != nil {
+		return *x.DisputeId
+	}
+	return ""
+}
+
+func (x *GetOrderDisputesRequest) GetMerchantId() string {
+	if x != nil && x.MerchantId != nil {
+		return *x.MerchantId
+	}
+	return ""
+}
+
+func (x *GetOrderDisputesRequest) GetOrderId() string {
+	if x != nil && x.OrderId != nil {
+		return *x.OrderId
 	}
 	return ""
 }
@@ -5690,11 +5722,23 @@ const file_order_proto_rawDesc = "" +
 	"\x17processed_amount_crypto\x18\x06 \x01(\x02R\x15processedAmountCrypto\x120\n" +
 	"\x14canceled_amount_fiat\x18\a \x01(\x02R\x12canceledAmountFiat\x124\n" +
 	"\x16canceled_amount_crypto\x18\b \x01(\x02R\x14canceledAmountCrypto\x12#\n" +
-	"\rincome_crypto\x18\t \x01(\x02R\fincomeCrypto\"[\n" +
+	"\rincome_crypto\x18\t \x01(\x02R\fincomeCrypto\"\xb1\x02\n" +
 	"\x17GetOrderDisputesRequest\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x03R\x04page\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x03R\x05limit\x12\x16\n" +
-	"\x06status\x18\x03 \x01(\tR\x06status\"~\n" +
+	"\x05limit\x18\x02 \x01(\x03R\x05limit\x12\x1b\n" +
+	"\x06status\x18\x03 \x01(\tH\x00R\x06status\x88\x01\x01\x12 \n" +
+	"\ttrader_id\x18\x04 \x01(\tH\x01R\btraderId\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"dispute_id\x18\x05 \x01(\tH\x02R\tdisputeId\x88\x01\x01\x12$\n" +
+	"\vmerchant_id\x18\x06 \x01(\tH\x03R\n" +
+	"merchantId\x88\x01\x01\x12\x1e\n" +
+	"\border_id\x18\a \x01(\tH\x04R\aorderId\x88\x01\x01B\t\n" +
+	"\a_statusB\f\n" +
+	"\n" +
+	"_trader_idB\r\n" +
+	"\v_dispute_idB\x0e\n" +
+	"\f_merchant_idB\v\n" +
+	"\t_order_id\"~\n" +
 	"\x18GetOrderDisputesResponse\x12/\n" +
 	"\bdisputes\x18\x01 \x03(\v2\x13.order.OrderDisputeR\bdisputes\x121\n" +
 	"\n" +
@@ -6341,6 +6385,7 @@ func file_order_proto_init() {
 	}
 	file_order_proto_msgTypes[0].OneofWrappers = []any{}
 	file_order_proto_msgTypes[2].OneofWrappers = []any{}
+	file_order_proto_msgTypes[11].OneofWrappers = []any{}
 	file_order_proto_msgTypes[68].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

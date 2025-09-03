@@ -23,7 +23,7 @@ type DisputeUsecase interface {
 	GetDisputeByID(disputeID string) (*domain.Dispute, error)
 	GetDisputeByOrderID(orderID string) (*domain.Dispute, error)
 	AcceptExpiredDisputes() error
-	GetOrderDisputes(page, limit int64, status string) ([]*domain.Dispute, int64, error)
+	GetOrderDisputes(input *disputedto.GetOrderDisputesInput) (*disputedto.GetOrderDisputesOutput, error)
 }
 
 type DefaultDisputeUsecase struct {
@@ -267,6 +267,33 @@ func (disputeUc *DefaultDisputeUsecase) AcceptExpiredDisputes() error {
 	return nil
 }
 
-func (disputeUc *DefaultDisputeUsecase) GetOrderDisputes(page, limit int64, status string) ([]*domain.Dispute, int64, error) {
-	return disputeUc.disputeRepo.GetOrderDisputes(page, limit, status)
+func (disputeUc *DefaultDisputeUsecase) GetOrderDisputes(input *disputedto.GetOrderDisputesInput) (*disputedto.GetOrderDisputesOutput, error) {
+	filter := domain.GetDisputesFilter{
+		DisputeID: input.DisputeID,
+		TraderID: input.TraderID,
+		OrderID: input.OrderID,
+		MerchantID: input.MerchantID,
+		Status: input.Status,
+		Page: int(input.Page),
+		Limit: int(input.Limit),
+	}
+	disputes, total, err := disputeUc.disputeRepo.GetOrderDisputes(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := total / input.Limit
+	if total % input.Limit != 0 {
+		totalPages++
+	}
+
+	return &disputedto.GetOrderDisputesOutput{
+		Disputes: disputes,
+		Pagination: disputedto.Pagination{
+			CurrentPage: int32(input.Page),
+			TotalPages: int32(totalPages),
+			TotalItems: int32(total),
+			ItemsPerPage: int32(input.Limit),
+		},
+	}, nil
 }

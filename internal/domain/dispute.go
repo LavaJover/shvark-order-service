@@ -26,11 +26,21 @@ type Dispute struct {
 	UpdatedAt           time.Time
 }
 
+type GetDisputesFilter struct {
+	DisputeID 	*string
+	TraderID  	*string
+	OrderID   	*string
+	MerchantID 	*string
+	Status 		*string
+	Page 		int
+	Limit 		int
+}
+
 type DisputeRepository interface {
 	CreateDispute(dispute *Dispute) error
 	UpdateDisputeStatus(disputeID string, status DisputeStatus) error
 	GetDisputeByID(disputeID string) (*Dispute, error)
 	GetDisputeByOrderID(orderID string) (*Dispute, error)
 	FindExpiredDisputes() ([]*Dispute, error)
-	GetOrderDisputes(page, limit int64, status string) ([]*Dispute, int64, error)
+	GetOrderDisputes(filter GetDisputesFilter) ([]*Dispute, int64, error)
 }

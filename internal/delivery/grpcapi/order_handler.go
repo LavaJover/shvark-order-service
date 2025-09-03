@@ -423,14 +423,22 @@ func (h *OrderHandler) FreezeOrderDispute(ctx context.Context, r *orderpb.Freeze
 }
 
 func (h *OrderHandler) GetOrderDisputes(ctx context.Context, r *orderpb.GetOrderDisputesRequest) (*orderpb.GetOrderDisputesResponse, error) {
-	page, limit, status := r.Page, r.Limit, r.Status
-	disputes, total, err := h.disputeUc.GetOrderDisputes(page, limit, status)
+	input := &disputedto.GetOrderDisputesInput{
+		Page: r.Page,
+		Limit: r.Limit,
+		Status: r.Status,
+		TraderID: r.TraderId,
+		DisputeID: r.DisputeId,
+		MerchantID: r.MerchantId,
+		OrderID: r.OrderId,
+	}
+	output, err := h.disputeUc.GetOrderDisputes(input)
 	if err != nil {
 		return nil, err
 	}
 
-	disputesResp := make([]*orderpb.OrderDispute, len(disputes))
-	for i, dispute := range disputes {
+	disputesResp := make([]*orderpb.OrderDispute, len(output.Disputes))
+	for i, dispute := range output.Disputes {
 		order, err := h.uc.GetOrderByID(dispute.OrderID)
 		if err != nil {
 			return nil, err
@@ -488,10 +496,10 @@ func (h *OrderHandler) GetOrderDisputes(ctx context.Context, r *orderpb.GetOrder
 	return &orderpb.GetOrderDisputesResponse{
 		Disputes: disputesResp,
 		Pagination: &orderpb.Pagination{
-			CurrentPage: r.Page,
-			TotalPages:  int64(math.Ceil(float64(total) / float64(r.Limit))),
-			TotalItems: total,
-			ItemsPerPage: r.Limit,
+			CurrentPage: int64(output.Pagination.CurrentPage),
+			TotalPages:  int64(output.Pagination.TotalPages),
+			TotalItems: int64(output.Pagination.TotalItems),
+			ItemsPerPage: int64(output.Pagination.ItemsPerPage),
 		},
 	}, nil
 }
