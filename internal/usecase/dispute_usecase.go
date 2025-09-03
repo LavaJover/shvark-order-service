@@ -110,7 +110,7 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(input *disputedto.CreateDi
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
-	err = disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.OrderStatus(domain.DisputeOpened))
+	err = disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.StatusDisputeCreated)
 	if err != nil {
 		return err
 	}
