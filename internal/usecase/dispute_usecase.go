@@ -63,9 +63,8 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(input *disputedto.CreateDi
 	if err != nil {
 		return err
 	}
-	// Если сделка не ушла в отмену, то диспут не открыть
-	if order.Status != domain.StatusCanceled {
-		return status.Error(codes.FailedPrecondition, "order is not even canceled")
+	if (order.Status != domain.StatusCanceled) && (order.Status != domain.StatusCompleted) {
+		return status.Error(codes.FailedPrecondition, "order is not finished yet")
 	}
 	idGenerator, err := nanoid.Standard(15)
 	if err != nil {
