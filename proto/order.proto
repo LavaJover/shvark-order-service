@@ -28,6 +28,49 @@ service OrderService {
     rpc GetAllOrders (GetAllOrdersRequest) returns (GetAllOrdersResponse);
 }
 
+service UncreatedOrderService {
+    rpc GetUncreatedOrdersWithFilters (GetUncreatedOrdersWithFiltersRequest) returns (GetUncreatedOrdersWithFiltersResponse);
+}
+
+message UncreatedOrder {
+    string order_id = 1;
+    string merchant_id = 2;
+    double amount_fiat = 3;
+    double amount_crypto = 4;
+    string currency = 5;
+    string client_id = 6;
+    google.protobuf.Timestamp created_at = 7;
+    string merchant_order_id = 8;
+    string payment_system = 9;
+    string bank_code = 10;
+    string error_message = 11;
+}
+
+message UncreatedOrderFilters {
+    optional string merchant_id = 1;
+    optional double min_amount_fiat = 2;
+    optional double max_amount_fiat = 3;
+    optional string currency = 4;
+    optional string client_id = 5;
+    optional google.protobuf.Timestamp date_from = 6;
+    optional google.protobuf.Timestamp date_to = 7;
+    optional string payment_system = 8;
+    optional string bank_code = 9;
+}
+
+message GetUncreatedOrdersWithFiltersRequest {
+    int32 page = 1;
+    int32 limit = 2;
+    optional string sort_by = 3;
+    optional string sort_order = 4;
+    optional UncreatedOrderFilters filters = 5;
+}
+
+message GetUncreatedOrdersWithFiltersResponse {
+    repeated UncreatedOrder uncreated_orders = 1;
+    Pagination pagination = 2;
+}
+
 message GetAllOrdersRequest {
     optional string trader_id = 1;
     optional string merchant_id = 2;

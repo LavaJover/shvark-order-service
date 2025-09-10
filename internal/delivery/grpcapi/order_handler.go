@@ -3,6 +3,8 @@ package grpcapi
 import (
 	"context"
 	"fmt"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/logger"
+	"github.com/google/uuid"
 	"math"
 	"time"
 
@@ -23,6 +25,7 @@ type OrderHandler struct {
 	uc usecase.OrderUsecase
 	disputeUc usecase.DisputeUsecase
 	bankDetailUc usecase.BankDetailUsecase
+	logger       logger.UncreatedOrdersLogger
 	orderpb.UnimplementedOrderServiceServer
 }
 
@@ -30,11 +33,13 @@ func NewOrderHandler(
 	uc usecase.OrderUsecase,
 	disputeUc usecase.DisputeUsecase,
 	bankDetailUc usecase.BankDetailUsecase,
-	) *OrderHandler {
+	logger logger.UncreatedOrdersLogger,
+) *OrderHandler {
 	return &OrderHandler{
 		uc: uc,
 		disputeUc: disputeUc,
 		bankDetailUc: bankDetailUc,
+		logger:       logger,
 	}
 }
 
@@ -93,6 +98,21 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
 				string(domain.StatusFailed),
 				0, 0, 0,
 			)
+		}
+		uncreatedOrder := domain.UncreatedOrder{
+			ID:              uuid.New().String(),
+			MerchantID:      r.MerchantId,
+			AmountFiat:      r.AmountFiat,
+			AmountCrypto:    amountCrypto,
+			Currency:        r.Currency,
+			ClientID:        r.ClientId,
+			CreatedAt:       time.Now(),
+			MerchantOrderID: r.MerchantOrderId,
+			PaymentSystem:   r.PaymentSystem,
+			BankCode:        r.BankCode,
+			ErrorMessage:    err.Error(),
+		}
+		if err_logger := h.logger.LogUncreatedOrder(&uncreatedOrder); err_logger != nil {
 		}
 		return nil, err
 	}

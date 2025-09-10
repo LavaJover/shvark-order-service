@@ -17,11 +17,12 @@ func MustInitDB(cfg *config.OrderConfig) *gorm.DB {
 	}
 
 	db.AutoMigrate(
-		&models.DeviceModel{}, 
-		&models.TrafficModel{}, 
-		&models.BankDetailModel{}, 
-		&models.OrderModel{}, 
-		&models.DisputeModel{}, 
+		&models.DeviceModel{},
+		&models.TrafficModel{},
+		&models.BankDetailModel{},
+		&models.OrderModel{},
+		&models.UncreatedOrderModel{},
+		&models.DisputeModel{},
 		&models.TeamRelationshipModel{},
 	)
 

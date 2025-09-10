@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/logger"
 	"log"
 	"log/slog"
 	"net"
@@ -34,6 +35,8 @@ func main() {
 	orderKafkaPublisher := kafka.NewKafkaPublisher([]string{fmt.Sprintf("%s:%s", cfg.KafkaService.Host, cfg.KafkaService.Port)}, "order-events")
 	disputeKafkaPublisher := kafka.NewKafkaPublisher([]string{fmt.Sprintf("%s:%s", cfg.KafkaService.Host, cfg.KafkaService.Port)}, "dispute-events")
 
+	// Init uncreated orders repo
+	uncreatedOrderRepo := repository.NewDefaultUncreatedOrderRepository(db)
 	// Init order repo
 	orderRepo := repository.NewDefaultOrderRepository(db)
 	// Init bank detail repo
@@ -51,6 +54,8 @@ func main() {
 		log.Fatalf("failed to init wallet usecase")
 	}
 
+	// Init uncreated order usecase
+	uncreatedOrderUsecase := usecase.NewDefaultUncreatedOrderUsecase(uncreatedOrderRepo)
 	// Init traffic usecase
 	trafficUsecase := usecase.NewDefaultTrafficUsecase(trafficRepo)
 	// Init bank detail usecase
@@ -62,6 +67,8 @@ func main() {
 	// Init device usecase
 	deviceUsecase := usecase.NewDefaultDeviceUsecase(deviceRepo)
 
+	// logger
+	uncreatedOrderLogger := logger.NewDefaultUncreatedOrdersLogger(uncreatedOrderUsecase)
 	// dispute
 	disputeRepo := repository.NewDefaultDisputeRepository(db)
 	disputeUc := usecase.NewDefaultDisputeUsecase(
@@ -76,12 +83,14 @@ func main() {
 
 	// Creating gRPC server
 	grpcServer := grpc.NewServer()
-	orderHandler := grpcapi.NewOrderHandler(uc, disputeUc, bankDetailUsecase)
+	orderHandler := grpcapi.NewOrderHandler(uc, disputeUc, bankDetailUsecase, uncreatedOrderLogger)
+	uncreatedOrderHandler := grpcapi.NewUncreatedOrderHandler(uncreatedOrderUsecase)
 	trafficHandler := grpcapi.NewTrafficHandler(trafficUsecase)
 	bankDetailHandler := grpcapi.NewBankDetailHandler(bankDetailUsecase)
 	teamRelationsHandler := grpcapi.NewTeamRelationsHandler(teamRelationsUsecase)
 	deviceHandler := grpcapi.NewDeviceHandler(deviceUsecase)
 
+	orderpb.RegisterUncreatedOrderServiceServer(grpcServer, uncreatedOrderHandler)
 	orderpb.RegisterOrderServiceServer(grpcServer, orderHandler)
 	orderpb.RegisterTrafficServiceServer(grpcServer, trafficHandler)
 	orderpb.RegisterBankDetailServiceServer(grpcServer, bankDetailHandler)
