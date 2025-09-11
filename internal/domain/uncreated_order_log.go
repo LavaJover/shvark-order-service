@@ -28,13 +28,19 @@ type UncreatedOrdersFilter struct {
 	BankCode         *string
 }
 
-type UncreatedOrdersOverallStats struct {
-	TotalCount        int64
-	TotalAmountFiat   float64
-	TotalAmountCrypto float64
-	AvgAmountFiat     float64
-	AvgAmountCrypto   float64
-	UniqueMerchants   int64
+type UncreatedOrdersStats struct {
+	MerchantID    *string
+	Currency      *string
+	PaymentSystem *string
+	DateGroup     *string
+	AmountRange   *string
+	BankCode      *string
+
+	TotalCount      int64
+	TotalAmountFiat float64
+	AvgAmountFiat   float64
+	MinAmountFiat   float64
+	MaxAmountFiat   float64
 }
 
 type UncreatedOrdersResponseStats struct {
@@ -49,7 +55,5 @@ type UncreatedOrderRepository interface {
 	CreateLog(log *UncreatedOrder) error
 
 	GetLogsWithFilters(filter *UncreatedOrdersFilter, page, limit int32, sortBy, sortOrder string) ([]*UncreatedOrder, int64, error)
-	//GetOverallStats()
-	//GetStatsByMerchantID(merchantID string)
-	//GetStatsByMerchantID(filter *UncreatedOrdersFilter)
+	GetStatsWithFIlters(filter *UncreatedOrdersFilter, groupByCriteria []string) ([]*UncreatedOrdersStats, error)
 }

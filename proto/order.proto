@@ -29,7 +29,8 @@ service OrderService {
 }
 
 service UncreatedOrderService {
-    rpc GetUncreatedOrdersWithFilters (GetUncreatedOrdersWithFiltersRequest) returns (GetUncreatedOrdersWithFiltersResponse);
+    rpc GetUncreatedOrdersWithFilter (GetUncreatedOrdersWithFilterRequest) returns (GetUncreatedOrdersWithFilterResponse);
+    rpc GetStatsForUncreatedOrdersWithFilter (GetStatsForUncreatedOrdersWithFilterRequest) returns (GetStatsForUncreatedOrdersWithFilterResponse);
 }
 
 message UncreatedOrder {
@@ -58,7 +59,30 @@ message UncreatedOrderFilters {
     optional string bank_code = 9;
 }
 
-message GetUncreatedOrdersWithFiltersRequest {
+message GetStatsForUncreatedOrdersWithFilterRequest {
+    repeated string group_by_criteria = 1;
+    optional UncreatedOrderFilters filters = 2;
+}
+
+message GetStatsForUncreatedOrdersWithFilterResponse {
+    repeated UncreatedOrdersStats stats = 1;
+}
+
+message UncreatedOrdersStats {
+    optional string merchant_id = 1;
+    optional string currency = 2;
+    optional string payment_system = 3;
+    optional string date_group = 4;
+    optional string amount_range = 5;
+    optional string bank_code = 6;
+    int64 total_count = 7;
+    double total_amount_fiat = 8;
+    double avg_amount_fiat = 9;
+    double min_amount_fiat = 10;
+    double max_amount_fiat = 11;
+}
+
+message GetUncreatedOrdersWithFilterRequest {
     int32 page = 1;
     int32 limit = 2;
     optional string sort_by = 3;
@@ -66,7 +90,7 @@ message GetUncreatedOrdersWithFiltersRequest {
     optional UncreatedOrderFilters filters = 5;
 }
 
-message GetUncreatedOrdersWithFiltersResponse {
+message GetUncreatedOrdersWithFilterResponse {
     repeated UncreatedOrder uncreated_orders = 1;
     Pagination pagination = 2;
 }
