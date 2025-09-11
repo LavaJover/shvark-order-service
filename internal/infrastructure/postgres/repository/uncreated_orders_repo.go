@@ -134,13 +134,13 @@ func buildSelectFields(groupByCriteria []string) string {
 		case "amount_range_10000":
 			selectFields += "FLOOR(amount_fiat / 10000) * 10000 as amount_range, "
 		case "date_range_hour":
-			selectFields += "DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00') as date_group, "
+			selectFields += "DATE_TRUNC('hour', created_at) as date_group, "
 		case "date_range_day":
-			selectFields += "DATE(created_at) as date_group, "
+			selectFields += "DATE_TRUNC('day', created_at)::date as date_group, "
 		case "date_range_week":
-			selectFields += "DATE_SUB(DATE(created_at), INTERVAL WEEKDAY(created_at) DAY) as date_group, "
+			selectFields += "DATE_TRUNC('week', created_at)::date as date_group, "
 		case "date_range_month":
-			selectFields += "DATE_FORMAT(created_at, '%Y-%m-01') as date_group, "
+			selectFields += "DATE_TRUNC('month', created_at)::date as date_group, "
 		}
 	}
 	return selectFields + baseAggregations
@@ -163,13 +163,13 @@ func buildGroupByFields(groupByCriteria []string) string {
 		case "bank_code":
 			groupByFields += "bank_code"
 		case "date_range_hour":
-			groupByFields += "DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00')"
+			groupByFields += "DATE_TRUNC('hour', created_at)"
 		case "date_range_day":
-			groupByFields += "DATE(created_at)"
+			groupByFields += "DATE_TRUNC('day', created_at)::date"
 		case "date_range_week":
-			groupByFields += "DATE_SUB(DATE(created_at), INTERVAL WEEKDAY(created_at) DAY)"
+			groupByFields += "DATE_TRUNC('week', created_at)::date"
 		case "date_range_month":
-			groupByFields += "DATE_FORMAT(created_at, '%Y-%m-01')"
+			groupByFields += "DATE_TRUNC('month', created_at)::date"
 		case "amount_range_100":
 			groupByFields += "FLOOR(amount_fiat / 100) * 100"
 		case "amount_range_1000":
