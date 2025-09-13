@@ -42,7 +42,7 @@ func SendCallback(
         maxAttempts := 3
         baseDelay := time.Second // Начальная задержка
         client := &http.Client{
-            Timeout: 10 * time.Second, // Увеличенный таймаут
+            Timeout: 20 * time.Second, // Увеличенный таймаут
         }
 
         var lastError error
