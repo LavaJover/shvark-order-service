@@ -125,83 +125,158 @@ func (r *DefaultBankDetailRepo) GetBankDetailsByTraderID(
 }
 
 func (r *DefaultBankDetailRepo) FindSuitableBankDetails(searchQuery *domain.SuitablleBankDetailsQuery) ([]*domain.BankDetail, error) {
-    var candidates []models.BankDetailModel
-
-    now := time.Now()
-    startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-    startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
-
-    query := r.DB.
-        Model(&models.BankDetailModel{}).
-        Where("bank_detail_models.enabled = ?", true).
-        Where("min_amount <= ? AND max_amount >= ?", searchQuery.AmountFiat, searchQuery.AmountFiat).
-        Where("payment_system = ?", searchQuery.PaymentSystem).
-        Where("currency = ?", searchQuery.Currency).
-        Where("bank_detail_models.deleted_at IS NULL").
-        // Подзапрос для подсчета активных PENDING заявок
-        Joins("LEFT JOIN (?) AS pending_orders ON pending_orders.bank_details_id = bank_detail_models.id",
-            r.DB.Model(&models.OrderModel{}).
-                Select("bank_details_id, COUNT(*) as count").
-                Where("status = ?", domain.StatusPending).
-                Group("bank_details_id"),
-        ).
-        // Подзапрос для статистики за день
-        Joins("LEFT JOIN (?) AS day_stats ON day_stats.bank_details_id = bank_detail_models.id",
-            r.DB.Model(&models.OrderModel{}).
-                Select("bank_details_id, COUNT(*) as count, COALESCE(SUM(amount_fiat), 0) as amount").
-                Where("status IN (?, ?)", domain.StatusPending, domain.StatusCompleted).
-                Where("created_at >= ?", startOfDay).
-                Group("bank_details_id"),
-        ).
-        // Подзапрос для статистики за месяц
-        Joins("LEFT JOIN (?) AS month_stats ON month_stats.bank_details_id = bank_detail_models.id",
-            r.DB.Model(&models.OrderModel{}).
-                Select("bank_details_id, COUNT(*) as count, COALESCE(SUM(amount_fiat), 0) as amount").
-                Where("status IN (?, ?)", domain.StatusPending, domain.StatusCompleted).
-                Where("created_at >= ?", startOfMonth).
-                Group("bank_details_id"),
-        ).
-        // Подзапрос для времени последней COMPLETED заявки
-        Joins("LEFT JOIN (?) AS last_completed ON last_completed.bank_details_id = bank_detail_models.id",
-            r.DB.Model(&models.OrderModel{}).
-                Select("bank_details_id, MAX(created_at) as last_time").
-                Where("status = ?", domain.StatusCompleted).
-                Group("bank_details_id"),
-        ).
-        // Проверка ограничений
-        Where("COALESCE(pending_orders.count, 0) < bank_detail_models.max_orders_simultaneosly"). // Максимальное количество активных заявок
-        Where("COALESCE(day_stats.count, 0) + 1 <= bank_detail_models.max_quantity_day").         // Дневной лимит количества (+1 для новой заявки)
-        Where("COALESCE(day_stats.amount, 0) + ? <= bank_detail_models.max_amount_day", searchQuery.AmountFiat). // Дневной лимит суммы (+новая сумма)
-        Where("COALESCE(month_stats.count, 0) + 1 <= bank_detail_models.max_quantity_month").     // Месячный лимит количества (+1 для новой заявки)
-        Where("COALESCE(month_stats.amount, 0) + ? <= bank_detail_models.max_amount_month", searchQuery.AmountFiat). // Месячный лимит суммы (+новая сумма)
-        Where("last_completed.last_time IS NULL OR last_completed.last_time <= NOW() - (bank_detail_models.delay / 1000000000.0) * INTERVAL '1 SECOND'"). // Задержка после завершенной заявки
-        Where("NOT EXISTS (?)", // Проверка на уникальность суммы для активных заявок
-            r.DB.Model(&models.OrderModel{}).
-                Select("1").
-                Where("bank_details_id = bank_detail_models.id").
-                Where("status = ?", domain.StatusPending).
-                Where("amount_fiat = ?", searchQuery.AmountFiat),
-        )
-
-    // Дополнительные фильтры
-    if searchQuery.BankCode != "" {
-        query = query.Where("bank_detail_models.bank_code = ?", searchQuery.BankCode)
+    // Этап 1: Быстрая предварительная фильтрация по статическим параметрам
+    baseCandidates, err := r.findBaseCandidates(searchQuery)
+    if err != nil {
+        return nil, err
+    }
+    
+    if len(baseCandidates) == 0 {
+        return []*domain.BankDetail{}, nil
     }
 
-    if searchQuery.NspkCode != "" {
-        query = query.Where("bank_detail_models.nspk_code = ?", searchQuery.NspkCode)
-    }
-
-    if err := query.Find(&candidates).Error; err != nil {
+    // Этап 2: Проверка динамических ограничений только для кандидатов
+    finalCandidates, err := r.applyDynamicConstraints(baseCandidates, searchQuery)
+    if err != nil {
         return nil, err
     }
 
+    return finalCandidates, nil
+}
+
+// Этап 1: Быстрая фильтрация по статическим параметрам
+func (r *DefaultBankDetailRepo) findBaseCandidates(searchQuery *domain.SuitablleBankDetailsQuery) ([]models.BankDetailModel, error) {
+    var baseCandidates []models.BankDetailModel
+    
+    query := r.DB.Model(&models.BankDetailModel{}).
+        Where("enabled = ?", true).
+        Where("min_amount <= ? AND max_amount >= ?", searchQuery.AmountFiat, searchQuery.AmountFiat).
+        Where("payment_system = ?", searchQuery.PaymentSystem).
+        Where("currency = ?", searchQuery.Currency).
+        Where("deleted_at IS NULL")
+    
+    if searchQuery.BankCode != "" {
+        query = query.Where("bank_code = ?", searchQuery.BankCode)
+    }
+    
+    if searchQuery.NspkCode != "" {
+        query = query.Where("nspk_code = ?", searchQuery.NspkCode)
+    }
+    
+    // Выбираем только ID и основные поля для быстрого отклика
+    err := query.Select("id, trader_id, country, currency, inflow_currency, " +
+        "min_amount, max_amount, bank_name, bank_code, nspk_code, " +
+        "payment_system, delay, enabled, card_number, phone, owner, " +
+        "max_orders_simultaneosly, max_amount_day, max_amount_month, " +
+        "max_quantity_day, max_quantity_month, device_id, created_at, updated_at").
+        Find(&baseCandidates).Error
+        
+    return baseCandidates, err
+}
+
+// Этап 2: Применение динамических ограничений
+func (r *DefaultBankDetailRepo) applyDynamicConstraints(baseCandidates []models.BankDetailModel, searchQuery *domain.SuitablleBankDetailsQuery) ([]*domain.BankDetail, error) {
+    if len(baseCandidates) == 0 {
+        return []*domain.BankDetail{}, nil
+    }
+    
+    // Получаем ID кандидатов для использования в SQL запросе
+    candidateIDs := make([]string, len(baseCandidates))
+    for i, candidate := range baseCandidates {
+        candidateIDs[i] = candidate.ID
+    }
+    
+    var finalCandidates []models.BankDetailModel
+    
+    now := time.Now()
+    startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+    startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+    
+    // Оптимизированный SQL запрос с использованием CTE (Common Table Expression)
+    sqlQuery := `
+        WITH candidate_stats AS (
+            SELECT 
+                bd.id,
+                bd.max_orders_simultaneosly,
+                bd.max_quantity_day,
+                bd.max_amount_day,
+                bd.max_quantity_month,
+                bd.max_amount_month,
+                bd.delay,
+                -- Статистика по активным заявкам
+                COALESCE(pending_orders.count, 0) as pending_count,
+                -- Статистика за день
+                COALESCE(day_stats.count, 0) as day_count,
+                COALESCE(day_stats.amount, 0) as day_amount,
+                -- Статистика за месяц
+                COALESCE(month_stats.count, 0) as month_count,
+                COALESCE(month_stats.amount, 0) as month_amount,
+                -- Время последней завершенной заявки
+                last_completed.last_time as last_completed_time
+            FROM bank_detail_models bd
+            LEFT JOIN (
+                SELECT bank_details_id, COUNT(*) as count 
+                FROM order_models 
+                WHERE status = ? AND bank_details_id IN (?)
+                GROUP BY bank_details_id
+            ) pending_orders ON pending_orders.bank_details_id = bd.id
+            LEFT JOIN (
+                SELECT bank_details_id, COUNT(*) as count, COALESCE(SUM(amount_fiat), 0) as amount
+                FROM order_models 
+                WHERE status IN (?, ?) AND created_at >= ? AND bank_details_id IN (?)
+                GROUP BY bank_details_id
+            ) day_stats ON day_stats.bank_details_id = bd.id
+            LEFT JOIN (
+                SELECT bank_details_id, COUNT(*) as count, COALESCE(SUM(amount_fiat), 0) as amount
+                FROM order_models 
+                WHERE status IN (?, ?) AND created_at >= ? AND bank_details_id IN (?)
+                GROUP BY bank_details_id
+            ) month_stats ON month_stats.bank_details_id = bd.id
+            LEFT JOIN (
+                SELECT bank_details_id, MAX(created_at) as last_time
+                FROM order_models 
+                WHERE status = ? AND bank_details_id IN (?)
+                GROUP BY bank_details_id
+            ) last_completed ON last_completed.bank_details_id = bd.id
+            WHERE bd.id IN (?)
+        )
+        SELECT bd.* FROM bank_detail_models bd
+        JOIN candidate_stats cs ON bd.id = cs.id
+        WHERE cs.pending_count < cs.max_orders_simultaneosly
+          AND cs.day_count + 1 <= cs.max_quantity_day
+          AND cs.day_amount + ? <= cs.max_amount_day
+          AND cs.month_count + 1 <= cs.max_quantity_month
+          AND cs.month_amount + ? <= cs.max_amount_month
+          AND (cs.last_completed_time IS NULL OR cs.last_completed_time <= NOW() - (cs.delay / 1000000000.0) * INTERVAL '1 SECOND')
+          AND NOT EXISTS (
+            SELECT 1 FROM order_models om 
+            WHERE om.bank_details_id = bd.id 
+              AND om.status = ? 
+              AND om.amount_fiat = ?
+          )
+    `
+    
+    // Выполняем оптимизированный запрос
+    err := r.DB.Raw(sqlQuery,
+        domain.StatusPending, candidateIDs, // pending_orders
+        domain.StatusPending, domain.StatusCompleted, startOfDay, candidateIDs, // day_stats
+        domain.StatusPending, domain.StatusCompleted, startOfMonth, candidateIDs, // month_stats
+        domain.StatusCompleted, candidateIDs, // last_completed
+        candidateIDs, // основной WHERE
+        searchQuery.AmountFiat, searchQuery.AmountFiat, // суммы для проверки лимитов
+        domain.StatusPending, searchQuery.AmountFiat, // NOT EXISTS
+    ).Scan(&finalCandidates).Error
+    
+    if err != nil {
+        return nil, err
+    }
+    
     // Преобразование в доменные объекты
-    bankDetails := make([]*domain.BankDetail, len(candidates))
-    for i, bankDetail := range candidates {
+    bankDetails := make([]*domain.BankDetail, len(finalCandidates))
+    for i, bankDetail := range finalCandidates {
         bankDetails[i] = mappers.ToDomainBankDetail(&bankDetail)
     }
-
+    
     return bankDetails, nil
 }
 
