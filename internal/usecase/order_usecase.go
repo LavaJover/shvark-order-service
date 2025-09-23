@@ -259,25 +259,30 @@ func (uc *DefaultOrderUsecase) CheckIdempotency(clientID string) error {
 }
 
 func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrderInput) (*orderdto.OrderOutput, error) {
-	// готовим и запускаем проверки параллельно
-	
+	start := time.Now()
+	slog.Info("CreateOrder started")
 	// check idempotency by client_id
 	if createOrderInput.ClientID != "" {
+		t := time.Now()
 		if err := uc.CheckIdempotency(createOrderInput.ClientID); err != nil {
 			return nil, err
 		}
+		slog.Info("CheckIdempotency done", "elapsed", time.Since(t))
 	}
 
 	// searching for eligible bank details due to order query parameters
+	t := time.Now()
 	bankDetails, err := uc.FindEligibleBankDetails(createOrderInput)
 	if err != nil {
-		return nil, status.Error(codes.NotFound, "no eligible bank detail" + err.Error())
+		return nil, status.Error(codes.NotFound, "no eligible bank detail"+err.Error())
 	}
+	slog.Info("FindEligibleBankDetails done", "elapsed", time.Since(t))
 	if len(bankDetails) == 0 {
 		log.Printf("Реквизиты для заявки не найдены!\n")
 		return nil, fmt.Errorf("no available bank details")
 	}
 	log.Printf("Для заявки найдены доступные реквизиты!\n")
+
 	if createOrderInput.AdvancedParams.CallbackUrl != "" {
 		notifier.SendCallback(
 			createOrderInput.AdvancedParams.CallbackUrl,
@@ -288,65 +293,76 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 	}
 
 	// business logic to pick best bank detail
+	t = time.Now()
 	chosenBankDetail, err := uc.PickBestBankDetail(bankDetails, createOrderInput.MerchantID)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "failed to pick best bank detail for order")
 	}
+	slog.Info("PickBestBankDetail done", "elapsed", time.Since(t))
 
 	// Get trader reward percent and save to order
+	t = time.Now()
 	traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(chosenBankDetail.TraderID, createOrderInput.MerchantID)
 	if err != nil {
 		return nil, err
 	}
+	slog.Info("GetTrafficByTraderMerchant done", "elapsed", time.Since(t))
 	traderReward := traffic.TraderRewardPercent
 	platformFee := traffic.PlatformFee
 
 	order := domain.Order{
-		ID: uuid.New().String(),
+		ID:     uuid.New().String(),
 		Status: domain.StatusPending,
 		MerchantInfo: domain.MerchantInfo{
-			MerchantID: createOrderInput.MerchantID,
+			MerchantID:     createOrderInput.MerchantID,
 			MerchantOrderID: createOrderInput.MerchantOrderID,
-			ClientID: createOrderInput.ClientID,
+			ClientID:       createOrderInput.ClientID,
 		},
 		AmountInfo: domain.AmountInfo{
-			AmountFiat: createOrderInput.AmountFiat,
+			AmountFiat:   createOrderInput.AmountFiat,
 			AmountCrypto: createOrderInput.AmountCrypto,
-			CryptoRate: createOrderInput.CryptoRate,
-			Currency: createOrderInput.Currency,
+			CryptoRate:   createOrderInput.CryptoRate,
+			Currency:     createOrderInput.Currency,
 		},
-		BankDetailID: chosenBankDetail.ID,
-		Type: createOrderInput.Type,
-		Recalculated: createOrderInput.Recalculated,
-		Shuffle: createOrderInput.Shuffle,
-		TraderReward: traderReward,
-		PlatformFee: platformFee,
-		CallbackUrl: createOrderInput.CallbackUrl,
-		ExpiresAt: createOrderInput.ExpiresAt,
+		BankDetailID:  chosenBankDetail.ID,
+		Type:          createOrderInput.Type,
+		Recalculated:  createOrderInput.Recalculated,
+		Shuffle:       createOrderInput.Shuffle,
+		TraderReward:  traderReward,
+		PlatformFee:   platformFee,
+		CallbackUrl:   createOrderInput.CallbackUrl,
+		ExpiresAt:     createOrderInput.ExpiresAt,
 	}
+	t = time.Now()
 	err = uc.OrderRepo.CreateOrder(&order)
 	if err != nil {
 		return nil, err
 	}
+	slog.Info("OrderRepo.CreateOrder done", "elapsed", time.Since(t))
 
 	// Freeze crypto
+	t = time.Now()
 	if err := uc.WalletHandler.Freeze(chosenBankDetail.TraderID, order.ID, createOrderInput.AmountCrypto); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	slog.Info("WalletHandler.Freeze done", "elapsed", time.Since(t))
 
-	if err = uc.Publisher.Publish(kafka.OrderEvent{
-		OrderID: order.ID,
-		TraderID: chosenBankDetail.TraderID,
-		Status: "🔥Новая сделка",
+	// Publish to Kafka асинхронно
+	go func(event kafka.OrderEvent) {
+		if err := uc.Publisher.Publish(event); err != nil {
+			slog.Error("failed to publish event", "error", err.Error())
+		}
+	}(kafka.OrderEvent{
+		OrderID:   order.ID,
+		TraderID:  chosenBankDetail.TraderID,
+		Status:    "🔥Новая сделка",
 		AmountFiat: order.AmountInfo.AmountFiat,
-		Currency: order.AmountInfo.Currency,
-		BankName: chosenBankDetail.BankName,
-		Phone: chosenBankDetail.Phone,
+		Currency:  order.AmountInfo.Currency,
+		BankName:  chosenBankDetail.BankName,
+		Phone:     chosenBankDetail.Phone,
 		CardNumber: chosenBankDetail.CardNumber,
-		Owner: chosenBankDetail.Owner,
-	}); err != nil {
-		slog.Error("failed to publish event", "error", err.Error())
-	}
+		Owner:     chosenBankDetail.Owner,
+	})
 
 	if order.CallbackUrl != "" {
 		notifier.SendCallback(
@@ -357,11 +373,14 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 		)
 	}
 
+	slog.Info("CreateOrder finished", "total_elapsed", time.Since(start))
+
 	return &orderdto.OrderOutput{
-		Order: order,
+		Order:     order,
 		BankDetail: *chosenBankDetail,
 	}, nil
 }
+
 
 func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*orderdto.OrderOutput, error) {
 	order, err := uc.OrderRepo.GetOrderByID(orderID)
