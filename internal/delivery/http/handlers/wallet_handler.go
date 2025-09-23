@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	walletRequest "github.com/LavaJover/shvark-order-service/internal/delivery/http/dto/wallet/request"
 	walletResponse "github.com/LavaJover/shvark-order-service/internal/delivery/http/dto/wallet/response"
@@ -102,4 +103,50 @@ func (h *HTTPWalletHandler) GetTraderBalance(traderID string) (float64, error) {
 		return 0, err
 	}
 	return 0, errors.New(errorResponse.Error)
+}
+
+// GetTraderBalancesBatch - метод для получения балансов конкретных трейдеров
+func (h *HTTPWalletHandler) GetTraderBalancesBatch(traderIDs []string) (map[string]float64, error) {
+	if len(traderIDs) == 0 {
+		return map[string]float64{}, nil
+	}
+
+	// Простой GET запрос
+	url := fmt.Sprintf("http://%s/wallets/balances/batch?traderIds=%s", 
+		h.Address, strings.Join(traderIDs, ","))
+	
+	response, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf("HTTP %d: %s", response.StatusCode, string(body))
+	}
+
+	var result struct {
+		Success  bool              `json:"success"`
+		Balances []walletResponse.BalanceResponse `json:"balances"`
+	}
+	
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, err
+	}
+
+	if !result.Success {
+		return nil, errors.New("request failed")
+	}
+
+	balances := make(map[string]float64)
+	for _, b := range result.Balances {
+		balances[b.TraderID] = b.Balance
+	}
+
+	return balances, nil
 }

@@ -131,18 +131,57 @@ func (uc *DefaultOrderUsecase) FilterByTraffic(bankDetails []*domain.BankDetail,
 	return result, nil
 }
 
-func (uc *DefaultOrderUsecase)FilterByTraderBalance(bankDetails []*domain.BankDetail, amountCrypto float64) ([]*domain.BankDetail, error) {
-	result := make([]*domain.BankDetail, 0)
+// FilterByTraderBalanceOptimal - оптимизированная версия с пакетным запросом
+func (uc *DefaultOrderUsecase) FilterByTraderBalanceOptimal(bankDetails []*domain.BankDetail, amountCrypto float64) ([]*domain.BankDetail, error) {
+	startTime := time.Now()
+	defer func() {
+		log.Printf("FilterByTraderBalanceOptimal took %v", time.Since(startTime))
+	}()
+
+	if len(bankDetails) == 0 {
+		return []*domain.BankDetail{}, nil
+	}
+
+	// Собираем уникальные traderIDs
+	traderIDMap := make(map[string]bool)
 	for _, bankDetail := range bankDetails {
-		traderBalance, err := uc.WalletHandler.GetTraderBalance(bankDetail.TraderID)
-		if err != nil {
-			return nil, err
+		traderIDMap[bankDetail.TraderID] = true
+	}
+
+	traderIDs := make([]string, 0, len(traderIDMap))
+	for traderID := range traderIDMap {
+		traderIDs = append(traderIDs, traderID)
+	}
+
+	// Получаем балансы одним запросом
+	balances, err := uc.WalletHandler.GetTraderBalancesBatch(traderIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get trader balances: %w", err)
+	}
+
+	// Фильтруем банковские реквизиты
+	result := make([]*domain.BankDetail, 0, len(bankDetails))
+	validCount := 0
+
+	for _, bankDetail := range bankDetails {
+		balance, exists := balances[bankDetail.TraderID]
+		if !exists {
+			log.Printf("Trader %s not found in balances", bankDetail.TraderID)
+			continue
 		}
-		fmt.Printf("Trader %s balance: %f\n. Order: %f\n", bankDetail.TraderID, traderBalance, amountCrypto)
-		if traderBalance >= amountCrypto {
+
+		if balance >= amountCrypto {
 			result = append(result, bankDetail)
+			validCount++
+		} else {
+			log.Printf("Trader %s insufficient balance: %f < %f", 
+				bankDetail.TraderID, balance, amountCrypto)
 		}
 	}
+
+	log.Printf("FilterByTraderBalance: %d/%d traders have sufficient balance", 
+		validCount, len(bankDetails))
+
 	return result, nil
 }
 
@@ -199,7 +238,7 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetails(input *orderdto.CreateOrd
 	}
 
 	// 1) Filter by Trader Available balances
-	bankDetails, err = uc.FilterByTraderBalance(bankDetails, input.AmountCrypto)
+	bankDetails, err = uc.FilterByTraderBalanceOptimal(bankDetails, input.AmountCrypto)
 	if err != nil {
 		return nil, err
 	}
@@ -220,6 +259,8 @@ func (uc *DefaultOrderUsecase) CheckIdempotency(clientID string) error {
 }
 
 func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrderInput) (*orderdto.OrderOutput, error) {
+	// готовим и запускаем проверки параллельно
+	
 	// check idempotency by client_id
 	if createOrderInput.ClientID != "" {
 		if err := uc.CheckIdempotency(createOrderInput.ClientID); err != nil {
