@@ -117,6 +117,7 @@ func (h *HTTPWalletHandler) GetTraderBalancesBatch(traderIDs []string) (map[stri
 	
 	response, err := http.Get(url)
 	if err != nil {
+		fmt.Println(err.Error())
 		return nil, err
 	}
 	defer response.Body.Close()

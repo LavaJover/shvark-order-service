@@ -156,6 +156,7 @@ func (uc *DefaultOrderUsecase) FilterByTraderBalanceOptimal(bankDetails []*domai
 	// Получаем балансы одним запросом
 	balances, err := uc.WalletHandler.GetTraderBalancesBatch(traderIDs)
 	if err != nil {
+		fmt.Println(err.Error())
 		return nil, fmt.Errorf("failed to get trader balances: %w", err)
 	}
 
