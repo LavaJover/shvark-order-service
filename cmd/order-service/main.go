@@ -31,9 +31,31 @@ func main() {
 	db := postgres.MustInitDB(cfg)
 
 	// Setup kafka
-	orderKafkaPublisher := kafka.NewKafkaPublisher([]string{fmt.Sprintf("%s:%s", cfg.KafkaService.Host, cfg.KafkaService.Port)}, "order-events")
-	disputeKafkaPublisher := kafka.NewKafkaPublisher([]string{fmt.Sprintf("%s:%s", cfg.KafkaService.Host, cfg.KafkaService.Port)}, "dispute-events")
+	orderPublisherConfig := publisher.KafkaConfig{
+		Brokers:   []string{fmt.Sprintf("%s:%s", cfg.KafkaService.Host, cfg.KafkaService.Port)},
+        Topic:     "order-events",
+        Username:  cfg.KafkaService.Username,
+        Password:  cfg.KafkaService.Password,
+        Mechanism: cfg.KafkaService.Mechanism,
+    	TLSEnabled: cfg.KafkaService.TLSEnabled,
+	}
+	orderKafkaPublisher, err := publisher.NewKafkaPublisher(orderPublisherConfig)
+	if err != nil {
+		log.Fatalf("failed to init kafka order publisher: %v", err)
+	}
 
+	disputePublisherConfig := publisher.KafkaConfig{
+		Brokers:   []string{fmt.Sprintf("%s:%s", cfg.KafkaService.Host, cfg.KafkaService.Port)},
+        Topic:     "dispute-events",
+        Username:  cfg.KafkaService.Username,
+        Password:  cfg.KafkaService.Password,
+        Mechanism: cfg.KafkaService.Mechanism,
+    	TLSEnabled: cfg.KafkaService.TLSEnabled,
+	}
+	disputeKafkaPublisher, err := publisher.NewKafkaPublisher(disputePublisherConfig)
+	if err != nil {
+		log.Fatalf("failed to init kafka dispute publisher: %v", err)
+	}
 	// Init order repo
 	orderRepo := repository.NewDefaultOrderRepository(db)
 	// Init bank detail repo

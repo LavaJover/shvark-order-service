@@ -47,7 +47,7 @@ type DefaultOrderUsecase struct {
 	TrafficUsecase  	domain.TrafficUsecase
 	BankDetailUsecase 	BankDetailUsecase
 	TeamRelationsUsecase TeamRelationsUsecase
-	Publisher 			*kafka.KafkaPublisher
+	Publisher 			*publisher.KafkaPublisher
 }
 
 func NewDefaultOrderUsecase(
@@ -55,7 +55,7 @@ func NewDefaultOrderUsecase(
 	walletHandler *handlers.HTTPWalletHandler,
 	trafficUsecase domain.TrafficUsecase,
 	bankDetailUsecase BankDetailUsecase,
-	kafkaPublisher *kafka.KafkaPublisher,
+	kafkaPublisher *publisher.KafkaPublisher,
 	teamRelationsUsecase TeamRelationsUsecase) *DefaultOrderUsecase {
 
 	return &DefaultOrderUsecase{
@@ -348,12 +348,12 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 	}
 	slog.Info("WalletHandler.Freeze done", "elapsed", time.Since(t))
 
-	// Publish to Kafka асинхронно
-	go func(event kafka.OrderEvent) {
-		if err := uc.Publisher.Publish(event); err != nil {
+	// Publish to kafka асинхронно
+	go func(event publisher.OrderEvent) {
+		if err := uc.Publisher.PublishOrder(event); err != nil {
 			slog.Error("failed to publish event", "error", err.Error())
 		}
-	}(kafka.OrderEvent{
+	}(publisher.OrderEvent{
 		OrderID:   order.ID,
 		TraderID:  chosenBankDetail.TraderID,
 		Status:    "🔥Новая сделка",
@@ -524,7 +524,7 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		return err
 	}
 
-	if err = uc.Publisher.Publish(kafka.OrderEvent{
+	if err = uc.Publisher.PublishOrder(publisher.OrderEvent{
 		OrderID: order.Order.ID,
 		TraderID: order.BankDetail.TraderID,
 		Status: "✅Сделка закрыта",
@@ -577,7 +577,7 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		return err
 	}
 
-	if err = uc.Publisher.Publish(kafka.OrderEvent{
+	if err = uc.Publisher.PublishOrder(publisher.OrderEvent{
 		OrderID: order.Order.ID,
 		TraderID: order.BankDetail.TraderID,
 		Status: "⛔️Отмена сделки",

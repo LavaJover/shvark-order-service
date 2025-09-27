@@ -31,7 +31,7 @@ type DefaultDisputeUsecase struct {
 	walletHandler *handlers.HTTPWalletHandler
 	orderRepo domain.OrderRepository
 	trafficRepo domain.TrafficRepository
-	kafkaPublisher *kafka.KafkaPublisher
+	kafkaPublisher *publisher.KafkaPublisher
 	teamRelationsUsecase TeamRelationsUsecase
 	bankDetailRepo domain.BankDetailRepository
 }
@@ -41,7 +41,7 @@ func NewDefaultDisputeUsecase(
 	walletHandler *handlers.HTTPWalletHandler,
 	orderRepo domain.OrderRepository,
 	trafficRepo domain.TrafficRepository,
-	kafkaPublisher *kafka.KafkaPublisher,
+	kafkaPublisher *publisher.KafkaPublisher,
 	teamRelationsUsecase TeamRelationsUsecase,
 	bankDetailRepo domain.BankDetailRepository,
 	) *DefaultDisputeUsecase {
@@ -92,7 +92,7 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(input *disputedto.CreateDi
 	if err != nil {
 		return err
 	}
-	disputeUc.kafkaPublisher.PublishDispute(kafka.DisputeEvent{
+	disputeUc.kafkaPublisher.PublishDispute(publisher.DisputeEvent{
 		DisputeID: dispute.ID,
 		OrderID: dispute.OrderID,
 		TraderID: bankDetail.TraderID,

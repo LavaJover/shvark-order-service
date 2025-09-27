@@ -1,4 +1,4 @@
-package kafka
+package publisher
 
 type OrderEvent struct {
 	OrderID 	string	`json:"order_id"`

@@ -1,4 +1,4 @@
-package kafka
+package publisher
 
 type DisputeEvent struct {
 	DisputeID 			string 	`json:"dispute_id"`

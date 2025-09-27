@@ -17,3 +17,7 @@ wallet-service:
 kafka-service:
   host: "localhost"
   port: "9092"
+  username: ""
+  password: ""
+  mechanism: ""
+  tls_enabled: true

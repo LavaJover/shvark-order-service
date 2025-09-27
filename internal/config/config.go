@@ -17,8 +17,12 @@ type OrderConfig struct {
 }
 
 type KafkaService struct {
-	Host string `yaml:"host"`
-	Port string `yaml:"port"`
+	Host 		string `yaml:"host"`
+	Port 		string `yaml:"port"`
+	Username 	string `yaml:"username"`
+	Password 	string `yaml:"password"`
+	Mechanism 	string `yaml:"mechanism"`
+	TLSEnabled 	bool   `yaml:"tls_enabled"`
 }
 
 type GRPCServer struct {
