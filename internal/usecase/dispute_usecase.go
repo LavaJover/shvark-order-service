@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"log"
+	"log/slog"
 	"time"
 
 	walletRequest "github.com/LavaJover/shvark-order-service/internal/delivery/http/dto/wallet/request"
@@ -92,7 +93,11 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(input *disputedto.CreateDi
 	if err != nil {
 		return err
 	}
-	disputeUc.kafkaPublisher.PublishDispute(publisher.DisputeEvent{
+	go func(event publisher.DisputeEvent){
+		if err := disputeUc.kafkaPublisher.PublishDispute(event); err != nil {
+			slog.Error("failed to publish kafka dispute event", "stage", "creating", "error",err.Error())
+		}
+	}(publisher.DisputeEvent{
 		DisputeID: dispute.ID,
 		OrderID: dispute.OrderID,
 		TraderID: bankDetail.TraderID,
@@ -106,6 +111,7 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(input *disputedto.CreateDi
 		CardNumber: bankDetail.CardNumber,
 		Owner: bankDetail.Owner,
 	})
+
 	err = disputeUc.walletHandler.Freeze(bankDetail.TraderID, dispute.OrderID, dispute.DisputeAmountCrypto)
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())

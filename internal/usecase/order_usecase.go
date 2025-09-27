@@ -351,7 +351,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 	// Publish to kafka асинхронно
 	go func(event publisher.OrderEvent) {
 		if err := uc.Publisher.PublishOrder(event); err != nil {
-			slog.Error("failed to publish event", "error", err.Error())
+			slog.Error("failed to publish OrderEvent:created", "error", err.Error())
 		}
 	}(publisher.OrderEvent{
 		OrderID:   order.ID,
@@ -524,7 +524,11 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		return err
 	}
 
-	if err = uc.Publisher.PublishOrder(publisher.OrderEvent{
+	go func(event publisher.OrderEvent){
+		if err := uc.Publisher.PublishOrder(event); err != nil {
+			slog.Error("failed to publish kafka OrderEvent", "stage", "approving", "error", err.Error())
+		}
+	}(publisher.OrderEvent{
 		OrderID: order.Order.ID,
 		TraderID: order.BankDetail.TraderID,
 		Status: "✅Сделка закрыта",
@@ -534,9 +538,7 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		Phone: order.BankDetail.Phone,
 		CardNumber: order.BankDetail.CardNumber,
 		Owner: order.BankDetail.Owner,
-	}); err != nil {
-		slog.Error("failed to publish event", "error", err.Error())
-	}
+	})
 
 	if order.Order.CallbackUrl != "" {
 		notifier.SendCallback(
@@ -577,7 +579,11 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		return err
 	}
 
-	if err = uc.Publisher.PublishOrder(publisher.OrderEvent{
+	go func(event publisher.OrderEvent){
+		if err := uc.Publisher.PublishOrder(event); err != nil {
+			slog.Error("failed to publish kafka order event", "stage", "cancelling", "error", err.Error())
+		}
+	}(publisher.OrderEvent{
 		OrderID: order.Order.ID,
 		TraderID: order.BankDetail.TraderID,
 		Status: "⛔️Отмена сделки",
@@ -587,9 +593,7 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		Phone: order.BankDetail.Phone,
 		CardNumber: order.BankDetail.CardNumber,
 		Owner: order.BankDetail.Owner,
-	}); err != nil {
-		slog.Error("failed to publish event", "error", err.Error())
-	}
+	})
 
 	if order.Order.CallbackUrl != "" {
 		notifier.SendCallback(
