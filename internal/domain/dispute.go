@@ -14,6 +14,8 @@ const (
 type Dispute struct {
 	ID 				  	string
 	OrderID 		  	string
+	OrderStatusOriginal OrderStatus
+	OrderStatusDisputed OrderStatus
 	DisputeAmountFiat 	float64
 	DisputeAmountCrypto float64
 	DisputeCryptoRate 	float64
@@ -45,8 +47,10 @@ type DisputeRepository interface {
 	GetOrderDisputes(filter GetDisputesFilter) ([]*Dispute, int64, error)
 
 	ProcessDisputeCriticalOperation(
-		disputeID string, 
-		newStatus DisputeStatus, 
+		disputeID string,
+		orderID string,
+		newDisputeStatus DisputeStatus,
+		newOrderStatus OrderStatus, 
 		operation string, // добавляем параметр операции
 		walletFunc func() error,
 	) error

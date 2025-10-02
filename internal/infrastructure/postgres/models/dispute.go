@@ -7,6 +7,8 @@ import (
 type DisputeModel struct {
 	ID 			 		string `gorm:"primaryKey"`
 	OrderID 	 		string
+	OrderStatusOriginal string
+	OrderStatusDisputed string
 	DisputeAmountFiat 	float64
 	DisputeAmountCrypto float64
 	DisputeCryptoRate 	float64

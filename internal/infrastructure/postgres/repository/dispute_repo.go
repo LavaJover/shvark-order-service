@@ -20,8 +20,10 @@ func NewDefaultDisputeRepository(db *gorm.DB) *DefaultDisputeRepository {
 
 // ProcessOrderCriticalOperation - выполнение критичной операции в транзакции
 func (r *DefaultDisputeRepository) ProcessDisputeCriticalOperation(
-    disputeID string, 
-    newStatus domain.DisputeStatus, 
+    disputeID string,
+	orderID string,
+    newDisputeStatus domain.DisputeStatus,
+	newOrderStatus domain.OrderStatus, 
     operation string, // добавляем параметр операции
     walletFunc func() error,
 ) error {
@@ -33,13 +35,19 @@ func (r *DefaultDisputeRepository) ProcessDisputeCriticalOperation(
         }
     }()
 
-    // 1. Обновляем статус
-    if err := tx.Model(&models.DisputeModel{}).Where("id = ?", disputeID).Update("status", newStatus).Error; err != nil {
+    // 1. Обновляем статус диспута
+    if err := tx.Model(&models.DisputeModel{}).Where("id = ?", disputeID).Update("status", newDisputeStatus).Error; err != nil {
         tx.Rollback()
-        return fmt.Errorf("failed to update order status: %w", err)
+        return fmt.Errorf("failed to update dispute status: %w", err)
     }
 
-    // 2. Выполняем операцию с кошельком
+	// 2. Обновляем статус сделки
+	if err := tx.Model(&models.OrderModel{}).Where("id = ?", orderID).Update("status", newOrderStatus).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to update order status: %w", err)
+	}
+
+    // 3. Выполняем операцию с кошельком
     if walletFunc != nil {
         if err := walletFunc(); err != nil {
             tx.Rollback()

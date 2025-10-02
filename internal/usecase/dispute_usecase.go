@@ -67,7 +67,7 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(input *disputedto.CreateDi
 		return err
 	}
 	if (order.Status != domain.StatusCanceled) && (order.Status != domain.StatusCompleted) {
-		return status.Error(codes.FailedPrecondition, "order is not finished yet")
+		return status.Error(codes.FailedPrecondition, "invalid order status")
 	}
 	idGenerator, err := nanoid.Standard(15)
 	if err != nil {
@@ -76,6 +76,8 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(input *disputedto.CreateDi
 	dispute := domain.Dispute{
 		ID: idGenerator(),
 		OrderID: input.OrderID,
+		OrderStatusOriginal: order.Status,
+		OrderStatusDisputed: domain.StatusDisputeCreated,
 		DisputeAmountFiat: input.DisputeAmountFiat,
 		DisputeAmountCrypto: input.DisputeAmountCrypto,
 		DisputeCryptoRate: input.DisputeCryptoRate,
@@ -142,6 +144,9 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
+	if order.Status != domain.StatusDisputeCreated {
+		return fmt.Errorf("invalid order status to accept dispute: %s", order.Status)
+	}
 	bankDetailID := order.BankDetailID
 	bankDetail, err := disputeUc.bankDetailRepo.GetBankDetailByID(bankDetailID)
 	if err != nil {
@@ -163,10 +168,13 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 		}
 	}
 	op := &DisputeOperation{
+		OrderID: order.ID,
 		DisputeID: disputeID,
 		Operation: "accept",
-		OldStatus: dispute.Status,
-		NewStatus: domain.DisputeAccepted,
+		OldDisputeStatus: dispute.Status,
+		NewDisputeStatus: domain.DisputeAccepted,
+		OldOrderStatus: domain.StatusDisputeCreated,
+		NewOrderStatus: domain.StatusCompleted,		
 		WalletOp: &WalletOperation{
 			Type: "release",
 			Request: walletRequest.ReleaseRequest{
@@ -183,6 +191,7 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 	if err := disputeUc.ProcessDisputeOperation(context.Background(), op); err != nil {
 		return err
 	}
+	
 	if order.CallbackUrl != "" {
 		notifier.SendCallback(
 			order.CallbackUrl,
@@ -203,16 +212,22 @@ func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
+	if order.Status != domain.StatusDisputeCreated {
+		return fmt.Errorf("invalid order status to reject dispute: %s", order.Status)
+	}
 	bankDetailID := order.BankDetailID
 	bankDetail, err := disputeUc.bankDetailRepo.GetBankDetailByID(bankDetailID)
 	if err != nil {
 		return err
 	}
 	op := &DisputeOperation{
+		OrderID: order.ID,
 		DisputeID: disputeID,
 		Operation: "reject",
-		OldStatus: dispute.Status,
-		NewStatus: domain.DisputeRejected,
+		OldDisputeStatus: dispute.Status,
+		NewDisputeStatus: domain.DisputeRejected,
+		OldOrderStatus: domain.StatusDisputeCreated,
+		NewOrderStatus: dispute.OrderStatusOriginal,
 		WalletOp: &WalletOperation{
 			Type: "release",
 			Request: walletRequest.ReleaseRequest{
@@ -249,10 +264,13 @@ func (disputeUc *DefaultDisputeUsecase) FreezeDispute(disputeID string) error {
 	}
 
 	op := &DisputeOperation{
+		OrderID: dispute.OrderID,
+		OldOrderStatus: domain.StatusDisputeCreated,
+		NewOrderStatus: domain.StatusDisputeCreated,
 		DisputeID: dispute.ID,
 		Operation: "freeze",
-		OldStatus: dispute.Status,
-		NewStatus: domain.DisputeFreezed,
+		OldDisputeStatus: dispute.Status,
+		NewDisputeStatus: domain.DisputeFreezed,
 		WalletOp: nil,
 		CreatedAt: time.Now(),
 	}
@@ -317,12 +335,15 @@ func (disputeUc *DefaultDisputeUsecase) GetOrderDisputes(input *disputedto.GetOr
 
 // DisputeOperation - описание операции с диспутом
 type DisputeOperation struct {
-    DisputeID   string                   `json:"dispute_id"`
-    Operation   string                    `json:"operation"` // "create", "approve", "cancel", "freeze"
-    OldStatus   domain.DisputeStatus        `json:"old_status"`
-    NewStatus   domain.DisputeStatus        `json:"new_status"`
-    WalletOp    *WalletOperation         `json:"wallet_op,omitempty"`
-    CreatedAt   time.Time                `json:"created_at"`
+	OrderID		string								`json:"order_id"`
+    DisputeID   string                   			`json:"dispute_id"`
+    Operation   string                    			`json:"operation"` // "create", "approve", "cancel", "freeze"
+	OldOrderStatus domain.OrderStatus				`json:"old_order_status"`
+	NewOrderStatus domain.OrderStatus				`json:"new_order_status"`
+    OldDisputeStatus   domain.DisputeStatus        	`json:"old_status"`
+    NewDisputeStatus   domain.DisputeStatus        	`json:"new_status"`
+    WalletOp    *WalletOperation         			`json:"wallet_op,omitempty"`
+    CreatedAt   time.Time                			`json:"created_at"`
 }
 
 ///////////////////////// Базовая транзакционная функция //////////////////////////
@@ -354,7 +375,9 @@ func (disputeUc *DefaultDisputeUsecase) processCriticalOperations(ctx context.Co
 
     return disputeUc.disputeRepo.ProcessDisputeCriticalOperation(
         op.DisputeID, 
-        op.NewStatus, 
+		op.OrderID,
+        op.NewDisputeStatus,
+		op.NewOrderStatus,
         op.Operation, // передаем тип операции
         walletFunc,
     )
