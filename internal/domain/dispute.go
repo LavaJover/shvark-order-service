@@ -50,7 +50,8 @@ type DisputeRepository interface {
 		disputeID string,
 		orderID string,
 		newDisputeStatus DisputeStatus,
-		newOrderStatus OrderStatus, 
+		newOrderStatus OrderStatus,
+		newOrderAmountFiat, newOrderAmountCrypto, newOrderCryptoRate float64,
 		operation string, // добавляем параметр операции
 		walletFunc func() error,
 	) error

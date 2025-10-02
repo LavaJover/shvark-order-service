@@ -354,6 +354,9 @@ type DisputeOperation struct {
 	NewOrderStatus domain.OrderStatus				`json:"new_order_status"`
     OldDisputeStatus   domain.DisputeStatus        	`json:"old_status"`
     NewDisputeStatus   domain.DisputeStatus        	`json:"new_status"`
+	NewOrderAmountFiat float64
+	NewOrderAmountCrypto float64
+	NewOrderAmountCryptoRate float64
     WalletOp    *WalletOperation         			`json:"wallet_op,omitempty"`
     CreatedAt   time.Time                			`json:"created_at"`
 }
@@ -390,6 +393,7 @@ func (disputeUc *DefaultDisputeUsecase) processCriticalOperations(ctx context.Co
 		op.OrderID,
         op.NewDisputeStatus,
 		op.NewOrderStatus,
+		op.NewOrderAmountFiat, op.NewOrderAmountCrypto, op.NewOrderAmountCryptoRate,
         op.Operation, // передаем тип операции
         walletFunc,
     )

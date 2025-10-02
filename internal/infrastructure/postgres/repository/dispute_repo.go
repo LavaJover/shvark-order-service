@@ -23,7 +23,8 @@ func (r *DefaultDisputeRepository) ProcessDisputeCriticalOperation(
     disputeID string,
 	orderID string,
     newDisputeStatus domain.DisputeStatus,
-	newOrderStatus domain.OrderStatus, 
+	newOrderStatus domain.OrderStatus,
+	newOrderAmountFiat, newOrderAmountCrypto, newOrderAmountCryptoRate float64,
     operation string, // добавляем параметр операции
     walletFunc func() error,
 ) error {
@@ -35,16 +36,25 @@ func (r *DefaultDisputeRepository) ProcessDisputeCriticalOperation(
         }
     }()
 
-    // 1. Обновляем статус диспута
     if err := tx.Model(&models.DisputeModel{}).Where("id = ?", disputeID).Update("status", newDisputeStatus).Error; err != nil {
         tx.Rollback()
         return fmt.Errorf("failed to update dispute status: %w", err)
     }
 
-	// 2. Обновляем статус сделки
 	if err := tx.Model(&models.OrderModel{}).Where("id = ?", orderID).Update("status", newOrderStatus).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to update order status: %w", err)
+	}
+
+	if operation == "accept" {
+		if err := tx.Model(&models.OrderModel{}).Where("id = ?", orderID).Updates(map[string]interface{}{
+			"amount_fiat": newOrderAmountFiat,
+			"amount_crypto": newOrderAmountCrypto,
+			"crypto_rub_rate": newOrderAmountCryptoRate,
+		}).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to update order amount values: %w", err)
+		}
 	}
 
     // 3. Выполняем операцию с кошельком
