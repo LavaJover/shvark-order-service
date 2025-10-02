@@ -265,130 +265,140 @@ func (uc *DefaultOrderUsecase) CheckIdempotency(clientID string) error {
 	return nil
 }
 
+// CreateOrder - БЫСТРАЯ версия (как было изначально)
 func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrderInput) (*orderdto.OrderOutput, error) {
-	start := time.Now()
-	slog.Info("CreateOrder started")
-	// check idempotency by client_id
-	if createOrderInput.ClientID != "" {
-		t := time.Now()
-		if err := uc.CheckIdempotency(createOrderInput.ClientID); err != nil {
-			return nil, err
-		}
-		slog.Info("CheckIdempotency done", "elapsed", time.Since(t))
-	}
-
-	// searching for eligible bank details due to order query parameters
-	t := time.Now()
-	bankDetails, err := uc.FindEligibleBankDetails(createOrderInput)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, "no eligible bank detail"+err.Error())
-	}
-	slog.Info("FindEligibleBankDetails done", "elapsed", time.Since(t))
-	if len(bankDetails) == 0 {
-		log.Printf("Реквизиты для заявки не найдены!\n")
-		return nil, fmt.Errorf("no available bank details")
-	}
-	log.Printf("Для заявки найдены доступные реквизиты!\n")
-
-	if createOrderInput.AdvancedParams.CallbackUrl != "" {
-		notifier.SendCallbackAsync(
-			createOrderInput.AdvancedParams.CallbackUrl,
-			createOrderInput.MerchantOrderID,
-			string(domain.StatusCreated),
-			0, 0, 0,
-		)
-	}
-
-	// business logic to pick best bank detail
-	t = time.Now()
-	chosenBankDetail, err := uc.PickBestBankDetail(bankDetails, createOrderInput.MerchantID)
-	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "failed to pick best bank detail for order")
-	}
-	slog.Info("PickBestBankDetail done", "elapsed", time.Since(t))
-
-	// Get trader reward percent and save to order
-	t = time.Now()
-	traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(chosenBankDetail.TraderID, createOrderInput.MerchantID)
-	if err != nil {
-		return nil, err
-	}
-	slog.Info("GetTrafficByTraderMerchant done", "elapsed", time.Since(t))
-	traderReward := traffic.TraderRewardPercent
-	platformFee := traffic.PlatformFee
-
-	order := domain.Order{
-		ID:     uuid.New().String(),
-		Status: domain.StatusCreated,
-		MerchantInfo: domain.MerchantInfo{
-			MerchantID:     createOrderInput.MerchantID,
-			MerchantOrderID: createOrderInput.MerchantOrderID,
-			ClientID:       createOrderInput.ClientID,
-		},
-		AmountInfo: domain.AmountInfo{
-			AmountFiat:   createOrderInput.AmountFiat,
-			AmountCrypto: createOrderInput.AmountCrypto,
-			CryptoRate:   createOrderInput.CryptoRate,
-			Currency:     createOrderInput.Currency,
-		},
-		BankDetailID:  chosenBankDetail.ID,
-		Type:          createOrderInput.Type,
-		Recalculated:  createOrderInput.Recalculated,
-		Shuffle:       createOrderInput.Shuffle,
-		TraderReward:  traderReward,
-		PlatformFee:   platformFee,
-		CallbackUrl:   createOrderInput.CallbackUrl,
-		ExpiresAt:     createOrderInput.ExpiresAt,
-	}
-
-	// 1. СНАЧАЛА создаем заказ в БД в статусе CREATED
-	if err := uc.OrderRepo.CreateOrder(&order); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-    // 2. ПОТОМ атомарно меняем статус + замораживаем средства
-    op := &OrderOperation{
-        OrderID:   order.ID,
-        Operation: "create",
-        OldStatus: domain.StatusCreated,
-        NewStatus: domain.StatusPending,
-        WalletOp: &WalletOperation{
-            Type: "freeze",
-            Request: walletRequest.FreezeRequest{
-                TraderID: chosenBankDetail.TraderID,
-                OrderID:  order.ID,
-                Amount:   createOrderInput.AmountCrypto,
-            },
-        },
-        EventData: &publisher.OrderEvent{
-            OrderID:    order.ID,
-            TraderID:   chosenBankDetail.TraderID,
-            Status:     "🔥Новая сделка",
-            AmountFiat: order.AmountInfo.AmountFiat,
-            Currency:   order.AmountInfo.Currency,
-            BankName:   chosenBankDetail.BankName,
-            Phone:      chosenBankDetail.Phone,
-            CardNumber: chosenBankDetail.CardNumber,
-            Owner:      chosenBankDetail.Owner,
-        },
-        CallbackData: &CallbackRequest{
-            URL:             createOrderInput.CallbackUrl,
-            MerchantOrderID: createOrderInput.MerchantOrderID,
-            OrderID:         order.ID,
-            Status:          string(domain.StatusPending),
-        },
-        CreatedAt: time.Now(),
+    start := time.Now()
+    slog.Info("CreateOrder started")
+    
+    // Все твои оригинальные проверки как есть
+    if createOrderInput.ClientID != "" {
+        t := time.Now()
+        if err := uc.CheckIdempotency(createOrderInput.ClientID); err != nil {
+            return nil, err
+        }
+        slog.Info("CheckIdempotency done", "elapsed", time.Since(t))
     }
-	if err := uc.ProcessOrderOperation(context.Background(), op); err != nil {
+
+    // searching for eligible bank details (как было)
+    t := time.Now()
+    bankDetails, err := uc.FindEligibleBankDetails(createOrderInput)
+    if err != nil {
+        return nil, status.Error(codes.NotFound, "no eligible bank detail"+err.Error())
+    }
+    slog.Info("FindEligibleBankDetails done", "elapsed", time.Since(t))
+    
+    if len(bankDetails) == 0 {
+        log.Printf("Реквизиты для заявки не найдены!\n")
+        return nil, fmt.Errorf("no available bank details")
+    }
+    log.Printf("Для заявки найдены доступные реквизиты!\n")
+
+    // Callback (как было)
+    if createOrderInput.AdvancedParams.CallbackUrl != "" {
+        go func() {
+            notifier.SendCallback(
+                createOrderInput.AdvancedParams.CallbackUrl,
+                createOrderInput.MerchantOrderID,
+                string(domain.StatusCreated),
+                0, 0, 0,
+            )
+        }()
+    }
+
+    // business logic to pick best bank detail (как было)
+    t = time.Now()
+    chosenBankDetail, err := uc.PickBestBankDetail(bankDetails, createOrderInput.MerchantID)
+    if err != nil {
+        return nil, status.Errorf(codes.NotFound, "failed to pick best bank detail for order")
+    }
+    slog.Info("PickBestBankDetail done", "elapsed", time.Since(t))
+
+    // Get trader reward percent (как было)
+    t = time.Now()
+    traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(chosenBankDetail.TraderID, createOrderInput.MerchantID)
+    if err != nil {
+        return nil, err
+    }
+    slog.Info("GetTrafficByTraderMerchant done", "elapsed", time.Since(t))
+    traderReward := traffic.TraderRewardPercent
+    platformFee := traffic.PlatformFee
+
+    order := domain.Order{
+        ID:     uuid.New().String(),
+        Status: domain.StatusPending,
+        MerchantInfo: domain.MerchantInfo{
+            MerchantID:     createOrderInput.MerchantID,
+            MerchantOrderID: createOrderInput.MerchantOrderID,
+            ClientID:       createOrderInput.ClientID,
+        },
+        AmountInfo: domain.AmountInfo{
+            AmountFiat:   createOrderInput.AmountFiat,
+            AmountCrypto: createOrderInput.AmountCrypto,
+            CryptoRate:   createOrderInput.CryptoRate,
+            Currency:     createOrderInput.Currency,
+        },
+        BankDetailID:  chosenBankDetail.ID,
+        Type:          createOrderInput.Type,
+        Recalculated:  createOrderInput.Recalculated,
+        Shuffle:       createOrderInput.Shuffle,
+        TraderReward:  traderReward,
+        PlatformFee:   platformFee,
+        CallbackUrl:   createOrderInput.CallbackUrl,
+        ExpiresAt:     createOrderInput.ExpiresAt,
+    }
+    
+    // Создание заказа (как было)
+    t = time.Now()
+    err = uc.OrderRepo.CreateOrder(&order)
+    if err != nil {
+        return nil, err
+    }
+    slog.Info("OrderRepo.CreateOrder done", "elapsed", time.Since(t))
+
+    // Freeze crypto (как было)
+    t = time.Now()
+    if err := uc.WalletHandler.Freeze(chosenBankDetail.TraderID, order.ID, createOrderInput.AmountCrypto); err != nil {
         return nil, status.Error(codes.Internal, err.Error())
     }
+    slog.Info("WalletHandler.Freeze done", "elapsed", time.Since(t))
 
-	slog.Info("CreateOrder finished", "total_elapsed", time.Since(start))
+	// Publish to kafka - ПРОСТАЯ версия
+	evt := publisher.OrderEvent{
+		OrderID:   order.ID,
+		TraderID:  chosenBankDetail.TraderID,
+		Status:    "🔥Новая сделка",
+		AmountFiat: order.AmountInfo.AmountFiat,
+		Currency:  order.AmountInfo.Currency,
+		BankName:  chosenBankDetail.BankName,
+		Phone:     chosenBankDetail.Phone,
+		CardNumber: chosenBankDetail.CardNumber,
+		Owner:     chosenBankDetail.Owner,
+	}
+    go func(event publisher.OrderEvent) {
+		v, _ := json.Marshal(evt)
+        if err := uc.mqPub.Publish("order-event", domain.Message{Key: []byte(evt.TraderID), Value: v}); err != nil {
+            slog.Error("failed to publish OrderEvent:created", "error", err.Error())
+        }
+    }(evt)
 
-	return &orderdto.OrderOutput{
-		Order:     order,
-		BankDetail: *chosenBankDetail,
-	}, nil
+    // Final callback (как было)
+    if order.CallbackUrl != "" {
+        go func() {
+            notifier.SendCallback(
+                order.CallbackUrl,
+                order.MerchantInfo.MerchantOrderID,
+                string(domain.StatusPending),
+                0, 0, 0,
+            )
+        }()
+    }
+
+    slog.Info("CreateOrder finished", "total_elapsed", time.Since(start))
+
+    return &orderdto.OrderOutput{
+        Order:     order,
+        BankDetail: *chosenBankDetail,
+    }, nil
 }
 
 func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*orderdto.OrderOutput, error) {
