@@ -29,6 +29,7 @@ func MustInitDB(cfg *config.OrderConfig) *gorm.DB {
 		&models.OrderModel{}, 
 		&models.DisputeModel{}, 
 		&models.TeamRelationshipModel{},
+		&models.OrderTransactionStateModel{},
 	)
 
 	// Применяем SQL миграции
