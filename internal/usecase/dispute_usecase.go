@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	"time"
@@ -164,20 +166,25 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 			})
 		}
 	}
-	releaseRequest := walletRequest.ReleaseRequest{
-		TraderID: bankDetail.TraderID,
-		MerchantID: order.MerchantInfo.MerchantID,
-		OrderID: order.ID,
-		RewardPercent: traffic.TraderRewardPercent,
-		PlatformFee: traffic.PlatformFee,
-		CommissionUsers: commissionUsers,
+	op := &DisputeOperation{
+		DisputeID: disputeID,
+		Operation: "accept",
+		OldStatus: dispute.Status,
+		NewStatus: domain.DisputeAccepted,
+		WalletOp: &WalletOperation{
+			Type: "release",
+			Request: walletRequest.ReleaseRequest{
+				TraderID: bankDetail.TraderID,
+				MerchantID: order.MerchantInfo.MerchantID,
+				OrderID: order.ID,
+				RewardPercent: traffic.TraderRewardPercent,
+				PlatformFee: traffic.PlatformFee,
+				CommissionUsers: commissionUsers,
+			},
+		},
+		CreatedAt: time.Now(),
 	}
-	err = disputeUc.walletHandler.Release(releaseRequest)
-	if err != nil {
-		return err
-	}
-	err = disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.StatusCompleted)
-	if err != nil {
+	if err := disputeUc.ProcessDisputeOperation(context.Background(), op); err != nil {
 		return err
 	}
 	if order.CallbackUrl != "" {
@@ -209,19 +216,24 @@ func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
 	if err != nil {
 		return err
 	}
-	releaseRequest := walletRequest.ReleaseRequest{
-		TraderID: bankDetail.TraderID,
-		MerchantID: order.MerchantInfo.MerchantID,
-		OrderID: order.ID,
-		RewardPercent: 1,
-		PlatformFee: 1,
+	op := &DisputeOperation{
+		DisputeID: disputeID,
+		Operation: "reject",
+		OldStatus: dispute.Status,
+		NewStatus: domain.DisputeRejected,
+		WalletOp: &WalletOperation{
+			Type: "release",
+			Request: walletRequest.ReleaseRequest{
+				TraderID: bankDetail.TraderID,
+				MerchantID: order.MerchantInfo.MerchantID,
+				OrderID: order.ID,
+				RewardPercent: 1,
+				PlatformFee: 1,
+			},
+		},
+		CreatedAt: time.Now(),
 	}
-	err = disputeUc.walletHandler.Release(releaseRequest)
-	if err != nil {
-		return err
-	}
-	err = disputeUc.orderRepo.UpdateOrderStatus(order.ID, domain.StatusCanceled)
-	if err != nil {
+	if err := disputeUc.ProcessDisputeOperation(context.Background(), op); err != nil {
 		return err
 	}
 	if order.CallbackUrl != "" {
@@ -243,11 +255,17 @@ func (disputeUc *DefaultDisputeUsecase) FreezeDispute(disputeID string) error {
 	if dispute.Status != domain.DisputeOpened {
 		return status.Error(codes.FailedPrecondition, "dispute is not opened yet")
 	}
-	err =  disputeUc.disputeRepo.UpdateDisputeStatus(disputeID, domain.DisputeFreezed)
-	if err != nil {
-		return err
+
+	op := &DisputeOperation{
+		DisputeID: dispute.ID,
+		Operation: "freeze",
+		OldStatus: dispute.Status,
+		NewStatus: domain.DisputeFreezed,
+		WalletOp: nil,
+		CreatedAt: time.Now(),
 	}
-	return nil
+
+	return disputeUc.ProcessDisputeOperation(context.Background(), op)
 }
 
 func (disputeUc *DefaultDisputeUsecase) GetDisputeByID(disputeID string) (*domain.Dispute, error) {
@@ -301,4 +319,65 @@ func (disputeUc *DefaultDisputeUsecase) GetOrderDisputes(input *disputedto.GetOr
 			ItemsPerPage: int32(input.Limit),
 		},
 	}, nil
+}
+
+////////////////////// Advanced Safe Dispute operations //////////////////////////
+
+// DisputeOperation - описание операции с диспутом
+type DisputeOperation struct {
+    DisputeID   string                   `json:"dispute_id"`
+    Operation   string                    `json:"operation"` // "create", "approve", "cancel", "freeze"
+    OldStatus   domain.DisputeStatus        `json:"old_status"`
+    NewStatus   domain.DisputeStatus        `json:"new_status"`
+    WalletOp    *WalletOperation         `json:"wallet_op,omitempty"`
+    CreatedAt   time.Time                `json:"created_at"`
+}
+
+///////////////////////// Базовая транзакционная функция //////////////////////////
+
+// ProcessOrderOperation - базовая функция для всех операций со сделками
+func (disputeUc *DefaultDisputeUsecase) ProcessDisputeOperation(ctx context.Context, op *DisputeOperation) error {
+    // 1. КРИТИЧНО: Атомарно меняем статус и обрабатываем кошелек
+    if err := disputeUc.processCriticalOperations(ctx, op); err != nil {
+        return fmt.Errorf("critical operations failed: %w", err)
+    }
+
+    // 2. НЕКРИТИЧНО: Асинхронно публикуем событие и отправляем callback
+    // if err := uc.scheduleNonCriticalOperations(op); err != nil {
+    //     log.Printf("Failed to schedule non-critical operations for order %s: %v", op.OrderID, err)
+    //     // НЕ возвращаем ошибку - критичные операции уже выполнены
+    // }
+
+    return nil
+}
+
+// processCriticalOperations - синхронная обработка критичных операций
+func (disputeUc *DefaultDisputeUsecase) processCriticalOperations(ctx context.Context, op *DisputeOperation) error {
+    var walletFunc func() error
+    if op.WalletOp != nil {
+        walletFunc = func() error {
+            return disputeUc.processWalletOperation(op.WalletOp)
+        }
+    }
+
+    return disputeUc.disputeRepo.ProcessDisputeCriticalOperation(
+        op.DisputeID, 
+        op.NewStatus, 
+        op.Operation, // передаем тип операции
+        walletFunc,
+    )
+}
+
+// processWalletOperation - обработка операций с кошельком
+func (disputeUc *DefaultDisputeUsecase) processWalletOperation(walletOp *WalletOperation) error {
+    switch walletOp.Type {
+    case "freeze":
+        req := walletOp.Request.(walletRequest.FreezeRequest)
+        return disputeUc.walletHandler.Freeze(req.TraderID, req.OrderID, req.Amount)
+    case "release":
+        req := walletOp.Request.(walletRequest.ReleaseRequest)
+        return disputeUc.walletHandler.Release(req)
+    default:
+        return fmt.Errorf("unknown wallet operation: %s", walletOp.Type)
+    }
 }

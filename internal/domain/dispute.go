@@ -43,4 +43,11 @@ type DisputeRepository interface {
 	GetDisputeByOrderID(orderID string) (*Dispute, error)
 	FindExpiredDisputes() ([]*Dispute, error)
 	GetOrderDisputes(filter GetDisputesFilter) ([]*Dispute, int64, error)
+
+	ProcessDisputeCriticalOperation(
+		disputeID string, 
+		newStatus DisputeStatus, 
+		operation string, // добавляем параметр операции
+		walletFunc func() error,
+	) error
 }

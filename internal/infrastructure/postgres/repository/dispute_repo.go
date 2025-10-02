@@ -18,6 +18,51 @@ func NewDefaultDisputeRepository(db *gorm.DB) *DefaultDisputeRepository {
 	return &DefaultDisputeRepository{db: db}
 }
 
+// ProcessOrderCriticalOperation - выполнение критичной операции в транзакции
+func (r *DefaultDisputeRepository) ProcessDisputeCriticalOperation(
+    disputeID string, 
+    newStatus domain.DisputeStatus, 
+    operation string, // добавляем параметр операции
+    walletFunc func() error,
+) error {
+    tx := r.db.Begin()
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+            panic(r)
+        }
+    }()
+
+    // 1. Обновляем статус
+    if err := tx.Model(&models.DisputeModel{}).Where("id = ?", disputeID).Update("status", newStatus).Error; err != nil {
+        tx.Rollback()
+        return fmt.Errorf("failed to update order status: %w", err)
+    }
+
+    // 2. Выполняем операцию с кошельком
+    if walletFunc != nil {
+        if err := walletFunc(); err != nil {
+            tx.Rollback()
+            return fmt.Errorf("wallet operation failed: %w", err)
+        }
+    }
+
+    // // 3. Сохраняем состояние транзакции
+    // state := &models.OrderTransactionStateModel{
+    //     OrderID:         orderID,
+    //     Operation:       operation,
+    //     StatusChanged:   true,
+    //     WalletProcessed: walletFunc != nil,
+    //     CreatedAt:       time.Now(),
+    // }
+    // if err := tx.Create(state).Error; err != nil {
+    //     tx.Rollback()
+    //     return fmt.Errorf("failed to save transaction state: %w", err)
+    // }
+
+    return tx.Commit().Error
+}
+
 func (r *DefaultDisputeRepository) CreateDispute(dispute *domain.Dispute) error {
 	disputeModel := mappers.ToGORMDispute(dispute)
 	if err := r.db.Create(&disputeModel).Error; err != nil {
