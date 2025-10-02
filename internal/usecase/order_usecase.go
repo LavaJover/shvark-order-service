@@ -340,45 +340,43 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 		CallbackUrl:   createOrderInput.CallbackUrl,
 		ExpiresAt:     createOrderInput.ExpiresAt,
 	}
-	t = time.Now()
-	err = uc.OrderRepo.CreateOrder(&order)
-	if err != nil {
-		return nil, err
-	}
-	slog.Info("OrderRepo.CreateOrder done", "elapsed", time.Since(t))
 
-	// Freeze crypto
-	t = time.Now()
-	if err := uc.WalletHandler.Freeze(chosenBankDetail.TraderID, order.ID, createOrderInput.AmountCrypto); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	slog.Info("WalletHandler.Freeze done", "elapsed", time.Since(t))
-
-	// Publish to kafka асинхронно
-	evt := publisher.OrderEvent{
-		OrderID:   order.ID,
-		TraderID:  chosenBankDetail.TraderID,
-		Status:    "🔥Новая сделка",
-		AmountFiat: order.AmountInfo.AmountFiat,
-		Currency:  order.AmountInfo.Currency,
-		BankName:  chosenBankDetail.BankName,
-		Phone:     chosenBankDetail.Phone,
-		CardNumber: chosenBankDetail.CardNumber,
-		Owner:     chosenBankDetail.Owner,
-	}
-	v, _ := json.Marshal(evt)
-	if err = uc.mqPub.Publish("order-events", domain.Message{Key: []byte(evt.TraderID), Value: v}); err != nil {
-		slog.Error("kafka publish event create failed", "error", err.Error())
-	}
-
-	if order.CallbackUrl != "" {
-		notifier.SendCallback(
-			order.CallbackUrl,
-			order.MerchantInfo.MerchantOrderID,
-			string(domain.StatusPending),
-			0, 0, 0,
-		)
-	}
+    // КРИТИЧНО: Атомарно создаем заказ и замораживаем средства
+    op := &OrderOperation{
+        OrderID:   order.ID,
+        Operation: "create",
+        OldStatus: "",
+        NewStatus: domain.StatusPending,
+        WalletOp: &WalletOperation{
+            Type: "freeze",
+            Request: walletRequest.FreezeRequest{
+                TraderID: chosenBankDetail.TraderID,
+                OrderID:  order.ID,
+                Amount:   createOrderInput.AmountCrypto,
+            },
+        },
+        EventData: &publisher.OrderEvent{
+            OrderID:    order.ID,
+            TraderID:   chosenBankDetail.TraderID,
+            Status:     "🔥Новая сделка",
+            AmountFiat: order.AmountInfo.AmountFiat,
+            Currency:   order.AmountInfo.Currency,
+            BankName:   chosenBankDetail.BankName,
+            Phone:      chosenBankDetail.Phone,
+            CardNumber: chosenBankDetail.CardNumber,
+            Owner:      chosenBankDetail.Owner,
+        },
+        CallbackData: &CallbackRequest{
+            URL:             createOrderInput.CallbackUrl,
+            MerchantOrderID: createOrderInput.MerchantOrderID,
+            OrderID:         order.ID,
+            Status:          string(domain.StatusPending),
+        },
+        CreatedAt: time.Now(),
+    }
+	if err := uc.ProcessOrderOperation(context.Background(), op); err != nil {
+        return nil, status.Error(codes.Internal, err.Error())
+    }
 
 	slog.Info("CreateOrder finished", "total_elapsed", time.Since(start))
 
@@ -387,7 +385,6 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 		BankDetail: *chosenBankDetail,
 	}, nil
 }
-
 
 func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*orderdto.OrderOutput, error) {
 	order, err := uc.OrderRepo.GetOrderByID(orderID)
@@ -931,127 +928,113 @@ func (uc *DefaultOrderUsecase) sendBatchCallbacksWithResults(callbacks []Callbac
     return results
 }
 
+// ApproveOrder - подтверждение заказа
 func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
-	// Find exact order
-	order, err := uc.GetOrderByID(orderID)
-	if err != nil {
-		return err
-	}
+    order, err := uc.GetOrderByID(orderID)
+    if err != nil {
+        return err
+    }
 
-	if order.Order.Status != domain.StatusPending {
-		return domain.ErrResolveDisputeFailed
-	}
+    if order.Order.Status != domain.StatusPending {
+        return domain.ErrResolveDisputeFailed
+    }
 
-	// Search for team relations to find commission users
-	var commissionUsers []walletRequest.CommissionUser
-	teamRelations, err := uc.TeamRelationsUsecase.GetRelationshipsByTraderID(order.BankDetail.TraderID)
-	if err == nil {
-		for _, teamRelation := range teamRelations {
-			commissionUsers = append(commissionUsers, walletRequest.CommissionUser{
-				UserID: teamRelation.TeamLeadID,
-				Commission: teamRelation.TeamRelationshipRapams.Commission,
-			})
-		}
-	}
-	// make request to wallet-service to release order
-	releaseRequest := walletRequest.ReleaseRequest{
-		TraderID: order.BankDetail.TraderID,
-		MerchantID: order.Order.MerchantInfo.MerchantID,
-		OrderID: order.Order.ID,
-		RewardPercent: order.Order.TraderReward,
-		PlatformFee: order.Order.PlatformFee,
-		CommissionUsers: commissionUsers,
-	}
-	if err := uc.WalletHandler.Release(releaseRequest); err != nil {
-		return err
-	}
+    // Подготавливаем commission users
+    var commissionUsers []walletRequest.CommissionUser
+    teamRelations, err := uc.TeamRelationsUsecase.GetRelationshipsByTraderID(order.BankDetail.TraderID)
+    if err == nil {
+        for _, teamRelation := range teamRelations {
+            commissionUsers = append(commissionUsers, walletRequest.CommissionUser{
+                UserID:     teamRelation.TeamLeadID,
+                Commission: teamRelation.TeamRelationshipRapams.Commission,
+            })
+        }
+    }
 
-	// Set order status to SUCCEED
-	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusCompleted); err != nil {
-		return err
-	}
+    op := &OrderOperation{
+        OrderID:   orderID,
+        Operation: "approve",
+        OldStatus: domain.StatusPending,
+        NewStatus: domain.StatusCompleted,
+        WalletOp: &WalletOperation{
+            Type: "release",
+            Request: walletRequest.ReleaseRequest{
+                TraderID:        order.BankDetail.TraderID,
+                MerchantID:      order.Order.MerchantInfo.MerchantID,
+                OrderID:         order.Order.ID,
+                RewardPercent:   order.Order.TraderReward,
+                PlatformFee:     order.Order.PlatformFee,
+                CommissionUsers: commissionUsers,
+            },
+        },
+        EventData: &publisher.OrderEvent{
+            OrderID:    order.Order.ID,
+            TraderID:   order.BankDetail.TraderID,
+            Status:     "✅Сделка закрыта",
+            AmountFiat: order.Order.AmountInfo.AmountFiat,
+            Currency:   order.Order.AmountInfo.Currency,
+            BankName:   order.BankDetail.BankName,
+            Phone:      order.BankDetail.Phone,
+            CardNumber: order.BankDetail.CardNumber,
+            Owner:      order.BankDetail.Owner,
+        },
+        CallbackData: &CallbackRequest{
+            URL:             order.Order.CallbackUrl,
+            MerchantOrderID: order.Order.MerchantInfo.MerchantOrderID,
+            OrderID:         order.Order.ID,
+            Status:          string(domain.StatusCompleted),
+        },
+    }
 
-	evt := publisher.OrderEvent{
-		OrderID: order.Order.ID,
-		TraderID: order.BankDetail.TraderID,
-		Status: "✅Сделка закрыта",
-		AmountFiat: order.Order.AmountInfo.AmountFiat,
-		Currency: order.Order.AmountInfo.Currency,
-		BankName: order.BankDetail.BankName,
-		Phone: order.BankDetail.Phone,
-		CardNumber: order.BankDetail.CardNumber,
-		Owner: order.BankDetail.Owner,
-	}
-	v, _ := json.Marshal(evt)
-	if err := uc.mqPub.Publish("order-events", domain.Message{Key: []byte(evt.TraderID), Value: v}); err != nil {
-		slog.Error("kafka publish approve", "error", err)
-	}
-
-	if order.Order.CallbackUrl != "" {
-		notifier.SendCallback(
-			order.Order.CallbackUrl,
-			order.Order.MerchantInfo.MerchantOrderID,
-			string(domain.StatusCompleted),
-			0, 0, 0,
-		)
-	}
-
-	return nil
+    return uc.ProcessOrderOperation(context.Background(), op)
 }
 
+// CancelOrder - отмена заказа
 func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
-	// Find exact order
-	order, err := uc.GetOrderByID(orderID)
-	if err != nil {
-		return err
-	}
+    order, err := uc.GetOrderByID(orderID)
+    if err != nil {
+        return err
+    }
 
-	if order.Order.Status != domain.StatusPending && order.Order.Status != domain.StatusDisputeCreated{
-		return domain.ErrCancelOrder
-	}
+    if order.Order.Status != domain.StatusPending && order.Order.Status != domain.StatusDisputeCreated {
+        return domain.ErrCancelOrder
+    }
 
-	// Set order status to CANCELED
-	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusCanceled); err != nil {
-		return err
-	}
-	// Search for team relations to find commission users
-	releaseRequest := walletRequest.ReleaseRequest{
-		TraderID: order.BankDetail.TraderID,
-		MerchantID: order.Order.MerchantInfo.MerchantID,
-		OrderID: order.Order.ID,
-		RewardPercent: 1,
-		PlatformFee: 1,
-	}
-	if err := uc.WalletHandler.Release(releaseRequest); err != nil {
-		return err
-	}
+    op := &OrderOperation{
+        OrderID:   orderID,
+        Operation: "cancel",
+        OldStatus: order.Order.Status,
+        NewStatus: domain.StatusCanceled,
+        WalletOp: &WalletOperation{
+            Type: "release",
+            Request: walletRequest.ReleaseRequest{
+                TraderID:      order.BankDetail.TraderID,
+                MerchantID:    order.Order.MerchantInfo.MerchantID,
+                OrderID:       order.Order.ID,
+                RewardPercent: 0, // При отмене не даем вознаграждение
+                PlatformFee:   0, // При отмене не берем комиссию
+            },
+        },
+        EventData: &publisher.OrderEvent{
+            OrderID:    order.Order.ID,
+            TraderID:   order.BankDetail.TraderID,
+            Status:     "⛔️Отмена сделки",
+            AmountFiat: order.Order.AmountInfo.AmountFiat,
+            Currency:   order.Order.AmountInfo.Currency,
+            BankName:   order.BankDetail.BankName,
+            Phone:      order.BankDetail.Phone,
+            CardNumber: order.BankDetail.CardNumber,
+            Owner:      order.BankDetail.Owner,
+        },
+        CallbackData: &CallbackRequest{
+            URL:             order.Order.CallbackUrl,
+            MerchantOrderID: order.Order.MerchantInfo.MerchantOrderID,
+            OrderID:         order.Order.ID,
+            Status:          string(domain.StatusCanceled),
+        },
+    }
 
-	evt := publisher.OrderEvent{
-		OrderID: order.Order.ID,
-		TraderID: order.BankDetail.TraderID,
-		Status: "⛔️Отмена сделки",
-		AmountFiat: order.Order.AmountInfo.AmountFiat,
-		Currency: order.Order.AmountInfo.Currency,
-		BankName: order.BankDetail.BankName,
-		Phone: order.BankDetail.Phone,
-		CardNumber: order.BankDetail.CardNumber,
-		Owner: order.BankDetail.Owner,
-	}
-	v, _ := json.Marshal(evt)
-	if err := uc.mqPub.Publish("order-events", domain.Message{Key: []byte(evt.TraderID), Value: v}); err != nil {
-		slog.Error("kafka publish approve", "error", err)
-	}
-
-	if order.Order.CallbackUrl != "" {
-		notifier.SendCallback(
-			order.Order.CallbackUrl,
-			order.Order.MerchantInfo.MerchantOrderID,
-			string(domain.StatusCanceled),
-			0, 0, 0,
-		)
-	}
-
-	return nil
+    return uc.ProcessOrderOperation(context.Background(), op)
 }
 
 func (uc *DefaultOrderUsecase) GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*domain.OrderStatistics, error) {
@@ -1109,4 +1092,273 @@ func (uc *DefaultOrderUsecase) GetAllOrders(input *orderdto.GetAllOrdersInput) (
             ItemsPerPage: input.Limit,
         },
     }, nil
+}
+
+////////////////////// Advanced Safe Order operations //////////////////////////
+
+// OrderOperation - описание операции со сделкой
+type OrderOperation struct {
+    OrderID     string                    `json:"order_id"`
+    Operation   string                    `json:"operation"` // "create", "approve", "cancel"
+    OldStatus   domain.OrderStatus        `json:"old_status"`
+    NewStatus   domain.OrderStatus        `json:"new_status"`
+    WalletOp    *WalletOperation         `json:"wallet_op,omitempty"`
+    EventData   *publisher.OrderEvent    `json:"event_data,omitempty"`
+    CallbackData *CallbackRequest        `json:"callback_data,omitempty"`
+    CreatedAt   time.Time                `json:"created_at"`
+}
+
+type WalletOperation struct {
+    Type    string  `json:"type"` // "freeze", "release"
+    Request interface{} `json:"request"`
+}
+
+// OrderTransactionState - состояние транзакции операции
+type OrderTransactionState struct {
+    OrderID         string    `json:"order_id"`
+    Operation       string    `json:"operation"`
+    StatusChanged   bool      `json:"status_changed"`
+    WalletProcessed bool      `json:"wallet_processed"`
+    EventPublished  bool      `json:"event_published"`
+    CallbackSent    bool      `json:"callback_sent"`
+    CreatedAt       time.Time `json:"created_at"`
+    CompletedAt     *time.Time `json:"completed_at,omitempty"`
+}
+
+///////////////////////// Базовая транзакционная функция //////////////////////////
+
+// ProcessOrderOperation - базовая функция для всех операций со сделками
+func (uc *DefaultOrderUsecase) ProcessOrderOperation(ctx context.Context, op *OrderOperation) error {
+    // 1. КРИТИЧНО: Атомарно меняем статус и обрабатываем кошелек
+    if err := uc.processCriticalOperations(ctx, op); err != nil {
+        return fmt.Errorf("critical operations failed: %w", err)
+    }
+
+    // 2. НЕКРИТИЧНО: Асинхронно публикуем событие и отправляем callback
+    if err := uc.scheduleNonCriticalOperations(op); err != nil {
+        log.Printf("Failed to schedule non-critical operations for order %s: %v", op.OrderID, err)
+        // НЕ возвращаем ошибку - критичные операции уже выполнены
+    }
+
+    return nil
+}
+
+// processCriticalOperations - синхронная обработка критичных операций
+func (uc *DefaultOrderUsecase) processCriticalOperations(ctx context.Context, op *OrderOperation) error {
+    var walletFunc func() error
+    if op.WalletOp != nil {
+        walletFunc = func() error {
+            return uc.processWalletOperation(op.WalletOp)
+        }
+    }
+
+    return uc.OrderRepo.ProcessOrderCriticalOperation(
+        op.OrderID, 
+        op.NewStatus, 
+        op.Operation, // передаем тип операции
+        walletFunc,
+    )
+}
+
+// processWalletOperation - обработка операций с кошельком
+func (uc *DefaultOrderUsecase) processWalletOperation(walletOp *WalletOperation) error {
+    switch walletOp.Type {
+    case "freeze":
+        req := walletOp.Request.(walletRequest.FreezeRequest)
+        return uc.WalletHandler.Freeze(req.TraderID, req.OrderID, req.Amount)
+    case "release":
+        req := walletOp.Request.(walletRequest.ReleaseRequest)
+        return uc.WalletHandler.Release(req)
+    default:
+        return fmt.Errorf("unknown wallet operation: %s", walletOp.Type)
+    }
+}
+
+/////////////////////////////// Асинхронная обработка некритичных операций //////////////////
+
+// scheduleNonCriticalOperations - планирует некритичные операции
+func (uc *DefaultOrderUsecase) scheduleNonCriticalOperations(op *OrderOperation) error {
+    payload, _ := json.Marshal(op)
+    return uc.mqPub.Publish("orders.processing", domain.Message{
+        Key:   []byte(op.OrderID),
+        Value: payload,
+    })
+}
+
+// StartProcessingWorker - воркер для обработки некритичных операций
+func (uc *DefaultOrderUsecase) StartProcessingWorker(ctx context.Context) {
+    msgs, err := uc.mqSub.Subscribe("orders.processing", "order-processing-group")
+    if err != nil {
+        log.Fatalf("Failed to subscribe to processing topic: %v", err)
+    }
+
+    log.Println("Order processing worker started")
+
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case m, ok := <-msgs:
+            if !ok {
+                return
+            }
+
+            var op OrderOperation
+            if err := json.Unmarshal(m.Value, &op); err != nil {
+                log.Printf("Invalid processing payload: %v", err)
+                continue
+            }
+
+            uc.processNonCriticalOperations(&op)
+        }
+    }
+}
+
+// processNonCriticalOperations - обработка некритичных операций
+// processNonCriticalOperations - обработка некритичных операций
+func (uc *DefaultOrderUsecase) processNonCriticalOperations(op *OrderOperation) {
+    state, err := uc.getTransactionState(op.OrderID)
+    if err != nil {
+        log.Printf("Failed to get transaction state for %s: %v", op.OrderID, err)
+        return
+    }
+
+    var updated bool
+
+    // Публикация в Kafka
+    if !state.EventPublished && op.EventData != nil {
+        if err := uc.publishOrderEvent(op.EventData); err != nil {
+            log.Printf("Failed to publish event for order %s: %v", op.OrderID, err)
+        } else {
+            if err := uc.markEventPublished(op.OrderID); err != nil {
+                log.Printf("Failed to mark event as published for order %s: %v", op.OrderID, err)
+            } else {
+                log.Printf("Published event for order %s", op.OrderID)
+                updated = true
+            }
+        }
+    }
+
+    // Отправка callback
+    if !state.CallbackSent && op.CallbackData != nil && op.CallbackData.URL != "" {
+        if err := notifier.SendCallback(op.CallbackData.URL, op.CallbackData.MerchantOrderID, op.CallbackData.Status, 0, 0, 0); err != nil {
+            log.Printf("Failed to send callback for order %s: %v", op.OrderID, err)
+        } else {
+            if err := uc.markCallbackSent(op.OrderID); err != nil {
+                log.Printf("Failed to mark callback as sent for order %s: %v", op.OrderID, err)
+            } else {
+                log.Printf("Sent callback for order %s", op.OrderID)
+                updated = true
+            }
+        }
+    }
+
+    // Если все операции завершены, отмечаем транзакцию как завершенную
+    if updated {
+        // Проверяем, завершены ли все некритичные операции
+        if err := uc.checkAndMarkCompleted(op.OrderID); err != nil {
+            log.Printf("Failed to check completion status for order %s: %v", op.OrderID, err)
+        }
+    }
+}
+
+// checkAndMarkCompleted - проверка и отметка завершения всех операций
+func (uc *DefaultOrderUsecase) checkAndMarkCompleted(orderID string) error {
+    state, err := uc.getTransactionState(orderID)
+    if err != nil {
+        return err
+    }
+
+    // Проверяем, завершены ли все нужные операции
+    allCompleted := state.StatusChanged && state.WalletProcessed
+    
+    // Если есть события для публикации, они должны быть опубликованы
+    if state.EventPublished {
+        allCompleted = allCompleted && state.EventPublished
+    }
+    
+    // Если есть callback для отправки, они должны быть отправлены
+    if state.CallbackSent {
+        allCompleted = allCompleted && state.CallbackSent
+    }
+
+    // Если все завершено и еще не отмечено как завершенное
+    if allCompleted && state.CompletedAt == nil {
+        if err := uc.OrderRepo.MarkCompleted(orderID); err != nil {
+            return err
+        }
+        log.Printf("Marked order %s as fully completed", orderID)
+    }
+
+    return nil
+}
+
+// getTransactionState - получение состояния транзакции
+func (uc *DefaultOrderUsecase) getTransactionState(orderID string) (*domain.OrderTransactionStateModel, error) {
+    return uc.OrderRepo.GetTransactionState(orderID)
+}
+
+// publishOrderEvent - публикация события заказа в Kafka
+func (uc *DefaultOrderUsecase) publishOrderEvent(event *publisher.OrderEvent) error {
+    eventJSON, err := json.Marshal(event)
+    if err != nil {
+        return fmt.Errorf("failed to marshal event: %w", err)
+    }
+
+    return uc.mqPub.Publish("order-events", domain.Message{
+        Key:   []byte(event.TraderID),
+        Value: eventJSON,
+    })
+}
+
+// markEventPublished - отметка успешной публикации события
+func (uc *DefaultOrderUsecase) markEventPublished(orderID string) error {
+    return uc.OrderRepo.MarkEventPublished(orderID)
+}
+
+// markCallbackSent - отметка успешной отправки callback
+func (uc *DefaultOrderUsecase) markCallbackSent(orderID string) error {
+    return uc.OrderRepo.MarkCallbackSent(orderID)
+}
+
+//////////////////////////// Мониторинг несоответствий ///////////////////
+
+// StartConsistencyMonitor - мониторинг консистентности статусов и кошельков
+func (uc *DefaultOrderUsecase) StartConsistencyMonitor(ctx context.Context) {
+    ticker := time.NewTicker(5 * time.Minute)
+    defer ticker.Stop()
+
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case <-ticker.C:
+            if err := uc.checkOrderWalletConsistency(); err != nil {
+                log.Printf("Consistency check failed: %v", err)
+            }
+        }
+    }
+}
+
+// checkOrderWalletConsistency - проверка соответствия статусов и кошельков
+func (uc *DefaultOrderUsecase) checkOrderWalletConsistency() error {
+    // Проверяем несоответствия между статусами ордеров и состоянием кошельков
+    inconsistent, err := uc.OrderRepo.FindInconsistentOrders()
+    if err != nil {
+        return err
+    }
+
+    if len(inconsistent) > 0 {
+        log.Printf("ALERT: Found %d inconsistent orders", len(inconsistent))
+        
+        // Отправляем на исправление
+        payload, _ := json.Marshal(inconsistent)
+        if err := uc.mqPub.Publish("orders.fix-consistency", domain.Message{
+            Value: payload,
+        }); err != nil {
+            log.Printf("Failed to publish consistency fix task: %v", err)
+        }
+    }
+
+    return nil
 }

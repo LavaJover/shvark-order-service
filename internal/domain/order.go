@@ -157,4 +157,32 @@ type OrderRepository interface {
 
 	FindStuckOrders(ctx context.Context, maxAttempts int) ([]string, error)
 	LoadExpiredOrderDataByIDs(ctx context.Context, orderIDs []string) ([]dto.ExpiredOrderData, error)
+
+    ProcessOrderCriticalOperation(orderID string, newStatus OrderStatus, operation string, walletFunc func() error) error
+    GetTransactionState(orderID string) (*OrderTransactionStateModel, error)
+    UpdateTransactionState(orderID string, updates map[string]interface{}) error
+    MarkEventPublished(orderID string) error
+    MarkCallbackSent(orderID string) error
+    MarkCompleted(orderID string) error
+
+	FindInconsistentOrders() ([]string, error) // возвращает список orderID с несоответствиями
+	GetInconsistentOrderDetails(orderID string) (map[string]interface{}, error)
+}
+
+// OrderTransactionStateModel - модель состояния транзакции операции в БД
+type OrderTransactionStateModel struct {
+    ID              uint       
+    OrderID         string     
+    Operation       string     
+    StatusChanged   bool       
+    WalletProcessed bool       
+    EventPublished  bool       
+    CallbackSent    bool       
+    CreatedAt       time.Time  
+    CompletedAt     *time.Time 
+    UpdatedAt       time.Time  
+}
+
+func (OrderTransactionStateModel) TableName() string {
+    return "order_transaction_states"
 }

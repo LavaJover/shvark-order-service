@@ -70,7 +70,7 @@ func main() {
 	// Init team relations usecase
 	teamRelationsUsecase := usecase.NewDefaultTeamRelationsUsecase(teamRelationsRepo)
 	// Init order usecase
-	uc := usecase.NewDefaultOrderUsecase(
+	orderUsecase := usecase.NewDefaultOrderUsecase(
 		orderRepo, 
 		httpWalletHandler, 
 		trafficUsecase, 
@@ -96,7 +96,7 @@ func main() {
 
 	// Creating gRPC server
 	grpcServer := grpc.NewServer()
-	orderHandler := grpcapi.NewOrderHandler(uc, disputeUc, bankDetailUsecase)
+	orderHandler := grpcapi.NewOrderHandler(orderUsecase, disputeUc, bankDetailUsecase)
 	trafficHandler := grpcapi.NewTrafficHandler(trafficUsecase)
 	bankDetailHandler := grpcapi.NewBankDetailHandler(bankDetailUsecase)
 	teamRelationsHandler := grpcapi.NewTeamRelationsHandler(teamRelationsUsecase)
@@ -114,24 +114,40 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	// Основной worker
-	go uc.StartWorker(context.Background())
+    // === ЗАПУСК ВСЕХ ВОРКЕРОВ ===
+    ctx := context.Background()
 
-	// Retry worker
-	go uc.StartRetryWorker(context.Background())
-	
-	// Мониторинг зависших ордеров
-	go uc.StartStuckOrdersMonitor(context.Background())
+    // 1. Основной воркер для некритичных операций (новый)
+    go orderUsecase.StartProcessingWorker(ctx)
+    log.Println("Started order processing worker")
+
+    // 2. Воркер для отменённых ордеров (существующий, обновленный)
+    go orderUsecase.StartWorker(ctx)
+    log.Println("Started order cancel worker")
+
+    // 3. Воркер для повторной обработки (новый)
+    go orderUsecase.StartRetryWorker(ctx)
+    log.Println("Started order retry worker")
+
+    // 4. Мониторинг зависших ордеров (новый)
+    go orderUsecase.StartStuckOrdersMonitor(ctx)
+    log.Println("Started stuck orders monitor")
+
+    // 5. Мониторинг консистентности (новый)
+    go orderUsecase.StartConsistencyMonitor(ctx)
+    log.Println("Started consistency monitor")
 
     // Периодический запуск CancelExpiredOrders
+    // Автоотмена просроченных ордеров (существующий, без изменений)
     go func() {
         ticker := time.NewTicker(5 * time.Second)
         defer ticker.Stop()
-        
         for {
             select {
+            case <-ctx.Done():
+                return
             case <-ticker.C:
-                if err := uc.CancelExpiredOrders(context.Background()); err != nil {
+                if err := orderUsecase.CancelExpiredOrders(context.Background()); err != nil {
                     log.Printf("Auto-cancel error: %v", err)
                 }
             }

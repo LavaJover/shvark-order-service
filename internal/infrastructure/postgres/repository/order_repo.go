@@ -21,6 +21,167 @@ func NewDefaultOrderRepository(db *gorm.DB) *DefaultOrderRepository {
 	return &DefaultOrderRepository{DB: db}
 }
 
+// ProcessOrderCriticalOperation - выполнение критичной операции в транзакции
+func (r *DefaultOrderRepository) ProcessOrderCriticalOperation(
+    orderID string, 
+    newStatus domain.OrderStatus, 
+    operation string, // добавляем параметр операции
+    walletFunc func() error,
+) error {
+    tx := r.DB.Begin()
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+            panic(r)
+        }
+    }()
+
+    // 1. Обновляем статус
+    if err := tx.Model(&models.OrderModel{}).Where("id = ?", orderID).Update("status", newStatus).Error; err != nil {
+        tx.Rollback()
+        return fmt.Errorf("failed to update order status: %w", err)
+    }
+
+    // 2. Выполняем операцию с кошельком
+    if walletFunc != nil {
+        if err := walletFunc(); err != nil {
+            tx.Rollback()
+            return fmt.Errorf("wallet operation failed: %w", err)
+        }
+    }
+
+    // 3. Сохраняем состояние транзакции
+    state := &models.OrderTransactionStateModel{
+        OrderID:         orderID,
+        Operation:       operation,
+        StatusChanged:   true,
+        WalletProcessed: walletFunc != nil,
+        CreatedAt:       time.Now(),
+    }
+    if err := tx.Create(state).Error; err != nil {
+        tx.Rollback()
+        return fmt.Errorf("failed to save transaction state: %w", err)
+    }
+
+    return tx.Commit().Error
+}
+
+// GetTransactionState - получение состояния транзакции
+func (r *DefaultOrderRepository) GetTransactionState(orderID string) (*domain.OrderTransactionStateModel, error) {
+    var state models.OrderTransactionStateModel
+    err := r.DB.Where("order_id = ?", orderID).
+        Order("created_at DESC").
+        First(&state).Error
+    if err != nil {
+        return nil, err
+    }
+    return &domain.OrderTransactionStateModel{
+        ID: state.ID,
+        OrderID: state.OrderID,
+        Operation: state.Operation,
+        StatusChanged: state.StatusChanged,
+        WalletProcessed: state.WalletProcessed,
+        EventPublished: state.EventPublished,
+        CallbackSent: state.CallbackSent,
+        CreatedAt: state.CreatedAt,
+        CompletedAt: state.CompletedAt,
+        UpdatedAt: state.UpdatedAt,
+    }, nil
+}
+
+// UpdateTransactionState - обновление состояния транзакции
+func (r *DefaultOrderRepository) UpdateTransactionState(orderID string, updates map[string]interface{}) error {
+    return r.DB.Model(&models.OrderTransactionStateModel{}).
+        Where("order_id = ?", orderID).
+        Order("created_at DESC").
+        Limit(1).
+        Updates(updates).Error
+}
+
+// MarkEventPublished - отметка успешной публикации события
+func (r *DefaultOrderRepository) MarkEventPublished(orderID string) error {
+    return r.UpdateTransactionState(orderID, map[string]interface{}{
+        "event_published": true,
+        "updated_at":      time.Now(),
+    })
+}
+
+// MarkCallbackSent - отметка успешной отправки callback
+func (r *DefaultOrderRepository) MarkCallbackSent(orderID string) error {
+    return r.UpdateTransactionState(orderID, map[string]interface{}{
+        "callback_sent": true,
+        "updated_at":    time.Now(),
+    })
+}
+
+// MarkCompleted - отметка завершения всех операций
+func (r *DefaultOrderRepository) MarkCompleted(orderID string) error {
+    now := time.Now()
+    return r.UpdateTransactionState(orderID, map[string]interface{}{
+        "completed_at": &now,
+        "updated_at":   now,
+    })
+}
+
+// FindInconsistentOrders - упрощенная версия поиска несоответствий
+func (r *DefaultOrderRepository) FindInconsistentOrders() ([]string, error) {
+    var inconsistentOrderIDs []string
+
+    // Ищем заказы, где статус изменен, но операция с кошельком не выполнена
+    query := `
+        SELECT DISTINCT ots.order_id
+        FROM order_transaction_states ots
+        JOIN order_models o ON ots.order_id = o.id
+        WHERE ots.status_changed = true 
+        AND ots.wallet_processed = false
+        AND ots.created_at < ?
+        AND (
+            (o.status = ? AND o.released_at IS NULL) OR  -- CANCELED но не разморожено
+            (o.status = ? AND o.released_at IS NULL) OR  -- COMPLETED но не освобождено  
+            (o.status = ? AND ots.operation = 'create')  -- PENDING но заморозка не прошла
+        )
+    `
+
+    if err := r.DB.Raw(query, 
+        time.Now().Add(-5*time.Minute), // старше 5 минут
+        domain.StatusCanceled,
+        domain.StatusCompleted, 
+        domain.StatusPending,
+    ).Pluck("order_id", &inconsistentOrderIDs).Error; err != nil {
+        return nil, fmt.Errorf("failed to find inconsistent orders: %w", err)
+    }
+
+    return inconsistentOrderIDs, nil
+}
+
+// GetInconsistentOrderDetails - получение деталей несоответствия для заказа
+func (r *DefaultOrderRepository) GetInconsistentOrderDetails(orderID string) (map[string]interface{}, error) {
+    // Получаем информацию о заказе
+    var order models.OrderModel
+    if err := r.DB.Where("id = ?", orderID).First(&order).Error; err != nil {
+        return nil, err
+    }
+
+    // Получаем состояние транзакции
+    var state models.OrderTransactionStateModel
+    if err := r.DB.Where("order_id = ?", orderID).
+        Order("created_at DESC").First(&state).Error; err != nil {
+        return nil, err
+    }
+
+    details := map[string]interface{}{
+        "order_id":          orderID,
+        "status":           order.Status,
+        "released_at":      order.ReleasedAt,
+        "status_changed":   state.StatusChanged,
+        "wallet_processed": state.WalletProcessed,
+        "operation":        state.Operation,
+        "created_at":       state.CreatedAt,
+    }
+
+    return details, nil
+}
+
 func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) error {
 	orderModel := mappers.ToGORMOrder(order)
 	if err := r.DB.Create(orderModel).Error; err != nil {
