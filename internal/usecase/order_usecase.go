@@ -291,7 +291,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 	log.Printf("Для заявки найдены доступные реквизиты!\n")
 
 	if createOrderInput.AdvancedParams.CallbackUrl != "" {
-		notifier.SendCallback(
+		notifier.SendCallbackAsync(
 			createOrderInput.AdvancedParams.CallbackUrl,
 			createOrderInput.MerchantOrderID,
 			string(domain.StatusCreated),
@@ -319,7 +319,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 
 	order := domain.Order{
 		ID:     uuid.New().String(),
-		Status: domain.StatusPending,
+		Status: domain.StatusCreated,
 		MerchantInfo: domain.MerchantInfo{
 			MerchantID:     createOrderInput.MerchantID,
 			MerchantOrderID: createOrderInput.MerchantOrderID,
@@ -341,11 +341,16 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 		ExpiresAt:     createOrderInput.ExpiresAt,
 	}
 
-    // КРИТИЧНО: Атомарно создаем заказ и замораживаем средства
+	// 1. СНАЧАЛА создаем заказ в БД в статусе CREATED
+	if err := uc.OrderRepo.CreateOrder(&order); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+    // 2. ПОТОМ атомарно меняем статус + замораживаем средства
     op := &OrderOperation{
         OrderID:   order.ID,
         Operation: "create",
-        OldStatus: "",
+        OldStatus: domain.StatusCreated,
         NewStatus: domain.StatusPending,
         WalletOp: &WalletOperation{
             Type: "freeze",

@@ -124,29 +124,30 @@ func (r *DefaultOrderRepository) MarkCompleted(orderID string) error {
 }
 
 // FindInconsistentOrders - упрощенная версия поиска несоответствий
+// FindInconsistentOrders - исправленная версия с приведением типов
 func (r *DefaultOrderRepository) FindInconsistentOrders() ([]string, error) {
     var inconsistentOrderIDs []string
 
-    // Ищем заказы, где статус изменен, но операция с кошельком не выполнена
+    // Исправляем JOIN с явным приведением типов
     query := `
         SELECT DISTINCT ots.order_id
         FROM order_transaction_states ots
-        JOIN order_models o ON ots.order_id = o.id
+        JOIN order_models o ON ots.order_id = o.id::text  -- Приводим UUID к TEXT
         WHERE ots.status_changed = true 
         AND ots.wallet_processed = false
-        AND ots.created_at < ?
+        AND ots.created_at < $1
         AND (
-            (o.status = ? AND o.released_at IS NULL) OR  -- CANCELED но не разморожено
-            (o.status = ? AND o.released_at IS NULL) OR  -- COMPLETED но не освобождено  
-            (o.status = ? AND ots.operation = 'create')  -- PENDING но заморозка не прошла
+            (o.status = $2 AND o.released_at IS NULL) OR  -- CANCELED но не разморожено
+            (o.status = $3 AND o.released_at IS NULL) OR  -- COMPLETED но не освобождено  
+            (o.status = $4 AND ots.operation = 'create')  -- PENDING но заморозка не прошла
         )
     `
 
     if err := r.DB.Raw(query, 
-        time.Now().Add(-5*time.Minute), // старше 5 минут
-        domain.StatusCanceled,
-        domain.StatusCompleted, 
-        domain.StatusPending,
+        time.Now().Add(-5*time.Minute), // $1
+        domain.StatusCanceled,          // $2
+        domain.StatusCompleted,         // $3
+        domain.StatusPending,           // $4
     ).Pluck("order_id", &inconsistentOrderIDs).Error; err != nil {
         return nil, fmt.Errorf("failed to find inconsistent orders: %w", err)
     }
