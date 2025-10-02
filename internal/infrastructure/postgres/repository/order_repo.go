@@ -19,6 +19,51 @@ func NewDefaultOrderRepository(db *gorm.DB) *DefaultOrderRepository {
 	return &DefaultOrderRepository{DB: db}
 }
 
+// ProcessOrderCriticalOperation - выполнение критичной операции в транзакции
+func (r *DefaultOrderRepository) ProcessOrderCriticalOperation(
+    orderID string, 
+    newStatus domain.OrderStatus, 
+    operation string, // добавляем параметр операции
+    walletFunc func() error,
+) error {
+    tx := r.DB.Begin()
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+            panic(r)
+        }
+    }()
+
+    // 1. Обновляем статус
+    if err := tx.Model(&models.OrderModel{}).Where("id = ?", orderID).Update("status", newStatus).Error; err != nil {
+        tx.Rollback()
+        return fmt.Errorf("failed to update order status: %w", err)
+    }
+
+    // 2. Выполняем операцию с кошельком
+    if walletFunc != nil {
+        if err := walletFunc(); err != nil {
+            tx.Rollback()
+            return fmt.Errorf("wallet operation failed: %w", err)
+        }
+    }
+
+    // // 3. Сохраняем состояние транзакции
+    // state := &models.OrderTransactionStateModel{
+    //     OrderID:         orderID,
+    //     Operation:       operation,
+    //     StatusChanged:   true,
+    //     WalletProcessed: walletFunc != nil,
+    //     CreatedAt:       time.Now(),
+    // }
+    // if err := tx.Create(state).Error; err != nil {
+    //     tx.Rollback()
+    //     return fmt.Errorf("failed to save transaction state: %w", err)
+    // }
+
+    return tx.Commit().Error
+}
+
 func (r *DefaultOrderRepository) CreateOrder(order *domain.Order) error {
 	orderModel := mappers.ToGORMOrder(order)
 	if err := r.DB.Create(orderModel).Error; err != nil {

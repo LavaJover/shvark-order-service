@@ -141,4 +141,11 @@ type OrderRepository interface {
 	GetOrders(filter Filter, sortField string, page, size int) ([]*Order, int64, error)
 
 	GetAllOrders(filter *AllOrdersFilters, sort string, page, limit int32) ([]*Order, int64, error)
+
+	ProcessOrderCriticalOperation(
+		orderID string, 
+		newStatus OrderStatus, 
+		operation string, // добавляем параметр операции
+		walletFunc func() error,
+	) error
 }

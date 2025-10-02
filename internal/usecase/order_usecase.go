@@ -506,21 +506,26 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 			})
 		}
 	}
-	// make request to wallet-service to release order
-	releaseRequest := walletRequest.ReleaseRequest{
-		TraderID: order.BankDetail.TraderID,
-		MerchantID: order.Order.MerchantInfo.MerchantID,
-		OrderID: order.Order.ID,
-		RewardPercent: order.Order.TraderReward,
-		PlatformFee: order.Order.PlatformFee,
-		CommissionUsers: commissionUsers,
-	}
-	if err := uc.WalletHandler.Release(releaseRequest); err != nil {
-		return err
-	}
+	op := &OrderOperation{
+        OrderID:   orderID,
+        Operation: "approve",
+        OldStatus: domain.StatusPending,
+        NewStatus: domain.StatusCompleted,
+        WalletOp: &WalletOperation{
+            Type: "release",
+            Request: walletRequest.ReleaseRequest{
+                TraderID:        order.BankDetail.TraderID,
+                MerchantID:      order.Order.MerchantInfo.MerchantID,
+                OrderID:         order.Order.ID,
+                RewardPercent:   order.Order.TraderReward,
+                PlatformFee:     order.Order.PlatformFee,
+                CommissionUsers: commissionUsers,
+            },
+        },
+		CreatedAt: time.Now(),
+    }
 
-	// Set order status to SUCCEED
-	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusCompleted); err != nil {
+	if err := uc.ProcessOrderOperation(context.Background(), op); err != nil {
 		return err
 	}
 
@@ -563,19 +568,25 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		return domain.ErrCancelOrder
 	}
 
-	// Set order status to CANCELED
-	if err := uc.OrderRepo.UpdateOrderStatus(orderID, domain.StatusCanceled); err != nil {
-		return err
+	op := &OrderOperation{
+        OrderID:   orderID,
+        Operation: "cancel",
+        OldStatus: order.Order.Status,
+        NewStatus: domain.StatusCanceled,
+        WalletOp: &WalletOperation{
+            Type: "release",
+            Request: walletRequest.ReleaseRequest{
+                TraderID:      order.BankDetail.TraderID,
+                MerchantID:    order.Order.MerchantInfo.MerchantID,
+                OrderID:       order.Order.ID,
+                RewardPercent: 0, // При отмене не даем вознаграждение
+                PlatformFee:   0, // При отмене не берем комиссию
+            },
+        },
+		CreatedAt: time.Now(),
 	}
-	// Search for team relations to find commission users
-	releaseRequest := walletRequest.ReleaseRequest{
-		TraderID: order.BankDetail.TraderID,
-		MerchantID: order.Order.MerchantInfo.MerchantID,
-		OrderID: order.Order.ID,
-		RewardPercent: 1,
-		PlatformFee: 1,
-	}
-	if err := uc.WalletHandler.Release(releaseRequest); err != nil {
+
+	if err := uc.ProcessOrderOperation(context.Background(), op); err != nil {
 		return err
 	}
 
@@ -662,4 +673,82 @@ func (uc *DefaultOrderUsecase) GetAllOrders(input *orderdto.GetAllOrdersInput) (
             ItemsPerPage: input.Limit,
         },
     }, nil
+}
+
+////////////////////// Advanced Safe Order operations //////////////////////////
+
+// OrderOperation - описание операции со сделкой
+type OrderOperation struct {
+    OrderID     string                    `json:"order_id"`
+    Operation   string                    `json:"operation"` // "create", "approve", "cancel"
+    OldStatus   domain.OrderStatus        `json:"old_status"`
+    NewStatus   domain.OrderStatus        `json:"new_status"`
+    WalletOp    *WalletOperation         `json:"wallet_op,omitempty"`
+    CreatedAt   time.Time                `json:"created_at"`
+}
+
+type WalletOperation struct {
+    Type    string  `json:"type"` // "freeze", "release"
+    Request interface{} `json:"request"`
+}
+
+// OrderTransactionState - состояние транзакции операции
+type OrderTransactionState struct {
+    OrderID         string    `json:"order_id"`
+    Operation       string    `json:"operation"`
+    StatusChanged   bool      `json:"status_changed"`
+    WalletProcessed bool      `json:"wallet_processed"`
+    EventPublished  bool      `json:"event_published"`
+    CallbackSent    bool      `json:"callback_sent"`
+    CreatedAt       time.Time `json:"created_at"`
+    CompletedAt     *time.Time `json:"completed_at,omitempty"`
+}
+
+///////////////////////// Базовая транзакционная функция //////////////////////////
+
+// ProcessOrderOperation - базовая функция для всех операций со сделками
+func (uc *DefaultOrderUsecase) ProcessOrderOperation(ctx context.Context, op *OrderOperation) error {
+    // 1. КРИТИЧНО: Атомарно меняем статус и обрабатываем кошелек
+    if err := uc.processCriticalOperations(ctx, op); err != nil {
+        return fmt.Errorf("critical operations failed: %w", err)
+    }
+
+    // 2. НЕКРИТИЧНО: Асинхронно публикуем событие и отправляем callback
+    // if err := uc.scheduleNonCriticalOperations(op); err != nil {
+    //     log.Printf("Failed to schedule non-critical operations for order %s: %v", op.OrderID, err)
+    //     // НЕ возвращаем ошибку - критичные операции уже выполнены
+    // }
+
+    return nil
+}
+
+// processCriticalOperations - синхронная обработка критичных операций
+func (uc *DefaultOrderUsecase) processCriticalOperations(ctx context.Context, op *OrderOperation) error {
+    var walletFunc func() error
+    if op.WalletOp != nil {
+        walletFunc = func() error {
+            return uc.processWalletOperation(op.WalletOp)
+        }
+    }
+
+    return uc.OrderRepo.ProcessOrderCriticalOperation(
+        op.OrderID, 
+        op.NewStatus, 
+        op.Operation, // передаем тип операции
+        walletFunc,
+    )
+}
+
+// processWalletOperation - обработка операций с кошельком
+func (uc *DefaultOrderUsecase) processWalletOperation(walletOp *WalletOperation) error {
+    switch walletOp.Type {
+    case "freeze":
+        req := walletOp.Request.(walletRequest.FreezeRequest)
+        return uc.WalletHandler.Freeze(req.TraderID, req.OrderID, req.Amount)
+    case "release":
+        req := walletOp.Request.(walletRequest.ReleaseRequest)
+        return uc.WalletHandler.Release(req)
+    default:
+        return fmt.Errorf("unknown wallet operation: %s", walletOp.Type)
+    }
 }
