@@ -181,7 +181,10 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 		OldDisputeStatus: dispute.Status,
 		NewDisputeStatus: domain.DisputeAccepted,
 		OldOrderStatus: domain.StatusDisputeCreated,
-		NewOrderStatus: domain.StatusCompleted,		
+		NewOrderStatus: domain.StatusCompleted,
+		NewOrderAmountFiat: dispute.DisputeAmountFiat,
+		NewOrderAmountCrypto: dispute.DisputeAmountCrypto,
+		NewOrderAmountCryptoRate: dispute.DisputeCryptoRate,		
 		WalletOp: &WalletOperation{
 			Type: "release",
 			Request: walletRequest.ReleaseRequest{
