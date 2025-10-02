@@ -134,10 +134,6 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(input *disputedto.CreateDi
 }
 
 func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
-	err :=  disputeUc.disputeRepo.UpdateDisputeStatus(disputeID, domain.DisputeAccepted)
-	if err != nil {
-		return err
-	}
 	dispute, err := disputeUc.disputeRepo.GetDisputeByID(disputeID)
 	if err != nil {
 		return err
@@ -199,10 +195,6 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 }
 
 func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
-	err :=  disputeUc.disputeRepo.UpdateDisputeStatus(disputeID, domain.DisputeRejected)
-	if err != nil {
-		return err
-	}
 	dispute, err := disputeUc.disputeRepo.GetDisputeByID(disputeID)
 	if err != nil {
 		return err
