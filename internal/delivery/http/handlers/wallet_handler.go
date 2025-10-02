@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -14,16 +13,11 @@ import (
 	walletResponse "github.com/LavaJover/shvark-order-service/internal/delivery/http/dto/wallet/response"
 )
 
-var (
-	HttpWalletRouter *HTTPWalletHandler
-)
-
 type HTTPWalletHandler struct {
 	Address string
 }
 
 func NewHTTPWalletHandler(address string) (*HTTPWalletHandler, error) {
-	HttpWalletRouter = &HTTPWalletHandler{Address: address}
 	return &HTTPWalletHandler{
 		Address: address,
 	}, nil
@@ -156,116 +150,4 @@ func (h *HTTPWalletHandler) GetTraderBalancesBatch(traderIDs []string) (map[stri
 	}
 
 	return balances, nil
-}
-
-// BatchReleaseRequest для множественного релиза
-type BatchReleaseRequest struct {
-    Releases []walletRequest.ReleaseRequest `json:"releases"`
-}
-
-// BatchReleaseResponse для ответа от батчевого релиза
-type BatchReleaseResponse struct {
-    TotalProcessed int                        `json:"totalProcessed"`
-    Successful     int                        `json:"successful"`
-    Failed         int                        `json:"failed"`
-    Results        []BatchReleaseItemResult  `json:"results"`
-}
-
-type BatchReleaseItemResult struct {
-    OrderID          string  `json:"orderId"`
-    Success          bool    `json:"success"`
-    Error            string  `json:"error,omitempty"`
-    TotalAmount      float64 `json:"totalAmount,omitempty"`
-    MerchantReceived float64 `json:"merchantReceived,omitempty"`
-    PlatformFee      float64 `json:"platformFee,omitempty"`
-    TraderReward     float64 `json:"traderReward,omitempty"`
-}
-
-// BatchRelease - батчевый релиз с fallback на одиночные запросы
-func (h *HTTPWalletHandler) BatchRelease(releases []walletRequest.ReleaseRequest) error {
-    if len(releases) == 0 {
-        return nil
-    }
-
-    // Если только один релиз - используем обычный метод
-    if len(releases) == 1 {
-        return h.Release(releases[0])
-    }
-
-    batchRequest := BatchReleaseRequest{
-        Releases: releases,
-    }
-
-    requestBodyBytes, err := json.Marshal(batchRequest)
-    if err != nil {
-        return err
-    }
-
-    response, err := http.Post(
-        fmt.Sprintf("http://%s/wallets/batch-release", h.Address), 
-        "application/json", 
-        bytes.NewBuffer(requestBodyBytes),
-    )
-    if err != nil {
-        // Fallback на одиночные запросы
-        return h.fallbackToIndividualReleases(releases)
-    }
-    defer response.Body.Close()
-
-    responseBodyBytes, err := io.ReadAll(response.Body)
-    if err != nil {
-        return h.fallbackToIndividualReleases(releases)
-    }
-
-    if response.StatusCode >= 200 && response.StatusCode < 300 {
-        var batchResponse BatchReleaseResponse
-        if err := json.Unmarshal(responseBodyBytes, &batchResponse); err != nil {
-            return err
-        }
-
-        // Если есть неуспешные - логируем их
-        if batchResponse.Failed > 0 {
-            for _, result := range batchResponse.Results {
-                if !result.Success {
-                    log.Printf("Failed to release order %s: %s", result.OrderID, result.Error)
-                }
-            }
-        }
-
-        log.Printf("Batch release completed: %d successful, %d failed", 
-            batchResponse.Successful, batchResponse.Failed)
-        
-        // Возвращаем ошибку только если все релизы провалились
-        if batchResponse.Successful == 0 {
-            return errors.New("all batch releases failed")
-        }
-
-        return nil
-    }
-
-    // Если батчевый запрос не сработал - fallback
-    return h.fallbackToIndividualReleases(releases)
-}
-
-// fallbackToIndividualReleases - запасной план с одиночными запросами
-func (h *HTTPWalletHandler) fallbackToIndividualReleases(releases []walletRequest.ReleaseRequest) error {
-    var lastError error
-    successCount := 0
-
-    for _, release := range releases {
-        if err := h.Release(release); err != nil {
-            log.Printf("Failed to release order %s: %v", release.OrderID, err)
-            lastError = err
-        } else {
-            successCount++
-        }
-    }
-
-    // Если хотя бы один релиз прошел успешно - не возвращаем ошибку
-    if successCount > 0 {
-        log.Printf("Fallback release completed: %d/%d successful", successCount, len(releases))
-        return nil
-    }
-
-    return lastError
 }

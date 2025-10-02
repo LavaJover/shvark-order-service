@@ -32,12 +32,12 @@ func MustInitDB(cfg *config.OrderConfig) *gorm.DB {
 	)
 
 	// Применяем SQL миграции
-	applySQLMigrations(db)
+	applySQLMigrations(db, dsn)
 
 	return db
 }
 
-func applySQLMigrations(db *gorm.DB) {
+func applySQLMigrations(db *gorm.DB, dsn string) {
 	// Получаем underlying sql.DB
 	sqlDB, err := db.DB()
 	if err != nil {

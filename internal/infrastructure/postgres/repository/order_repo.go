@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -9,7 +8,6 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/mappers"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/dto"
 	"gorm.io/gorm"
 )
 
@@ -443,150 +441,4 @@ func (r *DefaultOrderRepository) GetAllOrders(
     }
 
     return domainOrders, total, nil
-}
-
-// CancelExpiredOrdersBatch - батчевая отмена просроченных заказов
-func (r *DefaultOrderRepository) CancelExpiredOrdersBatch(ctx context.Context) ([]dto.ExpiredOrderData, error) {
-    query := `
-        WITH expired_orders AS (
-            SELECT o.id, o.merchant_id, o.amount_fiat, o.currency, o.callback_url, 
-                   o.merchant_order_id, o.trader_reward_percent, o.platform_fee,
-                   bd.trader_id, bd.bank_name, bd.phone, bd.card_number, bd.owner
-            FROM order_models o
-            JOIN bank_detail_models bd ON o.bank_details_id = bd.id
-            WHERE o.status = ? AND o.expires_at < NOW()
-            FOR UPDATE SKIP LOCKED
-        ),
-        updated AS (
-            UPDATE order_models 
-            SET status = ?, updated_at = NOW()
-            WHERE id IN (SELECT id FROM expired_orders)
-            RETURNING id
-        )
-        SELECT eo.* FROM expired_orders eo
-        JOIN updated u ON eo.id = u.id
-    `
-
-    var expiredOrders []dto.ExpiredOrderData
-
-    if err := r.DB.WithContext(ctx).Raw(query, 
-        domain.StatusPending, 
-        domain.StatusCanceled,
-    ).Scan(&expiredOrders).Error; err != nil {
-        return nil, err
-    }
-
-    return expiredOrders, nil
-}
-
-// IncrementReleaseAttempts - увеличение счетчика попыток разморозки
-func (r *DefaultOrderRepository) IncrementReleaseAttempts(ctx context.Context, orderIDs []string) error {
-    return r.DB.WithContext(ctx).
-        Model(&models.OrderModel{}).
-        Where("id IN ?", orderIDs).
-        UpdateColumn("release_attempts", gorm.Expr("release_attempts + 1")).
-        Error
-}
-
-// IncrementCallbackAttempts - увеличение счетчика попыток callback'ов
-func (r *DefaultOrderRepository) IncrementCallbackAttempts(ctx context.Context, orderIDs []string) error {
-    if len(orderIDs) == 0 {
-        return nil
-    }
-    
-    return r.DB.WithContext(ctx).
-        Model(&models.OrderModel{}).
-        Where("id IN ?", orderIDs).
-        UpdateColumn("callback_attempts", gorm.Expr("callback_attempts + 1")).
-        Error
-}
-
-// MarkCallbacksSentAt - отметка успешной отправки callback'ов
-func (r *DefaultOrderRepository) MarkCallbacksSentAt(ctx context.Context, orderIDs []string) error {
-    if len(orderIDs) == 0 {
-        return nil
-    }
-    
-    return r.DB.WithContext(ctx).
-        Model(&models.OrderModel{}).
-        Where("id IN ?", orderIDs).
-        Updates(map[string]interface{}{
-            "callbacks_sent_at": time.Now(),
-        }).Error
-}
-
-// LoadExpiredOrderDataByIDs - загрузка данных expired orders по списку ID
-func (r *DefaultOrderRepository) LoadExpiredOrderDataByIDs(ctx context.Context, orderIDs []string) ([]dto.ExpiredOrderData, error) {
-    if len(orderIDs) == 0 {
-        return []dto.ExpiredOrderData{}, nil
-    }
-
-    query := `
-        SELECT o.id, o.merchant_id, o.amount_fiat, o.currency, o.callback_url, 
-               o.merchant_order_id, o.trader_reward_percent, o.platform_fee,
-               bd.trader_id, bd.bank_name, bd.phone, bd.card_number, bd.owner
-        FROM order_models o
-        JOIN bank_detail_models bd ON o.bank_details_id = bd.id
-        WHERE o.id IN ?
-        AND o.status = ?
-    `
-
-    var expiredOrders []dto.ExpiredOrderData
-
-    if err := r.DB.WithContext(ctx).Raw(query, orderIDs, domain.StatusCanceled).Scan(&expiredOrders).Error; err != nil {
-        return nil, fmt.Errorf("failed to load expired order data by IDs: %w", err)
-    }
-
-    return expiredOrders, nil
-}
-
-// MarkReleasedAt - отметка успешной разморозки
-func (r *DefaultOrderRepository) MarkReleasedAt(ctx context.Context, orderIDs []string) error {
-    return r.DB.WithContext(ctx).
-        Model(&models.OrderModel{}).
-        Where("id IN ?", orderIDs).
-        Updates(map[string]interface{}{
-            "released_at": time.Now(),
-        }).Error
-}
-
-// IncrementPublishAttempts - увеличение счетчика попыток публикации
-func (r *DefaultOrderRepository) IncrementPublishAttempts(ctx context.Context, orderIDs []string) error {
-    if len(orderIDs) == 0 {
-        return nil
-    }
-    
-    return r.DB.WithContext(ctx).
-        Model(&models.OrderModel{}).
-        Where("id IN ?", orderIDs).
-        UpdateColumn("publish_attempts", gorm.Expr("publish_attempts + 1")).
-        Error
-}
-
-// MarkPublishedAt - отметка успешной публикации
-func (r *DefaultOrderRepository) MarkPublishedAt(ctx context.Context, orderIDs []string) error {
-    if len(orderIDs) == 0 {
-        return nil
-    }
-    
-    return r.DB.WithContext(ctx).
-        Model(&models.OrderModel{}).
-        Where("id IN ?", orderIDs).
-        Updates(map[string]interface{}{
-            "published_at": time.Now(),
-        }).Error
-}
-
-
-// FindStuckOrders - поиск "зависших" ордеров (отменены, но не разморожены)
-func (r *DefaultOrderRepository) FindStuckOrders(ctx context.Context, maxAttempts int) ([]string, error) {
-    var orderIDs []string
-    err := r.DB.WithContext(ctx).
-        Model(&models.OrderModel{}).
-        Select("id").
-        Where("status = ? AND released_at IS NULL AND release_attempts < ?", 
-              domain.StatusCanceled, maxAttempts).
-        Where("updated_at < ?", time.Now().Add(-10*time.Minute)). // старше 10 минут
-        Pluck("id", &orderIDs).Error
-    return orderIDs, err
 }

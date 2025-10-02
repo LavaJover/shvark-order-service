@@ -1,10 +1,7 @@
 package domain
 
 import (
-	"context"
 	"time"
-
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/dto"
 )
 
 type OrderStatus string
@@ -144,17 +141,4 @@ type OrderRepository interface {
 	GetOrders(filter Filter, sortField string, page, size int) ([]*Order, int64, error)
 
 	GetAllOrders(filter *AllOrdersFilters, sort string, page, limit int32) ([]*Order, int64, error)
-	CancelExpiredOrdersBatch(ctx context.Context) ([]dto.ExpiredOrderData, error)
-
-	IncrementReleaseAttempts(ctx context.Context, orderIDs []string) error
-	MarkReleasedAt(ctx context.Context, orderIDs []string) error
-
-	IncrementPublishAttempts(ctx context.Context, orderIDs []string) error
-	MarkPublishedAt(ctx context.Context, orderIDs []string) error
-
-	IncrementCallbackAttempts(ctx context.Context, orderIDs []string) error
-	MarkCallbacksSentAt(ctx context.Context, orderIDs []string) error
-
-	FindStuckOrders(ctx context.Context, maxAttempts int) ([]string, error)
-	LoadExpiredOrderDataByIDs(ctx context.Context, orderIDs []string) ([]dto.ExpiredOrderData, error)
 }
