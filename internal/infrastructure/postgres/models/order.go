@@ -28,4 +28,13 @@ type OrderModel struct {
 	Recalculated   		bool
 	CryptoRubRate		float64
 	Type 				string
+
+	ReleasedAt 			time.Time
+	ReleaseAttempts 	int
+
+	PublishedAt			time.Time
+	PublishAttempts 	int
+
+	CallbacksSentAt		time.Time
+	
 }

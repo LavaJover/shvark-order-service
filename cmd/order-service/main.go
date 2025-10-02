@@ -30,19 +30,9 @@ func main() {
 	// Init database
 	db := postgres.MustInitDB(cfg)
 
-	// Setup kafka
-	orderPublisherConfig := publisher.KafkaConfig{
-		Brokers:   []string{fmt.Sprintf("%s:%s", cfg.KafkaService.Host, cfg.KafkaService.Port)},
-        Topic:     "order-events",
-        Username:  cfg.KafkaService.Username,
-        Password:  cfg.KafkaService.Password,
-        Mechanism: cfg.KafkaService.Mechanism,
-    	TLSEnabled: cfg.KafkaService.TLSEnabled,
-	}
-	orderKafkaPublisher, err := publisher.NewKafkaPublisher(orderPublisherConfig)
-	if err != nil {
-		log.Fatalf("failed to init kafka order publisher: %v", err)
-	}
+	brokers := []string{fmt.Sprintf("%s:%s", cfg.KafkaService.Host, cfg.KafkaService.Port)}
+    pub := publisher.NewDefaultKafkaPublisher(brokers)
+    sub := publisher.NewDefaultKafkaSubscriber(brokers)
 
 	disputePublisherConfig := publisher.KafkaConfig{
 		Brokers:   []string{fmt.Sprintf("%s:%s", cfg.KafkaService.Host, cfg.KafkaService.Port)},
@@ -80,7 +70,15 @@ func main() {
 	// Init team relations usecase
 	teamRelationsUsecase := usecase.NewDefaultTeamRelationsUsecase(teamRelationsRepo)
 	// Init order usecase
-	uc := usecase.NewDefaultOrderUsecase(orderRepo, httpWalletHandler, trafficUsecase, bankDetailUsecase, orderKafkaPublisher, teamRelationsUsecase)
+	uc := usecase.NewDefaultOrderUsecase(
+		orderRepo, 
+		httpWalletHandler, 
+		trafficUsecase, 
+		bankDetailUsecase, 
+		teamRelationsUsecase,
+		pub,
+		sub,
+	)
 	// Init device usecase
 	deviceUsecase := usecase.NewDefaultDeviceUsecase(deviceRepo)
 
@@ -116,17 +114,29 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	// order auto-cancel
-	go func() {
-		ticker := time.NewTicker(5 * time.Second)
-		for {
-			<-ticker.C
-			err := uc.CancelExpiredOrders(context.Background())
-			if err != nil {
-				log.Printf("Auto-cancel error: %v\n", err)
-			}
-		}
-	}()
+	// Основной worker
+	go uc.StartWorker(context.Background())
+
+	// Retry worker
+	go uc.StartRetryWorker(context.Background())
+	
+	// Мониторинг зависших ордеров
+	go uc.StartStuckOrdersMonitor(context.Background())
+
+    // Периодический запуск CancelExpiredOrders
+    go func() {
+        ticker := time.NewTicker(5 * time.Second)
+        defer ticker.Stop()
+        
+        for {
+            select {
+            case <-ticker.C:
+                if err := uc.CancelExpiredOrders(context.Background()); err != nil {
+                    log.Printf("Auto-cancel error: %v", err)
+                }
+            }
+        }
+    }()
 
 	// updating crypto-rates
 	go func() {

@@ -2,105 +2,60 @@ package publisher
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
 	"time"
 
+	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/segmentio/kafka-go"
-	"github.com/segmentio/kafka-go/sasl"
-	"github.com/segmentio/kafka-go/sasl/plain"
-	"github.com/segmentio/kafka-go/sasl/scram"
 )
 
-type KafkaConfig struct {
-	Brokers    []string
-    Topic      string
-    Username   string
-    Password   string
-    Mechanism  string // "PLAIN", "SCRAM-SHA-256", etc.
-    TLSEnabled bool
+type DefaultKafkaPublisher struct {
+	writer *kafka.Writer
 }
 
-type KafkaPublisher struct {
-    writer *kafka.Writer
+func NewDefaultKafkaPublisher(brokers []string) *DefaultKafkaPublisher {
+	return &DefaultKafkaPublisher{
+		writer: &kafka.Writer{
+			Addr: kafka.TCP(brokers...),
+			Balancer: &kafka.LeastBytes{},
+		},
+	}
 }
 
-func NewKafkaPublisher(cfg KafkaConfig) (*KafkaPublisher, error) {
-    // Базовые настройки writer
-    writerConfig := kafka.Writer{
-        Addr:     kafka.TCP(cfg.Brokers...),
-        Topic:    cfg.Topic,
-        Balancer: &kafka.LeastBytes{},
-    }
+func (k *DefaultKafkaPublisher) Publish(topic string, msgs ...domain.Message) error {
+	var km []kafka.Message
+	for _, m := range msgs {
+		km = append(km, kafka.Message{
+			Key: m.Key,
+			Value: m.Value,
+			Time: time.Now(),
+			Topic: topic,
+		})
+	}
 
-    // Если включена аутентификация SASL
-    if cfg.Username != "" && cfg.Password != "" {
-        mechanism, err := createSASLMechanism(cfg.Mechanism, cfg.Username, cfg.Password)
-        if err != nil {
-            return nil, err
-        }
-
-        // Настраиваем транспорт с SASL и TLS
-        writerConfig.Transport = &kafka.Transport{
-            SASL: mechanism,
-            TLS:  createTLSConfig(cfg.TLSEnabled),
-        }
-    }
-
-    return &KafkaPublisher{
-        writer: &writerConfig,
-    }, nil
+	return k.writer.WriteMessages(context.Background(), km...)
 }
 
-func createSASLMechanism(mechanism, username, password string) (sasl.Mechanism, error) {
-    switch mechanism {
-    case "SCRAM-SHA-256":
-        return scram.Mechanism(scram.SHA256, username, password)
-    case "SCRAM-SHA-512":
-        return scram.Mechanism(scram.SHA512, username, password)
-    case "PLAIN":
-        return plain.Mechanism{
-            Username: username,
-            Password: password,
-        }, nil
-    default:
-        return nil, fmt.Errorf("unsupported SASL mechanism: %s", mechanism)
-    }
-}
-
-func createTLSConfig(enabled bool) *tls.Config {
-    if !enabled {
-        return nil
-    }
-    return &tls.Config{
-        InsecureSkipVerify: false, // В продакшене должно быть false
-    }
-}
-
-func (k *KafkaPublisher) PublishOrder(event OrderEvent) error {
-	msg, err := json.Marshal(event)
+func (k *DefaultKafkaPublisher) PublishOrder(topic string, event OrderEvent) error {
+	v, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
 
-	return k.writer.WriteMessages(context.Background(), kafka.Message{
-		Key:   []byte(event.TraderID),
-		Value: msg,
-		Time:  time.Now(),
-	})
+	return k.Publish(topic, domain.Message{Key: []byte(event.TraderID), Value: v})
 }
 
 // BatchPublishOrders - батчевая публикация событий заказов
-func (k *KafkaPublisher) BatchPublishOrders(events []OrderEvent) error {
+func (k *DefaultKafkaPublisher) BatchPublishOrders(topic string, events []OrderEvent) error {
     if len(events) == 0 {
         return nil
     }
 
     // Если только одно событие - используем обычную публикацию
     if len(events) == 1 {
-        return k.PublishOrder(events[0])
+        return k.PublishOrder(topic, events[0])
     }
 
     // Подготавливаем batch сообщений
@@ -138,7 +93,7 @@ func (k *KafkaPublisher) BatchPublishOrders(events []OrderEvent) error {
 }
 
 // BatchPublishOrdersWithRetry - батчевая публикация с retry и разбивкой на части
-func (k *KafkaPublisher) BatchPublishOrdersWithRetry(events []OrderEvent, batchSize int, maxRetries int) error {
+func (k *DefaultKafkaPublisher) BatchPublishOrdersWithRetry(topic string, events []OrderEvent, batchSize int, maxRetries int) error {
     if len(events) == 0 {
         return nil
     }
@@ -162,7 +117,7 @@ func (k *KafkaPublisher) BatchPublishOrdersWithRetry(events []OrderEvent, batchS
         // Пытаемся опубликовать батч с retry
         var err error
         for attempt := 1; attempt <= maxRetries; attempt++ {
-            err = k.BatchPublishOrders(batch)
+            err = k.BatchPublishOrders(topic, batch)
             if err == nil {
                 successfulCount += len(batch)
                 break
@@ -190,18 +145,4 @@ func (k *KafkaPublisher) BatchPublishOrdersWithRetry(events []OrderEvent, batchS
     }
 
     return nil
-}
-
-
-func (k *KafkaPublisher) PublishDispute(event DisputeEvent) error {
-	msg, err := json.Marshal(event)
-	if err != nil {
-		return err
-	}
-
-	return k.writer.WriteMessages(context.Background(), kafka.Message{
-		Key:   []byte(event.TraderID),
-		Value: msg,
-		Time:  time.Now(),
-	})
 }

@@ -2,10 +2,12 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"log/slog"
 	"math/rand"
+	"sync"
 	"time"
 
 	walletRequest "github.com/LavaJover/shvark-order-service/internal/delivery/http/dto/wallet/request"
@@ -13,6 +15,7 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/bitwire/notifier"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/dto"
 	bankdetaildto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/bank_detail"
 	orderdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/order"
 	"github.com/google/uuid"
@@ -47,7 +50,8 @@ type DefaultOrderUsecase struct {
 	TrafficUsecase  	domain.TrafficUsecase
 	BankDetailUsecase 	BankDetailUsecase
 	TeamRelationsUsecase TeamRelationsUsecase
-	Publisher 			*publisher.KafkaPublisher
+	mqPub				domain.PublisherPort
+	mqSub 				domain.SubscriberPort
 }
 
 func NewDefaultOrderUsecase(
@@ -55,16 +59,18 @@ func NewDefaultOrderUsecase(
 	walletHandler *handlers.HTTPWalletHandler,
 	trafficUsecase domain.TrafficUsecase,
 	bankDetailUsecase BankDetailUsecase,
-	kafkaPublisher *publisher.KafkaPublisher,
-	teamRelationsUsecase TeamRelationsUsecase) *DefaultOrderUsecase {
+	teamRelationsUsecase TeamRelationsUsecase,
+	pub domain.PublisherPort,
+	sub domain.SubscriberPort) *DefaultOrderUsecase {
 
 	return &DefaultOrderUsecase{
 		OrderRepo: orderRepo,
 		WalletHandler: walletHandler,
 		TrafficUsecase: trafficUsecase,
 		BankDetailUsecase: bankDetailUsecase,
-		Publisher: kafkaPublisher,
 		TeamRelationsUsecase: teamRelationsUsecase,
+		mqPub: pub,
+		mqSub: sub,
 	}
 }
 
@@ -349,11 +355,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 	slog.Info("WalletHandler.Freeze done", "elapsed", time.Since(t))
 
 	// Publish to kafka асинхронно
-	go func(event publisher.OrderEvent) {
-		if err := uc.Publisher.PublishOrder(event); err != nil {
-			slog.Error("failed to publish OrderEvent:created", "error", err.Error())
-		}
-	}(publisher.OrderEvent{
+	evt := publisher.OrderEvent{
 		OrderID:   order.ID,
 		TraderID:  chosenBankDetail.TraderID,
 		Status:    "🔥Новая сделка",
@@ -363,7 +365,11 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 		Phone:     chosenBankDetail.Phone,
 		CardNumber: chosenBankDetail.CardNumber,
 		Owner:     chosenBankDetail.Owner,
-	})
+	}
+	v, _ := json.Marshal(evt)
+	if err = uc.mqPub.Publish("order-events", domain.Message{Key: []byte(evt.TraderID), Value: v}); err != nil {
+		slog.Error("kafka publish event create failed", "error", err.Error())
+	}
 
 	if order.CallbackUrl != "" {
 		notifier.SendCallback(
@@ -467,21 +473,462 @@ func (uc *DefaultOrderUsecase) FindExpiredOrders() ([]*domain.Order, error) {
 }
 
 func (uc *DefaultOrderUsecase) CancelExpiredOrders(ctx context.Context) error {
-	orders, err := uc.FindExpiredOrders()
-	if err != nil {
-		return nil
-	}
+    // Получаем данные отмененных заказов из БД (УЖЕ ПОЛНЫЕ ДАННЫЕ)
+    expired, err := uc.OrderRepo.CancelExpiredOrdersBatch(ctx)
+    if err != nil {
+        return fmt.Errorf("failed to cancel expired orders: %w", err)
+    }
 
-	for _, order := range orders {
-		err = uc.CancelOrder(order.ID)
-		if err != nil {
-			log.Printf("Failed to cancel order %s to timeout! Error: %v\n", order.ID, err)
-		}
+    if len(expired) == 0 {
+        return nil
+    }
 
-		log.Printf("Order %s canceled due to timeout!\n", order.ID)
-	}
+    log.Printf("Canceled %d expired orders, publishing task to worker...", len(expired))
 
-	return nil
+    // Сериализуем ПОЛНЫЕ данные ExpiredOrderData, а не только ID
+    payload, err := json.Marshal(expired)
+    if err != nil {
+        return fmt.Errorf("failed to marshal expired orders: %w", err)
+    }
+
+    // Публикуем полные данные в Kafka
+    if err := uc.mqPub.Publish("orders.cancelled", domain.Message{Key: nil, Value: payload}); err != nil {
+        log.Printf("failed to publish cancel task, will retry next tick: %v", err)
+        // Не возвращаем ошибку, чтобы не блокировать основной процесс
+    }
+
+    return nil
+}
+
+func (uc *DefaultOrderUsecase) StartWorker(ctx context.Context) {
+    // Подписываемся на топик отменённых ордеров
+    msgs, err := uc.mqSub.Subscribe("orders.cancelled", "order-cancel-group")
+    if err != nil {
+        log.Fatalf("failed to subscribe to orders.cancelled: %v", err)
+    }
+
+    log.Println("Order cancel worker started")
+
+    for {
+        select {
+        case <-ctx.Done():
+            log.Println("Order cancel worker shutting down")
+            return
+        case m, ok := <-msgs:
+            if !ok {
+                log.Println("orders.cancelled channel closed")
+                return
+            }
+
+            // Десериализуем ПОЛНЫЕ данные ExpiredOrderData
+            var expiredOrders []dto.ExpiredOrderData
+            if err := json.Unmarshal(m.Value, &expiredOrders); err != nil {
+                log.Printf("invalid expired orders payload: %v", err)
+                continue
+            }
+
+            if len(expiredOrders) == 0 {
+                log.Printf("empty expired orders batch received")
+                continue
+            }
+
+            log.Printf("Processing %d expired orders in worker", len(expiredOrders))
+
+            // Вызываем готовый пайплайн обработки
+            uc.handleExpiredOrdersPostProcessing(expiredOrders)
+
+            log.Printf("Completed processing %d expired orders", len(expiredOrders))
+        }
+    }
+}
+
+// handleExpiredOrdersPostProcessing - обработка побочных эффектов с отслеживанием
+func (uc *DefaultOrderUsecase) handleExpiredOrdersPostProcessing(expiredOrders []dto.ExpiredOrderData) {
+    // 1. КРИТИЧЕСКИ ВАЖНО: Разморозка средств с отслеживанием
+    uc.processWalletReleasesWithTracking(expiredOrders)
+
+    // 2. Публикация событий (некритично)
+    uc.publishOrderEventsWithTracking(expiredOrders)
+
+    // 3. Callback'и (некритично)  
+    uc.sendCallbacksWithTracking(expiredOrders)
+}
+
+type CallbackRequest struct {
+    URL             string `json:"url"`
+    MerchantOrderID string `json:"merchant_order_id"`
+    OrderID         string `json:"order_id"` // Добавляем для отслеживания
+    Status          string `json:"status"`
+}
+
+type CallbackResult struct {
+    OrderID         string `json:"order_id"`
+    MerchantOrderID string `json:"merchant_order_id"`
+    Success         bool   `json:"success"`
+    Error           string `json:"error,omitempty"`
+}
+
+// processWalletReleasesWithTracking - разморозка с детальным отслеживанием
+func (uc *DefaultOrderUsecase) processWalletReleasesWithTracking(expiredOrders []dto.ExpiredOrderData) {
+    if len(expiredOrders) == 0 {
+        return
+    }
+
+    // Увеличиваем счетчик попыток для всех ордеров
+    orderIDs := make([]string, len(expiredOrders))
+    for i, order := range expiredOrders {
+        orderIDs[i] = order.ID
+    }
+    if err := uc.OrderRepo.IncrementReleaseAttempts(context.Background(), orderIDs); err != nil {
+        log.Printf("Failed to increment release attempts: %v", err)
+    }
+
+    walletReleases := make([]walletRequest.ReleaseRequest, len(expiredOrders))
+    for i, order := range expiredOrders {
+        walletReleases[i] = walletRequest.ReleaseRequest{
+            TraderID:      order.TraderID,
+            MerchantID:    order.MerchantID,
+            OrderID:       order.ID,
+            RewardPercent: order.TraderRewardPercent,
+            PlatformFee:   order.PlatformFee,
+        }
+    }
+
+    var successfulOrderIDs []string
+
+    // Пытаемся батчевый release
+    if err := uc.WalletHandler.BatchRelease(walletReleases); err != nil {
+        log.Printf("Batch wallet release failed, falling back to individual releases: %v", err)
+        
+        // Fallback на индивидуальные запросы с детальным отслеживанием
+        for _, release := range walletReleases {
+            if err := uc.WalletHandler.Release(release); err != nil {
+                log.Printf("CRITICAL: Failed to release wallet for order %s: %v", release.OrderID, err)
+                // Отправляем в DLQ для ручной обработки
+                uc.sendToDeadLetterQueue(release, err.Error())
+            } else {
+                successfulOrderIDs = append(successfulOrderIDs, release.OrderID)
+                log.Printf("Successfully released wallet for order %s", release.OrderID)
+            }
+        }
+    } else {
+        // Все успешно разморозились
+        for _, order := range expiredOrders {
+            successfulOrderIDs = append(successfulOrderIDs, order.ID)
+        }
+        log.Printf("Batch wallet release completed successfully for %d orders", len(expiredOrders))
+    }
+
+    // Помечаем успешно разморженные ордера
+    if len(successfulOrderIDs) > 0 {
+        if err := uc.OrderRepo.MarkReleasedAt(context.Background(), successfulOrderIDs); err != nil {
+            log.Printf("CRITICAL: Failed to mark orders as released: %v", err)
+        } else {
+            log.Printf("Marked %d orders as successfully released", len(successfulOrderIDs))
+        }
+    }
+
+    // Логируем статистику
+    failed := len(expiredOrders) - len(successfulOrderIDs)
+    if failed > 0 {
+        log.Printf("ALERT: %d/%d wallet releases FAILED", failed, len(expiredOrders))
+    }
+}
+
+// sendToDeadLetterQueue - отправка проблемных ордеров в DLQ
+func (uc *DefaultOrderUsecase) sendToDeadLetterQueue(release walletRequest.ReleaseRequest, errorMsg string) {
+    dlqPayload := struct {
+        OrderID   string    `json:"order_id"`
+        Release   walletRequest.ReleaseRequest `json:"release"`
+        Error     string    `json:"error"`
+        Timestamp time.Time `json:"timestamp"`
+    }{
+        OrderID:   release.OrderID,
+        Release:   release,
+        Error:     errorMsg,
+        Timestamp: time.Now(),
+    }
+    
+    payload, _ := json.Marshal(dlqPayload)
+    if err := uc.mqPub.Publish("orders.release.dlq", domain.Message{
+        Key:   []byte(release.OrderID),
+        Value: payload,
+    }); err != nil {
+        log.Printf("CRITICAL: Failed to send order %s to DLQ: %v", release.OrderID, err)
+    }
+}
+
+// processWalletReleases - обработка разморозки средств
+func (uc *DefaultOrderUsecase) processWalletReleases(expiredOrders []dto.ExpiredOrderData) {
+    if len(expiredOrders) == 0 {
+        return
+    }
+
+    walletReleases := make([]walletRequest.ReleaseRequest, len(expiredOrders))
+    for i, order := range expiredOrders {
+        walletReleases[i] = walletRequest.ReleaseRequest{
+            TraderID:      order.TraderID,
+            MerchantID:    order.MerchantID,
+            OrderID:       order.ID,
+            RewardPercent: order.TraderRewardPercent,
+            PlatformFee:   order.PlatformFee,
+        }
+    }
+
+    // Пытаемся батчевый release
+    if err := uc.WalletHandler.BatchRelease(walletReleases); err != nil {
+        log.Printf("Batch wallet release failed, falling back to individual releases: %v", err)
+        
+        // Fallback на индивидуальные запросы
+        successCount := 0
+        for _, release := range walletReleases {
+            if err := uc.WalletHandler.Release(release); err != nil {
+                log.Printf("Failed to release wallet for order %s: %v", release.OrderID, err)
+            } else {
+                successCount++
+            }
+        }
+        
+        log.Printf("Individual wallet releases completed: %d/%d successful", successCount, len(walletReleases))
+    } else {
+        log.Printf("Batch wallet release completed successfully for %d orders", len(walletReleases))
+    }
+}
+
+// StartStuckOrdersMonitor - мониторинг зависших ордеров
+func (uc *DefaultOrderUsecase) StartStuckOrdersMonitor(ctx context.Context) {
+    ticker := time.NewTicker(2 * time.Minute)
+    defer ticker.Stop()
+
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case <-ticker.C:
+            stuckIDs, err := uc.OrderRepo.FindStuckOrders(ctx, 5) // максимум 5 попыток
+            if err != nil {
+                log.Printf("Failed to find stuck orders: %v", err)
+                continue
+            }
+            
+            if len(stuckIDs) > 0 {
+                log.Printf("ALERT: Found %d stuck orders that need retry", len(stuckIDs))
+                
+                // Отправляем их на повторную обработку
+                payload, _ := json.Marshal(stuckIDs)
+                if err := uc.mqPub.Publish("orders.retry", domain.Message{
+                    Key:   nil,
+                    Value: payload,
+                }); err != nil {
+                    log.Printf("Failed to publish retry task: %v", err)
+                }
+            }
+        }
+    }
+}
+
+// StartRetryWorker - воркер для повторной обработки
+func (uc *DefaultOrderUsecase) StartRetryWorker(ctx context.Context) {
+    msgs, err := uc.mqSub.Subscribe("orders.retry", "order-retry-group")
+    if err != nil {
+        log.Fatalf("Failed to subscribe to retry topic: %v", err)
+    }
+
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case m, ok := <-msgs:
+            if !ok {
+                return
+            }
+            
+            var orderIDs []string
+            if err := json.Unmarshal(m.Value, &orderIDs); err != nil {
+                log.Printf("Invalid retry payload: %v", err)
+                continue
+            }
+            
+            // Загружаем данные по ID и повторно обрабатываем
+            expiredOrders, err := uc.OrderRepo.LoadExpiredOrderDataByIDs(ctx, orderIDs)
+            if err != nil {
+                log.Printf("Failed to load retry orders: %v", err)
+                continue
+            }
+            
+            log.Printf("Retrying %d stuck orders", len(expiredOrders))
+            uc.processWalletReleasesWithTracking(expiredOrders)
+        }
+    }
+}
+
+// publishOrderEventsWithTracking - публикация событий с отслеживанием
+func (uc *DefaultOrderUsecase) publishOrderEventsWithTracking(expiredOrders []dto.ExpiredOrderData) {
+    if len(expiredOrders) == 0 {
+        return
+    }
+
+    // Увеличиваем счетчик попыток публикации
+    orderIDs := make([]string, len(expiredOrders))
+    for i, order := range expiredOrders {
+        orderIDs[i] = order.ID
+    }
+    if err := uc.OrderRepo.IncrementPublishAttempts(context.Background(), orderIDs); err != nil {
+        log.Printf("Failed to increment publish attempts: %v", err)
+    }
+
+    // Формируем события
+    events := make([]publisher.OrderEvent, len(expiredOrders))
+    for i, order := range expiredOrders {
+        events[i] = publisher.OrderEvent{
+            OrderID:    order.ID,
+            TraderID:   order.TraderID,
+            Status:     "⛔️Отмена сделки",
+            AmountFiat: order.AmountFiat,
+            Currency:   order.Currency,
+            BankName:   order.BankName,
+            Phone:      order.Phone,
+            CardNumber: order.CardNumber,
+            Owner:      order.Owner,
+        }
+    }
+
+    var successfulOrderIDs []string
+
+    // Fallback на индивидуальные публикации с отслеживанием
+    for _, event := range events {
+		v, _ := json.Marshal(event)
+        if err := uc.mqPub.Publish("order-events", domain.Message{Key: []byte(event.TraderID), Value: v}); err != nil {
+            log.Printf("Failed to publish event for order %s: %v", event.OrderID, err)
+        } else {
+            successfulOrderIDs = append(successfulOrderIDs, event.OrderID)
+            log.Printf("Successfully published event for order %s", event.OrderID)
+        }
+    }
+
+    // Помечаем успешно опубликованные события
+    if len(successfulOrderIDs) > 0 {
+        if err := uc.OrderRepo.MarkPublishedAt(context.Background(), successfulOrderIDs); err != nil {
+            log.Printf("Failed to mark orders as published: %v", err)
+        } else {
+            log.Printf("Marked %d orders as successfully published", len(successfulOrderIDs))
+        }
+    }
+
+    // Логируем статистику
+    failed := len(expiredOrders) - len(successfulOrderIDs)
+    if failed > 0 {
+        log.Printf("WARNING: %d/%d event publications FAILED", failed, len(expiredOrders))
+    }
+}
+
+// sendCallbacksWithTracking - отправка callback'ов с отслеживанием
+func (uc *DefaultOrderUsecase) sendCallbacksWithTracking(expiredOrders []dto.ExpiredOrderData) {
+    // Фильтруем только те ордера, у которых есть callback URL
+    var callbackOrders []dto.ExpiredOrderData
+    var callbacks []CallbackRequest
+    
+    for _, order := range expiredOrders {
+        if order.CallbackURL != "" {
+            callbackOrders = append(callbackOrders, order)
+            callbacks = append(callbacks, CallbackRequest{
+                URL:             order.CallbackURL,
+                MerchantOrderID: order.MerchantOrderID,
+                OrderID:         order.ID, // Добавляем OrderID для отслеживания
+                Status:          string(domain.StatusCanceled),
+            })
+        }
+    }
+
+    if len(callbacks) == 0 {
+        log.Printf("No callbacks to send for expired orders")
+        return
+    }
+
+    // Увеличиваем счетчик попыток для ордеров с callback'ами
+    orderIDs := make([]string, len(callbackOrders))
+    for i, order := range callbackOrders {
+        orderIDs[i] = order.ID
+    }
+    if err := uc.OrderRepo.IncrementCallbackAttempts(context.Background(), orderIDs); err != nil {
+        log.Printf("Failed to increment callback attempts: %v", err)
+    }
+
+    log.Printf("Sending %d callbacks with tracking", len(callbacks))
+
+    // Отправляем callback'ы с детальным отслеживанием результатов
+    results := uc.sendBatchCallbacksWithResults(callbacks)
+
+    var successfulOrderIDs []string
+    successCount := 0
+    
+    // Анализируем результаты
+    for _, result := range results {
+        if result.Success {
+            successfulOrderIDs = append(successfulOrderIDs, result.OrderID)
+            successCount++
+            log.Printf("Successfully sent callback for order %s", result.OrderID)
+        } else {
+            log.Printf("Failed to send callback for order %s: %v", result.OrderID, result.Error)
+        }
+    }
+
+    // Помечаем успешно отправленные callback'ы
+    if len(successfulOrderIDs) > 0 {
+        if err := uc.OrderRepo.MarkCallbacksSentAt(context.Background(), successfulOrderIDs); err != nil {
+            log.Printf("Failed to mark callbacks as sent: %v", err)
+        } else {
+            log.Printf("Marked %d orders as callbacks sent", len(successfulOrderIDs))
+        }
+    }
+
+    // Логируем статистику
+    failed := len(callbacks) - successCount
+    if failed > 0 {
+        log.Printf("WARNING: %d/%d callbacks FAILED", failed, len(callbacks))
+    }
+}
+
+// sendBatchCallbacksWithResults - отправка callback'ов с возвратом результатов
+func (uc *DefaultOrderUsecase) sendBatchCallbacksWithResults(callbacks []CallbackRequest) []CallbackResult {
+    results := make([]CallbackResult, len(callbacks))
+    
+    // Параллельная отправка callbacks с rate limiting
+    semaphore := make(chan struct{}, 10) // Максимум 10 одновременных запросов
+    var wg sync.WaitGroup
+    var mu sync.Mutex
+
+    for i, callback := range callbacks {
+        wg.Add(1)
+        go func(index int, cb CallbackRequest) {
+            defer wg.Done()
+            semaphore <- struct{}{} // Захватываем семафор
+            defer func() { <-semaphore }() // Освобождаем семафор
+
+            // Отправляем callback (retry уже внутри SendCallback)
+            if err := notifier.SendCallback(cb.URL, cb.MerchantOrderID, cb.Status, 0, 0, 0); err != nil {
+                mu.Lock()
+                results[index] = CallbackResult{
+                    OrderID:         cb.OrderID,
+                    MerchantOrderID: cb.MerchantOrderID,
+                    Success:         false, 
+                    Error:           err.Error(),
+                }
+                mu.Unlock()
+            } else {
+                mu.Lock()
+                results[index] = CallbackResult{
+                    OrderID:         cb.OrderID,
+                    MerchantOrderID: cb.MerchantOrderID,
+                    Success:         true,
+                }
+                mu.Unlock()
+            }
+        }(i, callback)
+    }
+
+    wg.Wait()
+    return results
 }
 
 func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
@@ -524,11 +971,7 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		return err
 	}
 
-	go func(event publisher.OrderEvent){
-		if err := uc.Publisher.PublishOrder(event); err != nil {
-			slog.Error("failed to publish kafka OrderEvent", "stage", "approving", "error", err.Error())
-		}
-	}(publisher.OrderEvent{
+	evt := publisher.OrderEvent{
 		OrderID: order.Order.ID,
 		TraderID: order.BankDetail.TraderID,
 		Status: "✅Сделка закрыта",
@@ -538,7 +981,11 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		Phone: order.BankDetail.Phone,
 		CardNumber: order.BankDetail.CardNumber,
 		Owner: order.BankDetail.Owner,
-	})
+	}
+	v, _ := json.Marshal(evt)
+	if err := uc.mqPub.Publish("order-events", domain.Message{Key: []byte(evt.TraderID), Value: v}); err != nil {
+		slog.Error("kafka publish approve", "error", err)
+	}
 
 	if order.Order.CallbackUrl != "" {
 		notifier.SendCallback(
@@ -579,11 +1026,7 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		return err
 	}
 
-	go func(event publisher.OrderEvent){
-		if err := uc.Publisher.PublishOrder(event); err != nil {
-			slog.Error("failed to publish kafka order event", "stage", "cancelling", "error", err.Error())
-		}
-	}(publisher.OrderEvent{
+	evt := publisher.OrderEvent{
 		OrderID: order.Order.ID,
 		TraderID: order.BankDetail.TraderID,
 		Status: "⛔️Отмена сделки",
@@ -593,7 +1036,11 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		Phone: order.BankDetail.Phone,
 		CardNumber: order.BankDetail.CardNumber,
 		Owner: order.BankDetail.Owner,
-	})
+	}
+	v, _ := json.Marshal(evt)
+	if err := uc.mqPub.Publish("order-events", domain.Message{Key: []byte(evt.TraderID), Value: v}); err != nil {
+		slog.Error("kafka publish approve", "error", err)
+	}
 
 	if order.Order.CallbackUrl != "" {
 		notifier.SendCallback(
