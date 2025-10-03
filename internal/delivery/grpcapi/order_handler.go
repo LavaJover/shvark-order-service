@@ -3,6 +3,7 @@ package grpcapi
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"math"
 	"time"
 
@@ -744,4 +745,73 @@ func (h *OrderHandler) GetAllOrders(
     }
 
     return res, nil
+}
+
+// ProcessAutomaticPayment - обработчик gRPC для автоматического закрытия сделок
+func (h *OrderHandler) ProcessAutomaticPayment(
+	ctx context.Context, 
+	req *orderpb.ProcessAutomaticPaymentRequest,
+) (*orderpb.ProcessAutomaticPaymentResponse, error) {
+	
+	// Валидация входящего запроса
+	if err := h.validateAutomaticPaymentRequest(req); err != nil {
+		slog.Error("Invalid automatic payment request", "error", err)
+		return nil, status.Errorf(codes.InvalidArgument, "invalid request: %v", err)
+	}
+
+	// Преобразование gRPC запроса в доменную модель
+	paymentReq := &usecase.AutomaticPaymentRequest{
+		Group:         req.Group,
+		Amount:        req.Amount,
+		PaymentSystem: req.PaymentSystem,
+		Direction: 	   req.Direction,
+		Methods:       req.Methods,
+		ReceivedAt:    req.ReceivedAt,
+		Text:          req.Text,
+		Metadata:      req.Metadata,
+	}
+
+	// Вызов usecase слоя
+	result, err := h.uc.ProcessAutomaticPayment(ctx, paymentReq)
+	if err != nil {
+		slog.Error("Failed to process automatic payment", "error", err)
+		return nil, status.Errorf(codes.Internal, "processing failed: %v", err)
+	}
+
+	// Преобразование результата в gRPC ответ
+	return h.buildResponse(result), nil
+}
+
+func (h *OrderHandler) validateAutomaticPaymentRequest(req *orderpb.ProcessAutomaticPaymentRequest) error {
+	if req.Group == "" {
+		return status.Error(codes.InvalidArgument, "group is required")
+	}
+	if req.Amount <= 0 {
+		return status.Error(codes.InvalidArgument, "amount must be positive")
+	}
+	if req.PaymentSystem == "" {
+		return status.Error(codes.InvalidArgument, "payment_system is required")
+	}
+	if req.Direction != "in" {
+		return status.Error(codes.InvalidArgument, "direction must be 'in'")
+	}
+	if req.ReceivedAt == 0 {
+		return status.Error(codes.InvalidArgument, "received_at is required")
+	}
+	return nil
+}
+
+func (h *OrderHandler) buildResponse(result *domain.AutomaticPaymentResult) *orderpb.ProcessAutomaticPaymentResponse {
+	response := &orderpb.ProcessAutomaticPaymentResponse{
+		Action:  result.Action,
+		Message: result.Message,
+		Success: len(result.Results) > 0,
+	}
+
+	// Если есть результаты обработки отдельных ордеров
+	if len(result.Results) > 0 {
+		response.OrderId = result.Results[0].OrderID // Первый обработанный ордер
+	}
+
+	return response
 }

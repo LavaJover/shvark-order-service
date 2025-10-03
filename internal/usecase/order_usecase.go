@@ -42,6 +42,7 @@ type OrderUsecase interface {
 	GetOrders(filter domain.Filter, sortField string, page, size int) ([]*domain.Order, int64, error)
 
 	GetAllOrders(input *orderdto.GetAllOrdersInput) (*orderdto.GetAllOrdersOutput, error)
+	ProcessAutomaticPayment(ctx context.Context, req *AutomaticPaymentRequest) (*domain.AutomaticPaymentResult, error)
 }
 
 type DefaultOrderUsecase struct {
@@ -760,6 +761,7 @@ type AutomaticPaymentRequest struct {
 	Group         string
 	Amount        float64
 	PaymentSystem string
+	Direction 	  string
 	Methods       []string
 	ReceivedAt    int64
 	Text          string
