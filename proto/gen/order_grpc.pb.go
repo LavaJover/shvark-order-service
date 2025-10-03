@@ -34,6 +34,7 @@ const (
 	OrderService_GetOrderStatistics_FullMethodName        = "/order.OrderService/GetOrderStatistics"
 	OrderService_GetOrders_FullMethodName                 = "/order.OrderService/GetOrders"
 	OrderService_GetAllOrders_FullMethodName              = "/order.OrderService/GetAllOrders"
+	OrderService_ProcessAutomaticPayment_FullMethodName   = "/order.OrderService/ProcessAutomaticPayment"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -55,6 +56,7 @@ type OrderServiceClient interface {
 	GetOrderStatistics(ctx context.Context, in *GetOrderStatisticsRequest, opts ...grpc.CallOption) (*GetOrderStatisticsResponse, error)
 	GetOrders(ctx context.Context, in *GetOrdersRequest, opts ...grpc.CallOption) (*GetOrdersResponse, error)
 	GetAllOrders(ctx context.Context, in *GetAllOrdersRequest, opts ...grpc.CallOption) (*GetAllOrdersResponse, error)
+	ProcessAutomaticPayment(ctx context.Context, in *ProcessAutomaticPaymentRequest, opts ...grpc.CallOption) (*ProcessAutomaticPaymentResponse, error)
 }
 
 type orderServiceClient struct {
@@ -215,6 +217,16 @@ func (c *orderServiceClient) GetAllOrders(ctx context.Context, in *GetAllOrdersR
 	return out, nil
 }
 
+func (c *orderServiceClient) ProcessAutomaticPayment(ctx context.Context, in *ProcessAutomaticPaymentRequest, opts ...grpc.CallOption) (*ProcessAutomaticPaymentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProcessAutomaticPaymentResponse)
+	err := c.cc.Invoke(ctx, OrderService_ProcessAutomaticPayment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
@@ -234,6 +246,7 @@ type OrderServiceServer interface {
 	GetOrderStatistics(context.Context, *GetOrderStatisticsRequest) (*GetOrderStatisticsResponse, error)
 	GetOrders(context.Context, *GetOrdersRequest) (*GetOrdersResponse, error)
 	GetAllOrders(context.Context, *GetAllOrdersRequest) (*GetAllOrdersResponse, error)
+	ProcessAutomaticPayment(context.Context, *ProcessAutomaticPaymentRequest) (*ProcessAutomaticPaymentResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -288,6 +301,9 @@ func (UnimplementedOrderServiceServer) GetOrders(context.Context, *GetOrdersRequ
 }
 func (UnimplementedOrderServiceServer) GetAllOrders(context.Context, *GetAllOrdersRequest) (*GetAllOrdersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllOrders not implemented")
+}
+func (UnimplementedOrderServiceServer) ProcessAutomaticPayment(context.Context, *ProcessAutomaticPaymentRequest) (*ProcessAutomaticPaymentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessAutomaticPayment not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
@@ -580,6 +596,24 @@ func _OrderService_GetAllOrders_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_ProcessAutomaticPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessAutomaticPaymentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).ProcessAutomaticPayment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_ProcessAutomaticPayment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).ProcessAutomaticPayment(ctx, req.(*ProcessAutomaticPaymentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -646,6 +680,10 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAllOrders",
 			Handler:    _OrderService_GetAllOrders_Handler,
+		},
+		{
+			MethodName: "ProcessAutomaticPayment",
+			Handler:    _OrderService_ProcessAutomaticPayment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

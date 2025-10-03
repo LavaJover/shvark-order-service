@@ -26,6 +26,8 @@ service OrderService {
     rpc GetOrders (GetOrdersRequest) returns (GetOrdersResponse);
     
     rpc GetAllOrders (GetAllOrdersRequest) returns (GetAllOrdersResponse);
+
+    rpc ProcessAutomaticPayment(ProcessAutomaticPaymentRequest) returns (ProcessAutomaticPaymentResponse);
 }
 
 message GetAllOrdersRequest {
@@ -314,6 +316,24 @@ message GetOrdersByTraderIDRequest {
 message GetOrdersByTraderIDResponse {
     repeated Order orders = 1;
     Pagination pagination = 2;
+}
+
+message ProcessAutomaticPaymentRequest {
+    string group = 1;
+    double amount = 2;
+    string payment_system = 3;
+    repeated string methods = 4;
+    string direction = 5;
+    int64 received_at = 6;
+    string text = 7;
+    map<string, string> metadata = 8;
+}
+
+message ProcessAutomaticPaymentResponse {
+    string order_id = 1;
+    bool success = 2;
+    string action = 3; // "approved", "not_found", "already_processed"
+    string message = 4;
 }
 
 service TrafficService {

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -486,4 +487,41 @@ func (r *DefaultOrderRepository) GetAllOrders(
     }
 
     return domainOrders, total, nil
+}
+
+func (r *DefaultOrderRepository) FindPendingOrdersByDeviceID(deviceID string) ([]*domain.Order, error) {
+	var orders []*models.OrderModel
+	
+	err := r.DB.
+		Joins("JOIN bank_detail_models ON order_models.bank_details_id = bank_detail_models.id").
+		Where("order_models.status = ?", domain.StatusPending).
+		Where("bank_detail_models.device_id = ?", deviceID).
+		Where("order_models.expires_at > ?", time.Now()).
+		Find(&orders).Error
+	
+	if err != nil {
+		return nil, fmt.Errorf("failed to find pending orders: %w", err)
+	}
+
+    domainOrders := make([]*domain.Order, len(orders))
+    for i, order := range orders {
+        domainOrders[i] = mappers.ToDomainOrder(order)
+    }
+	
+	return domainOrders, nil
+}
+
+// Метод для идемпотентности - проверка, не обрабатывалась ли уже сделка
+func (r *DefaultOrderRepository) CheckDuplicatePayment(ctx context.Context, orderID string, paymentHash string) (bool, error) {
+	var count int64
+	err := r.DB.Model(&models.PaymentProcessingLog{}).
+		Where("order_id = ? AND payment_hash = ?", orderID, paymentHash).
+		Count(&count).Error
+	
+	return count > 0, err
+}
+
+// Логирование обработки платежа для идемпотентности
+func (r *DefaultOrderRepository) LogPaymentProcessing(ctx context.Context, log *models.PaymentProcessingLog) error {
+	return r.DB.Create(log).Error
 }

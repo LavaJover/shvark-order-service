@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"time"
 )
 
@@ -148,4 +149,32 @@ type OrderRepository interface {
 		operation string, // добавляем параметр операции
 		walletFunc func() error,
 	) error
+
+	CheckDuplicatePayment(ctx context.Context, orderID string, paymentHash string) (bool, error)
+	FindPendingOrdersByDeviceID(deviceID string) ([]*Order, error)
+}
+
+type PaymentProcessingLog struct {
+	ID           string    `gorm:"primaryKey;type:uuid"`
+	OrderID      string    `gorm:"type:uuid;not null;index"`
+	PaymentHash  string    `gorm:"not null;index"` // Хэш уведомления для идемпотентности
+	Amount       float64   `gorm:"not null"`
+	PaymentSystem string   `gorm:"not null"`
+	ProcessedAt  time.Time `gorm:"not null"`
+	Success      bool      `gorm:"not null"`
+	Error        string    
+	Metadata     string    `gorm:"type:jsonb"` // Дополнительные данные
+}
+
+type OrderProcessingResult struct {
+	OrderID string `json:"order_id"`
+	Action  string `json:"action"` // approved, failed, already_processed
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+type AutomaticPaymentResult struct {
+	Action  string                  `json:"action"`
+	Message string                  `json:"message"`
+	Results []OrderProcessingResult `json:"results,omitempty"`
 }
