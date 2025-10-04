@@ -583,8 +583,8 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
                 TraderID:      order.BankDetail.TraderID,
                 MerchantID:    order.Order.MerchantInfo.MerchantID,
                 OrderID:       order.Order.ID,
-                RewardPercent: 0, // При отмене не даем вознаграждение
-                PlatformFee:   0, // При отмене не берем комиссию
+                RewardPercent: 1, // При отмене не даем вознаграждение !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                PlatformFee:   1, // При отмене не берем комиссию
             },
         },
 		CreatedAt: time.Now(),
