@@ -182,71 +182,77 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
     
     // Получаем trader_id кандидатов для прямого поиска по order_models
     traderIDs := make([]string, len(baseCandidates))
-    traderToBankDetail := make(map[string]models.BankDetailModel)
-    
     for i, candidate := range baseCandidates {
         traderIDs[i] = candidate.TraderID
-        traderToBankDetail[candidate.TraderID] = candidate
     }
     
     now := time.Now()
     startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
     startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
     
-    // СУПЕР ОПТИМИЗИРОВАННЫЙ запрос БЕЗ JOIN'ов - только к order_models!
+    // ИСПРАВЛЕННЫЙ запрос с правильной обработкой UUID массивов
     sqlQuery := `
         WITH trader_stats AS (
             SELECT 
-                trader_id,
+                trader_id::text as trader_id_text,
                 -- Количество активных заказов
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending_count,
+                SUM(CASE WHEN status = $1 THEN 1 ELSE 0 END) as pending_count,
                 -- Статистика за день
-                SUM(CASE WHEN status IN (?, ?) AND created_at >= ? THEN 1 ELSE 0 END) as day_count,
-                SUM(CASE WHEN status IN (?, ?) AND created_at >= ? THEN amount_fiat ELSE 0 END) as day_amount,
+                SUM(CASE WHEN status = ANY($2::text[]) AND created_at >= $3 THEN 1 ELSE 0 END) as day_count,
+                SUM(CASE WHEN status = ANY($4::text[]) AND created_at >= $5 THEN amount_fiat ELSE 0 END) as day_amount,
                 -- Статистика за месяц
-                SUM(CASE WHEN status IN (?, ?) AND created_at >= ? THEN 1 ELSE 0 END) as month_count,
-                SUM(CASE WHEN status IN (?, ?) AND created_at >= ? THEN amount_fiat ELSE 0 END) as month_amount,
+                SUM(CASE WHEN status = ANY($6::text[]) AND created_at >= $7 THEN 1 ELSE 0 END) as month_count,
+                SUM(CASE WHEN status = ANY($8::text[]) AND created_at >= $9 THEN amount_fiat ELSE 0 END) as month_amount,
                 -- Время последнего завершенного заказа
-                MAX(CASE WHEN status = ? THEN created_at END) as last_completed_time,
+                MAX(CASE WHEN status = $10 THEN created_at END) as last_completed_time,
                 -- Проверка на дублирующие заказы
-                SUM(CASE WHEN status = ? AND amount_fiat = ? THEN 1 ELSE 0 END) as duplicate_count
+                SUM(CASE WHEN status = $11 AND amount_fiat = $12 THEN 1 ELSE 0 END) as duplicate_count
             FROM order_models 
-            WHERE trader_id = ANY(?)
+            WHERE trader_id::text = ANY($13::text[])
             GROUP BY trader_id
         )
-        SELECT DISTINCT bd.* 
+        SELECT bd.* 
         FROM bank_detail_models bd
-        LEFT JOIN trader_stats ts ON bd.trader_id = ts.trader_id
-        WHERE bd.trader_id = ANY(?)
+        LEFT JOIN trader_stats ts ON bd.trader_id::text = ts.trader_id_text
+        WHERE bd.trader_id::text = ANY($14::text[])
           AND bd.enabled = true
           AND bd.deleted_at IS NULL
           AND COALESCE(ts.pending_count, 0) < bd.max_orders_simultaneosly
           AND COALESCE(ts.day_count, 0) + 1 <= bd.max_quantity_day
-          AND COALESCE(ts.day_amount, 0) + ? <= bd.max_amount_day
+          AND COALESCE(ts.day_amount, 0) + $15 <= bd.max_amount_day
           AND COALESCE(ts.month_count, 0) + 1 <= bd.max_quantity_month
-          AND COALESCE(ts.month_amount, 0) + ? <= bd.max_amount_month
+          AND COALESCE(ts.month_amount, 0) + $16 <= bd.max_amount_month
           AND (ts.last_completed_time IS NULL OR ts.last_completed_time <= NOW() - (bd.delay / 1000000000.0) * INTERVAL '1 SECOND')
           AND COALESCE(ts.duplicate_count, 0) = 0
     `
     
     var finalCandidates []models.BankDetailModel
     
-    // Выполняем СУПЕР оптимизированный запрос
+    // Подготавливаем массивы статусов
+    pendingCompletedStatuses := []string{string(domain.StatusPending), string(domain.StatusCompleted)}
+    
+    // Выполняем запрос с правильными параметрами
     err := r.DB.Raw(sqlQuery,
-        domain.StatusPending, // pending_count
-        domain.StatusPending, domain.StatusCompleted, startOfDay, // day_count
-        domain.StatusPending, domain.StatusCompleted, startOfDay, // day_amount  
-        domain.StatusPending, domain.StatusCompleted, startOfMonth, // month_count
-        domain.StatusPending, domain.StatusCompleted, startOfMonth, // month_amount
-        domain.StatusCompleted, // last_completed_time
-        domain.StatusPending, searchQuery.AmountFiat, // duplicate_count
-        pq.Array(traderIDs), // trader_id = ANY(?)
-        pq.Array(traderIDs), // WHERE trader_id = ANY(?)
-        searchQuery.AmountFiat, searchQuery.AmountFiat, // лимиты сумм
+        string(domain.StatusPending),                    // $1 - pending status
+        pq.Array(pendingCompletedStatuses),             // $2 - day count statuses
+        startOfDay,                                     // $3 - day start
+        pq.Array(pendingCompletedStatuses),             // $4 - day amount statuses
+        startOfDay,                                     // $5 - day start
+        pq.Array(pendingCompletedStatuses),             // $6 - month count statuses
+        startOfMonth,                                   // $7 - month start
+        pq.Array(pendingCompletedStatuses),             // $8 - month amount statuses
+        startOfMonth,                                   // $9 - month start
+        string(domain.StatusCompleted),                 // $10 - completed status
+        string(domain.StatusPending),                   // $11 - duplicate status
+        searchQuery.AmountFiat,                         // $12 - duplicate amount
+        pq.Array(traderIDs),                           // $13 - trader IDs for WHERE
+        pq.Array(traderIDs),                           // $14 - trader IDs for JOIN
+        searchQuery.AmountFiat,                         // $15 - day amount limit
+        searchQuery.AmountFiat,                         // $16 - month amount limit
     ).Scan(&finalCandidates).Error
     
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to apply dynamic constraints: %w", err)
     }
     
     // Преобразование в доменные объекты
