@@ -56,6 +56,24 @@ type Order struct {
 	PlatformFee		float64
 	CallbackUrl 	string
 
+	// Параметры реквизитв
+	TraderID 			string
+	CardNumber 			string 
+	Phone 				string
+	Owner 				string
+	PaymentSystem 		string
+	BankName 			string
+	BankCode 			string
+	NspkCode 			string
+	DeviceID			string
+
+	// Метрики
+	AutomaticCompleted  bool
+	ManuallyCompleted   bool
+
+	// Тайминги
+	CompletedAt		time.Time
+	CanceledAt		time.Time
 	ExpiresAt 		time.Time
 	CreatedAt 		time.Time
 	UpdatedAt 		time.Time

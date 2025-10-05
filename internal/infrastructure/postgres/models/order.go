@@ -28,6 +28,24 @@ type OrderModel struct {
 	Recalculated   		bool
 	CryptoRubRate		float64
 	Type 				string
+	// Параметры реквизитв
+	TraderID 			string
+	CardNumber 			string 
+	Phone 				string
+	Owner 				string
+	PaymentSystem 		string
+	BankName 			string
+	BankCode 			string
+	NspkCode 			string
+	DeviceID			string
+	// Метрики
+	AutomaticCompleted  bool
+	ManuallyComoleted   bool
+
+	// Тайминги
+	CompletedAt			time.Time
+	CanceledAt			time.Time
+
 }
 
 type PaymentProcessingLog struct {

@@ -10,6 +10,18 @@ type TrafficModel struct {
 	PlatformFee			float64 
 	TraderPriority 		float64
 	Enabled 			bool
+
+	// Гибкие настройки
+	MerchantEnabled		bool
+	TraderEnabled		bool
+	DeviceEnabled		bool
+	FraudEnabled		bool
+
+	// Для антифрода
+	Locked				bool
+	LockedAt			time.Time
+	UnlockedAt			time.Time		
+
 	CreatedAt 			time.Time
 	UpdatedAt 			time.Time
 }
