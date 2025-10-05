@@ -2,12 +2,12 @@ package engine
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/rules"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/strategies"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -15,7 +15,7 @@ import (
 
 func GenerateUUID() string {
     // Здесь должна быть реальная генерация UUID
-    return fmt.Sprintf("uuid-%d", time.Now().UnixNano())
+    return uuid.New().String()
 }
 
 // Пример использования системы
