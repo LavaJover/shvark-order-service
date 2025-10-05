@@ -14,6 +14,9 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/engine"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/rules"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/strategies"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
@@ -153,6 +156,44 @@ func main() {
 			}
 		}
 	}()
+
+	// Init antifraud
+	antifraudLogger := slog.Default()
+	antifraudEngine := engine.NewAntiFraudEngine(db, antifraudLogger)
+
+	antifraudEngine.RegisterStrategy(strategies.NewConsecutiveOrdersStrategy(db))
+	antifraudEngine.RegisterStrategy(strategies.NewCanceledOrdersStrategy(db))
+
+	ruleManager := engine.NewRuleManager(db)
+
+	  // Создаем правила
+	  consecutiveConfig := &rules.ConsecutiveOrdersConfig{
+        MaxConsecutiveOrders: 10,
+        TimeWindow:          24 * time.Hour,
+        StatesToCount:       []string{"COMPLETED", "PROCESSING"},
+    }
+
+    ruleManager.CreateRule(context.Background(), 
+        "Max Consecutive Orders", 
+        "consecutive_orders", 
+        consecutiveConfig, 
+        100)
+
+    canceledConfig := &rules.CanceledOrdersConfig{
+        MaxCanceledOrders: 5,
+        TimeWindow:        24 * time.Hour,
+        CanceledStatuses:  []string{"CANCELED", "REJECTED"},
+    }
+
+    ruleManager.CreateRule(context.Background(), 
+        "Max Canceled Orders", 
+        "canceled_orders", 
+        canceledConfig, 
+		90)
+		
+	// Запускаем планировщик для автоматических проверок
+	scheduler := engine.NewScheduler(antifraudEngine, db, 30*time.Minute, antifraudLogger)
+	go scheduler.Start(context.Background())
 
 	log.Printf("gRPC server started on %s:%s\n", cfg.GRPCServer.Host, cfg.GRPCServer.Port)
 	if err := grpcServer.Serve(lis); err != nil {

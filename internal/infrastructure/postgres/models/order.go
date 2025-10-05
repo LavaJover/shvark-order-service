@@ -40,7 +40,7 @@ type OrderModel struct {
 	DeviceID			string
 	// Метрики
 	AutomaticCompleted  bool
-	ManuallyComoleted   bool
+	ManuallyCompleted   bool
 
 	// Тайминги
 	CompletedAt			time.Time

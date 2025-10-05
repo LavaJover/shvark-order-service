@@ -282,7 +282,16 @@ message GetOrderByIDRequest {
 message GetOrderByIDResponse {
     Order order = 1;
 }
+	// // Метрики
+	// AutomaticCompleted  bool
+	// ManuallyCompleted   bool
 
+	// // Тайминги
+	// CompletedAt		time.Time
+	// CanceledAt		time.Time
+	// ExpiresAt 		time.Time
+	// CreatedAt 		time.Time
+	// UpdatedAt 		time.Time
 message Order {
     string order_id = 1;
     string status = 2;
@@ -302,6 +311,14 @@ message Order {
     double crypto_rub_rate = 15;
     string merchant_id = 16;
     string type = 17;
+
+    // Метрики
+    message Metrics {
+        google.protobuf.Timestamp completed_at = 18;
+        google.protobuf.Timestamp cancelled_ad = 19;
+        bool automatic_completed = 20;
+        bool manually_completed = 21;
+    }
 }
 
 message GetOrdersByTraderIDRequest {
@@ -346,6 +363,20 @@ service TrafficService {
     rpc GetTraderTrafficStatus (GetTraderTrafficStatusRequest) returns (GetTraderTrafficStatusResponse);
 }
 
+	// // Гибкие настройки
+	// MerchantEnabled		bool
+	// TraderEnabled		bool
+	// DeviceEnabled		bool
+	// FraudEnabled		bool
+
+	// // Для антифрода
+	// Locked				bool
+	// LockedAt			time.Time
+	// UnlockedAt			time.Time
+
+	// // Бизнес-параметры
+	// MerchantDealsDuration	time.Duration
+
 message AddTrafficRequest {
     string merchant_id = 1;
     string trader_id = 2;
@@ -353,6 +384,22 @@ message AddTrafficRequest {
     double trader_priority = 4;
     bool enabled = 5;
     double platform_fee = 6;
+
+    message ActivityParameters {
+        bool merchant_unlocked = 1;
+        bool trader_unlocked = 2;
+        bool manually_unlocked = 3;
+        bool antifraud_unlocked = 4;
+
+        message AntifraudParameters {
+            bool antifraud_required = 1;
+        }
+    }
+
+    message BusinessParameters {
+        google.protobuf.Duration merchant_deals_duration = 1;
+    }
+
 }
 
 message Traffic {
@@ -363,6 +410,21 @@ message Traffic {
     double trader_priority = 5;
     bool enabled = 6;
     double platform_fee = 7;
+
+    message ActivityParameters {
+        bool merchant_unlocked = 1;
+        bool trader_unlocked = 2;
+        bool manually_unlocked = 3;
+        bool antifraud_unlocked = 4;
+
+        message AntifraudParameters {
+            bool antifraud_enabled = 1;
+        }
+    }
+
+    message BusinessParameters {
+        google.protobuf.Duration merchant_deals_duration = 1;
+    }
 }
 
 message AddTrafficResponse {
@@ -599,12 +661,19 @@ message Device {
     string device_name = 2;
     string trader_id = 3;
     bool enabled = 4;
+
+    bool device_online = 5;
+    bool manually_unlocked = 6;
+
+    google.protobuf.Timestamp created_at = 7;
+    google.protobuf.Timestamp updated_at = 8;
 }
 
 message CreateDeviceRequest {
     string device_name = 1;
     string trader_id = 2;
     bool enabled = 3;
+    bool manually_unlocked = 7;
 }
 
 message CreateDeviceResponse {}

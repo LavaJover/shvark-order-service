@@ -2,6 +2,21 @@ package domain
 
 import "time"
 
+// message ActivityParameters {
+// 	bool merchant_unlocked = 1;
+// 	bool trader_unlocked = 2;
+// 	bool manually_unlocked = 3;
+// 	bool antifraud_unlocked = 4;
+
+// 	message AntifraudParameters {
+// 		bool antifraud_enabled = 1;
+// 	}
+// }
+
+// message BusinessParameters {
+// 	google.protobuf.Duration merchant_deals_duration = 1;
+// }
+
 type Traffic struct {
 	ID 					string
 	MerchantID 			string
@@ -11,16 +26,38 @@ type Traffic struct {
 	TraderPriority 		float64
 	Enabled 			bool // для админов
 
-	// Гибкие настройки
-	MerchantEnabled		bool
-	TraderEnabled		bool
-	DeviceEnabled		bool
-	FraudEnabled		bool
+	// Гибкие параметры
+	ActivityParams 		TrafficActivityParams
 
 	// Для антифрода
-	Locked				bool
+	AntifraudParams		TrafficAntifraudParams
+
+	// Детали блокировки
+	LockDetails			*TrafficLockDetails
+
+	// Бизнес-параметры
+	BusinessParams		TrafficBusinessParams
+}
+
+type TrafficActivityParams struct {
+	MerchantUnlocked	bool
+	TraderUnlocked		bool
+	AntifraudUnlocked	bool
+	ManuallyUnlocked	bool
+}
+
+type TrafficAntifraudParams struct {
+	AntifraudRequired bool
+}
+
+type TrafficLockDetails struct {
 	LockedAt			time.Time
-	UnlockedAt			time.Time	
+	UnlockedAt			time.Time
+	Reason				string
+}
+
+type TrafficBusinessParams struct {
+	MerchantDealsDuration time.Duration
 }
 
 type TrafficUsecase interface {

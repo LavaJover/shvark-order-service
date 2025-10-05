@@ -30,6 +30,20 @@ func ToDomainOrder(model *models.OrderModel) *domain.Order {
 		ExpiresAt: model.ExpiresAt,
 		CreatedAt: model.CreatedAt,
 		UpdatedAt: model.UpdatedAt,
+
+		TraderID: model.TraderID,
+		CardNumber: model.CardNumber,
+		Phone: model.Phone,
+		Owner: model.Owner,
+		PaymentSystem: model.PaymentSystem,
+		BankName: model.BankName,
+		BankCode: model.BankCode,
+		NspkCode: model.NspkCode,
+		DeviceID: model.DeviceID,
+		AutomaticCompleted: model.AutomaticCompleted,
+		ManuallyCompleted: model.ManuallyCompleted,
+		CompletedAt: model.CompletedAt,
+		CanceledAt: model.CanceledAt,
 	}
 }
 
@@ -54,5 +68,19 @@ func ToGORMOrder(order *domain.Order) *models.OrderModel {
 		ExpiresAt: order.ExpiresAt,
 		CreatedAt: order.CreatedAt,
 		UpdatedAt: order.UpdatedAt,
+
+		TraderID: order.TraderID,
+		CardNumber: order.CardNumber,
+		Phone: order.Phone,
+		Owner: order.Owner,
+		PaymentSystem: order.PaymentSystem,
+		BankName: order.BankName,
+		BankCode: order.BankCode,
+		NspkCode: order.NspkCode,
+		DeviceID: order.DeviceID,
+		AutomaticCompleted: order.AutomaticCompleted,
+		ManuallyCompleted: order.ManuallyCompleted,
+		CompletedAt: order.CompletedAt,
+		CanceledAt: order.CanceledAt,
 	}
 }

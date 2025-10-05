@@ -12,15 +12,18 @@ type TrafficModel struct {
 	Enabled 			bool
 
 	// Гибкие настройки
-	MerchantEnabled		bool
-	TraderEnabled		bool
-	DeviceEnabled		bool
-	FraudEnabled		bool
+	MerchantUnlocked	bool
+	TraderUnlocked		bool
+	AntifraudUnlocked	bool
+	ManuallyUnlocked	bool
 
-	// Для антифрода
-	Locked				bool
+	AntifraudRequired bool	
+
 	LockedAt			time.Time
-	UnlockedAt			time.Time		
+	UnlockedAt			time.Time
+	Reason				string
+
+	MerchantDealsDuration time.Duration
 
 	CreatedAt 			time.Time
 	UpdatedAt 			time.Time

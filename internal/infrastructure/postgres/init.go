@@ -5,6 +5,8 @@ import (
 
 	"github.com/LavaJover/shvark-order-service/internal/config"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/engine"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/rules"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -30,6 +32,8 @@ func MustInitDB(cfg *config.OrderConfig) *gorm.DB {
 		&models.DisputeModel{}, 
 		&models.TeamRelationshipModel{},
 		&models.PaymentProcessingLog{},
+		&rules.AntiFraudRule{},
+		&engine.AntiFraudAuditLog{},
 	)
 
 	// Применяем SQL миграции
