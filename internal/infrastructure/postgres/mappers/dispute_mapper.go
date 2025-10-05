@@ -17,6 +17,8 @@ func ToDomainDispute(model *models.DisputeModel) *domain.Dispute {
 		Status: domain.DisputeStatus(model.Status),
 		Ttl: model.Ttl,
 		AutoAcceptAt: model.AutoAcceptAt,
+		OrderStatusOriginal: domain.OrderStatus(model.OrderStatusOriginal),
+		OrderStatusDisputed: domain.OrderStatus(model.OrderStatusDisputed),
 		CreatedAt: model.CreatedAt,
 		UpdatedAt: model.UpdatedAt,
 	}
@@ -34,6 +36,8 @@ func ToGORMDispute(dispute *domain.Dispute) *models.DisputeModel {
 		Status: string(dispute.Status),
 		Ttl: dispute.Ttl,
 		AutoAcceptAt: dispute.AutoAcceptAt,
+		OrderStatusOriginal: string(dispute.OrderStatusOriginal),
+		OrderStatusDisputed: string(dispute.OrderStatusDisputed),
 		CreatedAt: dispute.CreatedAt,
 		UpdatedAt: dispute.UpdatedAt,
 	}
