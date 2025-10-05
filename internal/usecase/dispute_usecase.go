@@ -87,11 +87,6 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(input *disputedto.CreateDi
 		AutoAcceptAt: time.Now().Add(input.Ttl),
 	}
 
-	bankDetailID := order.BankDetailID
-	bankDetail, err := disputeUc.bankDetailRepo.GetBankDetailByID(bankDetailID)
-	if err != nil {
-		return err
-	}
 	err = disputeUc.disputeRepo.CreateDispute(&dispute)
 	if err != nil {
 		return err
@@ -103,25 +98,25 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(input *disputedto.CreateDi
 	}(publisher.DisputeEvent{
 		DisputeID: dispute.ID,
 		OrderID: dispute.OrderID,
-		TraderID: bankDetail.TraderID,
+		TraderID: order.RequisiteDetails.TraderID,
 		OrderAmountFiat: order.AmountInfo.AmountFiat,
 		DisputeAmountFiat: dispute.DisputeAmountFiat,
 		ProofUrl: dispute.ProofUrl,
 		Reason: dispute.Reason,
 		Status: "🆘Открыт диспут",
-		BankName: bankDetail.BankName,
-		Phone: bankDetail.Phone,
-		CardNumber: bankDetail.CardNumber,
-		Owner: bankDetail.Owner,
+		BankName: order.RequisiteDetails.BankName,
+		Phone: order.RequisiteDetails.Phone,
+		CardNumber: order.RequisiteDetails.CardNumber,
+		Owner: order.RequisiteDetails.Owner,
 	})
 
 	if order.Status == domain.StatusCompleted {
-		err = disputeUc.walletHandler.Freeze(bankDetail.TraderID, fmt.Sprintf("%s_dispute_%s", dispute.OrderID, dispute.ID), dispute.DisputeAmountCrypto-order.AmountInfo.AmountCrypto)
+		err = disputeUc.walletHandler.Freeze(order.RequisiteDetails.TraderID, fmt.Sprintf("%s_dispute_%s", dispute.OrderID, dispute.ID), dispute.DisputeAmountCrypto-order.AmountInfo.AmountCrypto)
 		if err != nil {
 			return status.Error(codes.Internal, err.Error())
 		}
 	}else {
-		err = disputeUc.walletHandler.Freeze(bankDetail.TraderID, fmt.Sprintf("%s_dispute_%s", dispute.OrderID, dispute.ID), dispute.DisputeAmountCrypto)
+		err = disputeUc.walletHandler.Freeze(order.RequisiteDetails.TraderID, fmt.Sprintf("%s_dispute_%s", dispute.OrderID, dispute.ID), dispute.DisputeAmountCrypto)
 		if err != nil {
 			return status.Error(codes.Internal, err.Error())
 		}
@@ -153,18 +148,13 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 	if order.Status != domain.StatusDisputeCreated {
 		return fmt.Errorf("invalid order status to accept dispute: %s", order.Status)
 	}
-	bankDetailID := order.BankDetailID
-	bankDetail, err := disputeUc.bankDetailRepo.GetBankDetailByID(bankDetailID)
-	if err != nil {
-		return err
-	}
-	traffic, err := disputeUc.trafficRepo.GetTrafficByTraderMerchant(bankDetail.TraderID, order.MerchantInfo.MerchantID)
+	traffic, err := disputeUc.trafficRepo.GetTrafficByTraderMerchant(order.RequisiteDetails.TraderID, order.MerchantInfo.MerchantID)
 	if err != nil {
 		return err
 	}
 	// Search for team relations to find commission users
 	var commissionUsers []walletRequest.CommissionUser
-	teamRelations, err := disputeUc.teamRelationsUsecase.GetRelationshipsByTraderID(bankDetail.TraderID)
+	teamRelations, err := disputeUc.teamRelationsUsecase.GetRelationshipsByTraderID(order.RequisiteDetails.TraderID)
 	if err == nil {
 		for _, teamRelation := range teamRelations {
 			commissionUsers = append(commissionUsers, walletRequest.CommissionUser{
@@ -187,7 +177,7 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 		WalletOp: &WalletOperation{
 			Type: "release",
 			Request: walletRequest.ReleaseRequest{
-				TraderID: bankDetail.TraderID,
+				TraderID: order.RequisiteDetails.TraderID,
 				MerchantID: order.MerchantInfo.MerchantID,
 				OrderID: fmt.Sprintf("%s_dispute_%s", dispute.OrderID, dispute.ID),
 				RewardPercent: traffic.TraderRewardPercent,
@@ -228,11 +218,6 @@ func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
 	if order.Status != domain.StatusDisputeCreated {
 		return fmt.Errorf("invalid order status to reject dispute: %s", order.Status)
 	}
-	bankDetailID := order.BankDetailID
-	bankDetail, err := disputeUc.bankDetailRepo.GetBankDetailByID(bankDetailID)
-	if err != nil {
-		return err
-	}
 	op := &DisputeOperation{
 		OrderID: order.ID,
 		DisputeID: disputeID,
@@ -244,7 +229,7 @@ func (disputeUc *DefaultDisputeUsecase) RejectDispute(disputeID string) error {
 		WalletOp: &WalletOperation{
 			Type: "release",
 			Request: walletRequest.ReleaseRequest{
-				TraderID: bankDetail.TraderID,
+				TraderID: order.RequisiteDetails.TraderID,
 				MerchantID: order.MerchantInfo.MerchantID,
 				OrderID: fmt.Sprintf("%s_dispute_%s", dispute.OrderID, dispute.ID),
 				RewardPercent: 1,

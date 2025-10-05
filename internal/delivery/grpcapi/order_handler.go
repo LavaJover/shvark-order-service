@@ -40,24 +40,6 @@ func NewOrderHandler(
 }
 
 func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRequest) (*orderpb.CreateOrderResponse, error) {
-
-	// orderRequest := domain.Order{
-	// 	MerchantID: r.MerchantId,
-	// 	AmountFiat: r.AmountFiat,
-	// 	Currency: r.Currency,
-	// 	Country: r.Country,
-	// 	ClientID: r.ClientId,
-	// 	Status: domain.StatusPending,
-	// 	PaymentSystem: r.PaymentSystem,
-	// 	MerchantOrderID: r.MerchantOrderId,
-	// 	Shuffle: r.Shuffle,
-	// 	ExpiresAt: r.ExpiresAt.AsTime(),
-	// 	CallbackURL: r.CallbackUrl,
-	// 	BankCode: r.BankCode,
-	// 	NspkCode: r.NspkCode,
-	// 	Type: r.Type,
-	// }
-
 	amountCrypto := r.AmountFiat / usdt.UsdtRubRates
 
 	createOrderInput := orderdto.CreateOrderInput{
@@ -152,7 +134,7 @@ func (h *OrderHandler) ApproveOrder(ctx context.Context, r *orderpb.ApproveOrder
 
 func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByIDRequest) (*orderpb.GetOrderByIDResponse, error) {
 	orderID := r.OrderId
-	orderResponse, err := h.uc.GetOrderByID(orderID)
+	order, err := h.uc.GetOrderByID(orderID)
 	if err != nil {
 		return nil, err
 	}
@@ -160,86 +142,90 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 	return &orderpb.GetOrderByIDResponse{
 		Order: &orderpb.Order{
 			OrderId: orderID,
-			Status: string(orderResponse.Order.Status),
-			Type: orderResponse.Order.Type,
+			Status: string(order.Status),
+			Type: order.Type,
 			BankDetail: &orderpb.BankDetail{
-				BankDetailId: orderResponse.BankDetail.ID,
-				TraderId: orderResponse.BankDetail.TraderID,
-				Currency: orderResponse.BankDetail.Currency,
-				Country: orderResponse.BankDetail.Country,
-				MinAmount: float64(orderResponse.BankDetail.MinOrderAmount),
-				MaxAmount: float64(orderResponse.BankDetail.MaxOrderAmount),
-				BankName: orderResponse.BankDetail.BankName,
-				PaymentSystem: orderResponse.BankDetail.PaymentSystem,
-				Enabled: orderResponse.BankDetail.Enabled,
-				Delay: durationpb.New(orderResponse.BankDetail.Delay),
-				Owner: orderResponse.BankDetail.Owner,
-				CardNumber: orderResponse.BankDetail.CardNumber,
-				Phone: orderResponse.BankDetail.Phone,
-				BankCode: orderResponse.BankDetail.BankCode,
-				NspkCode: orderResponse.BankDetail.NspkCode,
-				InflowCurrency: orderResponse.BankDetail.InflowCurrency,
+				BankDetailId: order.BankDetailID,
+				TraderId: order.RequisiteDetails.TraderID,
+				Currency: order.AmountInfo.Currency,
+				Country: "unknown",
+				BankName: order.RequisiteDetails.BankName,
+				PaymentSystem: order.RequisiteDetails.PaymentSystem,
+				Owner: order.RequisiteDetails.Owner,
+				CardNumber: order.RequisiteDetails.CardNumber,
+				Phone: order.RequisiteDetails.Phone,
+				BankCode: order.RequisiteDetails.BankCode,
+				NspkCode: order.RequisiteDetails.NspkCode,
+				InflowCurrency: order.AmountInfo.Currency,
 			},
-			AmountFiat: float64(orderResponse.Order.AmountInfo.AmountFiat),
-			AmountCrypto: float64(orderResponse.Order.AmountInfo.AmountCrypto),
-			ExpiresAt: timestamppb.New(orderResponse.Order.ExpiresAt),
-			MerchantOrderId: orderResponse.Order.MerchantInfo.MerchantOrderID,
-			Shuffle: orderResponse.Order.Shuffle,
-			ClientId: orderResponse.Order.MerchantInfo.ClientID,
-			CallbackUrl: orderResponse.Order.CallbackUrl,
-			TraderRewardPercent: orderResponse.Order.TraderReward,
-			CreatedAt: timestamppb.New(orderResponse.Order.CreatedAt),
-			UpdatedAt: timestamppb.New(orderResponse.Order.UpdatedAt),
-			Recalculated: orderResponse.Order.Recalculated,
-			CryptoRubRate: orderResponse.Order.AmountInfo.CryptoRate,
-			MerchantId: orderResponse.Order.MerchantInfo.MerchantID,
+			AmountFiat: order.AmountInfo.AmountFiat,
+			AmountCrypto: order.AmountInfo.AmountCrypto,
+			ExpiresAt: timestamppb.New(order.ExpiresAt),
+			MerchantOrderId: order.MerchantInfo.MerchantOrderID,
+			Shuffle: order.Shuffle,
+			ClientId: order.MerchantInfo.ClientID,
+			CallbackUrl: order.CallbackUrl,
+			TraderRewardPercent: order.TraderReward,
+			CreatedAt: timestamppb.New(order.CreatedAt),
+			UpdatedAt: timestamppb.New(order.UpdatedAt),
+			Recalculated: order.Recalculated,
+			CryptoRubRate: order.AmountInfo.CryptoRate,
+			MerchantId: order.MerchantInfo.MerchantID,
+			Metrics: &orderpb.OrderMetrics{
+				CompletedAt: timestamppb.New(order.Metrics.CompletedAt),
+				CancelledAd: timestamppb.New(order.Metrics.CanceledAt),
+				AutomaticCompleted: order.Metrics.AutomaticCompleted,
+				ManuallyCompleted: order.Metrics.ManuallyCompleted,
+			},
 		},
 	}, nil
 }
 
 func (h *OrderHandler) GetOrderByMerchantOrderID(ctx context.Context, r *orderpb.GetOrderByMerchantOrderIDRequest) (*orderpb.GetOrderByMerchantOrderIDResponse, error) {
 	merchantOrderID := r.MerchantOrderId
-	orderResponse, err := h.uc.GetOrderByMerchantOrderID(merchantOrderID)
+	order, err := h.uc.GetOrderByMerchantOrderID(merchantOrderID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &orderpb.GetOrderByMerchantOrderIDResponse{
 		Order: &orderpb.Order{
-			OrderId: orderResponse.Order.ID,
-			Status: string(orderResponse.Order.Status),
-			Type: orderResponse.Order.Type,
+			OrderId: order.ID,
+			Status: string(order.Status),
+			Type: order.Type,
 			BankDetail: &orderpb.BankDetail{
-				BankDetailId: orderResponse.BankDetail.ID,
-				TraderId: orderResponse.BankDetail.TraderID,
-				Currency: orderResponse.BankDetail.Currency,
-				Country: orderResponse.BankDetail.Country,
-				MinAmount: float64(orderResponse.BankDetail.MinOrderAmount),
-				MaxAmount: float64(orderResponse.BankDetail.MaxOrderAmount),
-				BankName: orderResponse.BankDetail.BankName,
-				PaymentSystem: orderResponse.BankDetail.PaymentSystem,
-				Enabled: orderResponse.BankDetail.Enabled,
-				Delay: durationpb.New(orderResponse.BankDetail.Delay),
-				Owner: orderResponse.BankDetail.Owner,
-				CardNumber: orderResponse.BankDetail.CardNumber,
-				Phone: orderResponse.BankDetail.Phone,
-				BankCode: orderResponse.BankDetail.BankCode,
-				NspkCode: orderResponse.BankDetail.NspkCode,
-				InflowCurrency: orderResponse.BankDetail.InflowCurrency,
+				BankDetailId: order.BankDetailID,
+				TraderId: order.RequisiteDetails.TraderID,
+				Currency: order.AmountInfo.Currency,
+				Country: "unknown",
+				BankName: order.RequisiteDetails.BankName,
+				PaymentSystem: order.RequisiteDetails.PaymentSystem,
+				Owner: order.RequisiteDetails.Owner,
+				CardNumber: order.RequisiteDetails.CardNumber,
+				Phone: order.RequisiteDetails.Phone,
+				BankCode: order.RequisiteDetails.BankCode,
+				NspkCode: order.RequisiteDetails.NspkCode,
+				InflowCurrency: order.AmountInfo.Currency,
 			},
-			AmountFiat: float64(orderResponse.Order.AmountInfo.AmountFiat),
-			AmountCrypto: float64(orderResponse.Order.AmountInfo.AmountCrypto),
-			ExpiresAt: timestamppb.New(orderResponse.Order.ExpiresAt),
-			MerchantOrderId: orderResponse.Order.MerchantInfo.MerchantOrderID,
-			Shuffle: orderResponse.Order.Shuffle,
-			ClientId: orderResponse.Order.MerchantInfo.ClientID,
-			CallbackUrl: orderResponse.Order.CallbackUrl,
-			TraderRewardPercent: orderResponse.Order.TraderReward,
-			CreatedAt: timestamppb.New(orderResponse.Order.CreatedAt),
-			UpdatedAt: timestamppb.New(orderResponse.Order.UpdatedAt),
-			Recalculated: orderResponse.Order.Recalculated,
-			CryptoRubRate: orderResponse.Order.AmountInfo.CryptoRate,
-			MerchantId: orderResponse.Order.MerchantInfo.MerchantID,
+			AmountFiat: order.AmountInfo.AmountFiat,
+			AmountCrypto: order.AmountInfo.AmountCrypto,
+			ExpiresAt: timestamppb.New(order.ExpiresAt),
+			MerchantOrderId: order.MerchantInfo.MerchantOrderID,
+			Shuffle: order.Shuffle,
+			ClientId: order.MerchantInfo.ClientID,
+			CallbackUrl: order.CallbackUrl,
+			TraderRewardPercent: order.TraderReward,
+			CreatedAt: timestamppb.New(order.CreatedAt),
+			UpdatedAt: timestamppb.New(order.UpdatedAt),
+			Recalculated: order.Recalculated,
+			CryptoRubRate: order.AmountInfo.CryptoRate,
+			MerchantId: order.MerchantInfo.MerchantID,
+			Metrics: &orderpb.OrderMetrics{
+				CompletedAt: timestamppb.New(order.Metrics.CompletedAt),
+				CancelledAd: timestamppb.New(order.Metrics.CanceledAt),
+				AutomaticCompleted: order.Metrics.AutomaticCompleted,
+				ManuallyCompleted: order.Metrics.ManuallyCompleted,
+			},
 		},
 	}, nil
 }
@@ -325,6 +311,12 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 			Recalculated: order.Order.Recalculated,
 			CryptoRubRate: order.Order.AmountInfo.CryptoRate,
 			MerchantId: order.Order.MerchantInfo.MerchantID,
+			Metrics: &orderpb.OrderMetrics{
+				CompletedAt: timestamppb.New(order.Order.Metrics.CompletedAt),
+				CancelledAd: timestamppb.New(order.Order.Metrics.CanceledAt),
+				AutomaticCompleted: order.Order.Metrics.AutomaticCompleted,
+				ManuallyCompleted: order.Order.Metrics.ManuallyCompleted,
+			},
 		}
 	}
 
@@ -455,40 +447,41 @@ func (h *OrderHandler) GetOrderDisputes(ctx context.Context, r *orderpb.GetOrder
 			DisputeCryptoRate: dispute.DisputeCryptoRate,
 			AcceptAt: timestamppb.New(dispute.AutoAcceptAt),
 			Order: &orderpb.Order{
-				OrderId: order.Order.ID,
-				Status: string(order.Order.Status),
-				AmountFiat: order.Order.AmountInfo.AmountFiat,
-				AmountCrypto: order.Order.AmountInfo.AmountCrypto,
-				ExpiresAt: timestamppb.New(order.Order.ExpiresAt),
-				MerchantOrderId: order.Order.MerchantInfo.MerchantOrderID,
-				TraderRewardPercent: order.Order.TraderReward,
-				CreatedAt: timestamppb.New(order.Order.CreatedAt),
-				UpdatedAt: timestamppb.New(order.Order.UpdatedAt),
-				CryptoRubRate: order.Order.AmountInfo.CryptoRate,
-				Type: order.Order.Type,
+				OrderId: order.ID,
+				Status: string(order.Status),
+				AmountFiat: order.AmountInfo.AmountFiat,
+				AmountCrypto: order.AmountInfo.AmountCrypto,
+				ExpiresAt: timestamppb.New(order.ExpiresAt),
+				MerchantOrderId: order.MerchantInfo.MerchantOrderID,
+				TraderRewardPercent: order.TraderReward,
+				CreatedAt: timestamppb.New(order.CreatedAt),
+				UpdatedAt: timestamppb.New(order.UpdatedAt),
+				CryptoRubRate: order.AmountInfo.CryptoRate,
+				Type: order.Type,
 				BankDetail: &orderpb.BankDetail{
-					BankDetailId: order.BankDetail.ID,
-					TraderId: order.BankDetail.TraderID,
-					Currency: order.BankDetail.Currency,
-					BankName: order.BankDetail.BankName,
-					PaymentSystem: order.BankDetail.PaymentSystem,
-					CardNumber: order.BankDetail.CardNumber,
-					Phone: order.BankDetail.Phone,
-					Owner: order.BankDetail.Owner,
-					DeviceId: order.BankDetail.DeviceID,
-					BankCode: order.BankDetail.BankCode,
-					Country: order.BankDetail.Country,
-					MinAmount: float64(order.BankDetail.MinOrderAmount),
-					MaxAmount: float64(order.BankDetail.MaxOrderAmount),
-					Enabled: order.BankDetail.Enabled,
-					Delay: durationpb.New(order.BankDetail.Delay),
-					MaxOrdersSimultaneosly: order.BankDetail.MaxOrdersSimultaneosly,
-					MaxAmountDay: float64(order.BankDetail.MaxAmountDay),
-					MaxAmountMonth: float64(order.BankDetail.MaxAmountMonth),
-					MaxQuantityDay: float64(order.BankDetail.MaxQuantityDay),
-					MaxQuantityMonth: float64(order.BankDetail.MaxQuantityMonth),
-					InflowCurrency: order.BankDetail.InflowCurrency,
-					NspkCode: order.BankDetail.NspkCode,
+					BankDetailId: order.BankDetailID,
+					TraderId: order.RequisiteDetails.TraderID,
+					Currency: order.AmountInfo.Currency,
+					Country: "unknown",
+					BankName: order.RequisiteDetails.BankName,
+					PaymentSystem: order.RequisiteDetails.PaymentSystem,
+					Owner: order.RequisiteDetails.Owner,
+					CardNumber: order.RequisiteDetails.CardNumber,
+					Phone: order.RequisiteDetails.Phone,
+					BankCode: order.RequisiteDetails.BankCode,
+					NspkCode: order.RequisiteDetails.NspkCode,
+					InflowCurrency: order.AmountInfo.Currency,
+				},
+				MerchantId: order.MerchantInfo.MerchantID,
+				Shuffle: order.Shuffle,
+				ClientId: order.MerchantInfo.ClientID,
+				CallbackUrl: order.CallbackUrl,
+				Recalculated: order.Recalculated,
+				Metrics: &orderpb.OrderMetrics{
+					CompletedAt: timestamppb.New(order.Metrics.CompletedAt),
+					CancelledAd: timestamppb.New(order.Metrics.CanceledAt),
+					AutomaticCompleted: order.Metrics.AutomaticCompleted,
+					ManuallyCompleted: order.Metrics.ManuallyCompleted,
 				},
 			},
 		}
@@ -572,11 +565,11 @@ func (h *OrderHandler) GetOrders(ctx context.Context, r *orderpb.GetOrdersReques
     content := make([]*orderpb.OrderResponse, 0, len(orders))
     for _, o := range orders {
         // ИСПРАВЛЕНО: используем реальные данные из модели
-		bankDetailID := o.BankDetailID
-		bankDetail, err := h.bankDetailUc.GetBankDetailByID(bankDetailID)
-		if err != nil {
-			return nil, err
-		}
+		// bankDetailID := o.BankDetailID
+		// bankDetail, err := h.bankDetailUc.GetBankDetailByID(bankDetailID)
+		// if err != nil {
+		// 	return nil, err
+		// }
         response := &orderpb.OrderResponse{
             Id:           o.MerchantInfo.MerchantOrderID,
             TimeOpening:  timestamppb.New(o.CreatedAt),
@@ -595,10 +588,10 @@ func (h *OrderHandler) GetOrders(ctx context.Context, r *orderpb.GetOrdersReques
                 Currency: "USDT",
             },
             Requisites: &orderpb.Requisites{
-                Issuer:      bankDetail.BankCode,
-                HolderName:  bankDetail.Owner,
-                PhoneNumber: bankDetail.Phone,
-				CardNumber: bankDetail.CardNumber,
+                Issuer:      o.RequisiteDetails.BankCode,
+                HolderName:  o.RequisiteDetails.Owner,
+                PhoneNumber: o.RequisiteDetails.Phone,
+				CardNumber: o.RequisiteDetails.CardNumber,
             },
             Email: "email", // TODO: заменить на реальное значение
         }
@@ -696,36 +689,27 @@ func (h *OrderHandler) GetAllOrders(
 
     for i, order := range output.Orders {
         // Здесь используем ваш маппинг в protobuf
-		bankDetail, err := h.bankDetailUc.GetBankDetailByID(order.BankDetailID)
-		if err != nil {
-			return nil, err
-		}
+		// bankDetail, err := h.bankDetailUc.GetBankDetailByID(order.BankDetailID)
+		// if err != nil {
+		// 	return nil, err
+		// }
         res.Orders[i] = &orderpb.Order{
 			OrderId: order.ID,
 			Status: string(order.Status),
 			BankDetail: &orderpb.BankDetail{
-				BankDetailId: bankDetail.ID,
-				TraderId: bankDetail.TraderID,
-				Currency: bankDetail.Currency,
-				Country: bankDetail.Country,
-				MinAmount: float64(bankDetail.MinOrderAmount),
-				MaxAmount: float64(bankDetail.MaxOrderAmount),
-				BankName: bankDetail.BankName,
-				PaymentSystem: bankDetail.PaymentSystem,
-				Enabled: bankDetail.Enabled,
-				Delay: durationpb.New(bankDetail.Delay),
-				CardNumber: bankDetail.CardNumber,
-				Phone: bankDetail.Phone,
-				Owner: bankDetail.Owner,
-				MaxOrdersSimultaneosly: bankDetail.MaxOrdersSimultaneosly,
-				MaxAmountDay: bankDetail.MaxAmountDay,
-				MaxAmountMonth: bankDetail.MaxAmountMonth,
-				MaxQuantityDay: float64(bankDetail.MaxQuantityDay),
-				MaxQuantityMonth: float64(bankDetail.MaxQuantityMonth),
-				DeviceId: bankDetail.DeviceID,
-				InflowCurrency: bankDetail.InflowCurrency,
-				BankCode: bankDetail.BankCode,
-				NspkCode: bankDetail.NspkCode,
+				BankDetailId: order.BankDetailID,
+				TraderId: order.RequisiteDetails.TraderID,
+				Currency: order.AmountInfo.Currency,
+				Country: "unknown",
+				BankName: order.RequisiteDetails.BankName,
+				PaymentSystem: order.RequisiteDetails.PaymentSystem,
+				CardNumber: order.RequisiteDetails.CardNumber,
+				Phone: order.RequisiteDetails.Phone,
+				Owner: order.RequisiteDetails.Owner,
+				DeviceId: order.RequisiteDetails.DeviceID,
+				InflowCurrency: order.AmountInfo.Currency,
+				BankCode: order.RequisiteDetails.BankCode,
+				NspkCode: order.RequisiteDetails.NspkCode,
 			},
 			AmountFiat: order.AmountInfo.AmountFiat,
 			AmountCrypto: order.AmountInfo.AmountCrypto,
@@ -741,6 +725,12 @@ func (h *OrderHandler) GetAllOrders(
 			CryptoRubRate: order.AmountInfo.CryptoRate,
 			MerchantId: order.MerchantInfo.MerchantID,
 			Type: order.Type,
+			Metrics: &orderpb.OrderMetrics{
+				CompletedAt: timestamppb.New(order.Metrics.CompletedAt),
+				CancelledAd: timestamppb.New(order.Metrics.CanceledAt),
+				AutomaticCompleted: order.Metrics.AutomaticCompleted,
+				ManuallyCompleted: order.Metrics.ManuallyCompleted,
+			},
 		}
     }
 

@@ -311,14 +311,14 @@ message Order {
     double crypto_rub_rate = 15;
     string merchant_id = 16;
     string type = 17;
+    OrderMetrics metrics = 18;
+}
 
-    // Метрики
-    message Metrics {
-        google.protobuf.Timestamp completed_at = 18;
-        google.protobuf.Timestamp cancelled_ad = 19;
-        bool automatic_completed = 20;
-        bool manually_completed = 21;
-    }
+message OrderMetrics{
+    google.protobuf.Timestamp completed_at = 1;
+    google.protobuf.Timestamp cancelled_ad = 2;
+    bool automatic_completed = 3;
+    bool manually_completed = 4;
 }
 
 message GetOrdersByTraderIDRequest {
@@ -363,19 +363,44 @@ service TrafficService {
     rpc GetTraderTrafficStatus (GetTraderTrafficStatusRequest) returns (GetTraderTrafficStatusResponse);
 }
 
-	// // Гибкие настройки
-	// MerchantEnabled		bool
-	// TraderEnabled		bool
-	// DeviceEnabled		bool
-	// FraudEnabled		bool
+// type Traffic struct {
+// 	ID 					string
+// 	MerchantID 			string
+// 	TraderID 			string
+// 	TraderRewardPercent float64
+// 	PlatformFee			float64
+// 	TraderPriority 		float64
+// 	Enabled 			bool // для админов
 
-	// // Для антифрода
-	// Locked				bool
-	// LockedAt			time.Time
-	// UnlockedAt			time.Time
+// 	// Гибкие параметры
+// 	ActivityParams 		TrafficActivityParams
 
-	// // Бизнес-параметры
-	// MerchantDealsDuration	time.Duration
+// 	// Для антифрода
+// 	AntifraudParams		TrafficAntifraudParams
+
+// 	// Детали блокировки
+// 	LockDetails			*TrafficLockDetails
+
+// 	// Бизнес-параметры
+// 	BusinessParams		TrafficBusinessParams
+// }
+
+// type TrafficActivityParams struct {
+// 	MerchantUnlocked	bool
+// 	TraderUnlocked		bool
+// 	AntifraudUnlocked	bool
+// 	ManuallyUnlocked	bool
+// }
+
+// type TrafficAntifraudParams struct {
+// 	AntifraudRequired bool
+// }
+
+// type TrafficLockDetails struct {
+// 	LockedAt			time.Time
+// 	UnlockedAt			time.Time
+// 	Reason				string
+// }
 
 message AddTrafficRequest {
     string merchant_id = 1;
@@ -385,21 +410,24 @@ message AddTrafficRequest {
     bool enabled = 5;
     double platform_fee = 6;
 
-    message ActivityParameters {
-        bool merchant_unlocked = 1;
-        bool trader_unlocked = 2;
-        bool manually_unlocked = 3;
-        bool antifraud_unlocked = 4;
+    TrafficActivityParameters activity_params = 7;
+    TrafficAntifraudParameters antifraud_params = 8;
+    TrafficBusinessParameters business_params = 9;
+}
 
-        message AntifraudParameters {
-            bool antifraud_required = 1;
-        }
-    }
+message TrafficActivityParameters {
+    bool merchant_unlocked = 1;
+    bool trader_unlocked = 2;
+    bool manually_unlocked = 3;
+    bool antifraud_unlocked = 4;
+}
 
-    message BusinessParameters {
-        google.protobuf.Duration merchant_deals_duration = 1;
-    }
+message TrafficAntifraudParameters {
+    bool antifraud_required = 1;
+}
 
+message TrafficBusinessParameters {
+    google.protobuf.Duration merchant_deals_duration = 1;
 }
 
 message Traffic {
@@ -411,20 +439,9 @@ message Traffic {
     bool enabled = 6;
     double platform_fee = 7;
 
-    message ActivityParameters {
-        bool merchant_unlocked = 1;
-        bool trader_unlocked = 2;
-        bool manually_unlocked = 3;
-        bool antifraud_unlocked = 4;
-
-        message AntifraudParameters {
-            bool antifraud_enabled = 1;
-        }
-    }
-
-    message BusinessParameters {
-        google.protobuf.Duration merchant_deals_duration = 1;
-    }
+    TrafficActivityParameters activity_params = 8;
+    TrafficAntifraudParameters antifraud_params = 9;
+    TrafficBusinessParameters business_params = 10;
 }
 
 message AddTrafficResponse {

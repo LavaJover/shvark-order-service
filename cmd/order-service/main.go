@@ -170,7 +170,7 @@ func main() {
 	  consecutiveConfig := &rules.ConsecutiveOrdersConfig{
         MaxConsecutiveOrders: 10,
         TimeWindow:          24 * time.Hour,
-        StatesToCount:       []string{"COMPLETED", "PROCESSING"},
+        StatesToCount:       []string{"CANCELED"},
     }
 
     ruleManager.CreateRule(context.Background(), 
@@ -182,7 +182,7 @@ func main() {
     canceledConfig := &rules.CanceledOrdersConfig{
         MaxCanceledOrders: 5,
         TimeWindow:        24 * time.Hour,
-        CanceledStatuses:  []string{"CANCELED", "REJECTED"},
+        CanceledStatuses:  []string{"CANCELED"},
     }
 
     ruleManager.CreateRule(context.Background(), 
@@ -190,9 +190,9 @@ func main() {
         "canceled_orders", 
         canceledConfig, 
 		90)
-		
+
 	// Запускаем планировщик для автоматических проверок
-	scheduler := engine.NewScheduler(antifraudEngine, db, 30*time.Minute, antifraudLogger)
+	scheduler := engine.NewScheduler(antifraudEngine, db, 10*time.Second, antifraudLogger)
 	go scheduler.Start(context.Background())
 
 	log.Printf("gRPC server started on %s:%s\n", cfg.GRPCServer.Host, cfg.GRPCServer.Port)

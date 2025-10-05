@@ -24,6 +24,16 @@ func (r *DefaultTrafficRepository) CreateTraffic(traffic *domain.Traffic) error 
 		TraderPriority: traffic.TraderPriority,
 		Enabled: traffic.Enabled,
 		PlatformFee: traffic.PlatformFee,
+		MerchantUnlocked: traffic.ActivityParams.MerchantUnlocked,
+		TraderUnlocked: traffic.ActivityParams.TraderUnlocked,
+		AntifraudUnlocked: traffic.ActivityParams.AntifraudUnlocked,
+		ManuallyUnlocked: traffic.ActivityParams.ManuallyUnlocked,
+		AntifraudRequired: traffic.AntifraudParams.AntifraudRequired,
+		LockedAt: traffic.LockDetails.LockedAt,
+		UnlockedAt: traffic.LockDetails.UnlockedAt,
+		Reason: traffic.LockDetails.Reason,
+		MerchantDealsDuration: traffic.BusinessParams.MerchantDealsDuration,
+
 	}
 
 	if err := r.DB.Create(&trafficModel).Error; err != nil {
@@ -86,6 +96,23 @@ func (r *DefaultTrafficRepository) GetTrafficRecords(page, limit int32) ([]*doma
 			TraderPriority: trafficModel.TraderPriority,
 			Enabled: trafficModel.Enabled,
 			PlatformFee: trafficModel.PlatformFee,
+			ActivityParams: domain.TrafficActivityParams{
+				MerchantUnlocked: trafficModel.MerchantUnlocked,
+				TraderUnlocked: trafficModel.TraderUnlocked,
+				AntifraudUnlocked: trafficModel.AntifraudUnlocked,
+				ManuallyUnlocked: trafficModel.ManuallyUnlocked,
+			},
+			AntifraudParams: domain.TrafficAntifraudParams{
+				AntifraudRequired: trafficModel.AntifraudRequired,
+			},
+			LockDetails: &domain.TrafficLockDetails{
+				LockedAt: trafficModel.LockedAt,
+				UnlockedAt: trafficModel.UnlockedAt,
+				Reason: trafficModel.Reason,
+			},
+			BusinessParams: domain.TrafficBusinessParams{
+				MerchantDealsDuration: trafficModel.MerchantDealsDuration,
+			},
 		}
 	}
 
@@ -106,6 +133,23 @@ func (r *DefaultTrafficRepository) GetTrafficByID(trafficID string) (*domain.Tra
 		TraderPriority: trafficModel.TraderPriority,
 		Enabled: trafficModel.Enabled,
 		PlatformFee: trafficModel.PlatformFee,
+		ActivityParams: domain.TrafficActivityParams{
+			MerchantUnlocked: trafficModel.MerchantUnlocked,
+			TraderUnlocked: trafficModel.TraderUnlocked,
+			AntifraudUnlocked: trafficModel.AntifraudUnlocked,
+			ManuallyUnlocked: trafficModel.ManuallyUnlocked,
+		},
+		AntifraudParams: domain.TrafficAntifraudParams{
+			AntifraudRequired: trafficModel.AntifraudRequired,
+		},
+		LockDetails: &domain.TrafficLockDetails{
+			LockedAt: trafficModel.LockedAt,
+			UnlockedAt: trafficModel.UnlockedAt,
+			Reason: trafficModel.Reason,
+		},
+		BusinessParams: domain.TrafficBusinessParams{
+			MerchantDealsDuration: trafficModel.MerchantDealsDuration,
+		},
 	}, nil
 }
 
@@ -123,6 +167,23 @@ func (r *DefaultTrafficRepository) GetTrafficByTraderMerchant(traderID, merchant
 		TraderPriority: trafficModel.TraderPriority,
 		Enabled: trafficModel.Enabled,
 		PlatformFee: trafficModel.PlatformFee,
+		ActivityParams: domain.TrafficActivityParams{
+			MerchantUnlocked: trafficModel.MerchantUnlocked,
+			TraderUnlocked: trafficModel.TraderUnlocked,
+			AntifraudUnlocked: trafficModel.AntifraudUnlocked,
+			ManuallyUnlocked: trafficModel.ManuallyUnlocked,
+		},
+		AntifraudParams: domain.TrafficAntifraudParams{
+			AntifraudRequired: trafficModel.AntifraudRequired,
+		},
+		LockDetails: &domain.TrafficLockDetails{
+			LockedAt: trafficModel.LockedAt,
+			UnlockedAt: trafficModel.UnlockedAt,
+			Reason: trafficModel.Reason,
+		},
+		BusinessParams: domain.TrafficBusinessParams{
+			MerchantDealsDuration: trafficModel.MerchantDealsDuration,
+		},
 	}, nil
 }
 

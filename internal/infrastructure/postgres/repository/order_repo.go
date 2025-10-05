@@ -109,67 +109,63 @@ func (r *DefaultOrderRepository) UpdateOrderStatus(orderID string, newStatus dom
 }
 
 func (r *DefaultOrderRepository) GetOrdersByTraderID(
-	traderID string, 
-	page, limit int64, 
-	sortBy, sortOrder string,
-	filters domain.OrderFilters,
+    traderID string, 
+    page, limit int64, 
+    sortBy, sortOrder string,
+    filters domain.OrderFilters,
 ) ([]*domain.Order, int64, error) {
-	var orderModels []models.OrderModel
-	var total int64
-	
-	safeSortBy := "order_models.created_at"
-	switch sortBy {
-	case "amount_fiat":
-		safeSortBy = "order_models.amount_fiat"
-	case "expires_at":
-		safeSortBy = "order_models.expires_at"
-	case "created_at":
-		safeSortBy = "order_models.created_at"
-	}
+    var orderModels []models.OrderModel
+    var total int64
+    
+    safeSortBy := "created_at"
+    switch sortBy {
+    case "amount_fiat":
+        safeSortBy = "amount_fiat"
+    case "expires_at":
+        safeSortBy = "expires_at"
+    case "created_at":
+        safeSortBy = "created_at"
+    }
 
-	safeSortOrder := "DESC"
-	if strings.ToUpper(sortOrder) == "ASC" {
-		safeSortOrder = "ASC"
-	}
+    safeSortOrder := "DESC"
+    if strings.ToUpper(sortOrder) == "ASC" {
+        safeSortOrder = "ASC"
+    }
 
-    // Базовый запрос с JOIN
+    // УПРОЩЕННЫЙ запрос без JOIN - используем денормализованное поле trader_id
     baseQuery := r.DB.Model(&models.OrderModel{}).
-	Preload("BankDetail", func(db *gorm.DB) *gorm.DB {
-		return db.Unscoped() // отключаем фильтрацию по DeletedAt
-	}).
-        Joins("JOIN bank_detail_models ON order_models.bank_details_id = bank_detail_models.id").
-        Where("bank_detail_models.trader_id = ?", traderID)
+        Where("trader_id = ?", traderID)
 
-    // Применяем фильтры
+    // Применяем фильтры (все на одной таблице!)
     if len(filters.Statuses) > 0 {
-        baseQuery = baseQuery.Where("order_models.status IN (?)", filters.Statuses)
+        baseQuery = baseQuery.Where("status IN (?)", filters.Statuses)
     }
     
     if filters.MinAmountFiat > 0 {
-        baseQuery = baseQuery.Where("order_models.amount_fiat >= ?", filters.MinAmountFiat)
+        baseQuery = baseQuery.Where("amount_fiat >= ?", filters.MinAmountFiat)
     }
     
     if filters.MaxAmountFiat > 0 {
-        baseQuery = baseQuery.Where("order_models.amount_fiat <= ?", filters.MaxAmountFiat)
+        baseQuery = baseQuery.Where("amount_fiat <= ?", filters.MaxAmountFiat)
     }
     
     if !filters.DateFrom.IsZero() {
-        baseQuery = baseQuery.Where("order_models.created_at >= ?", filters.DateFrom)
+        baseQuery = baseQuery.Where("created_at >= ?", filters.DateFrom)
     }
     
     if !filters.DateTo.IsZero() {
-        baseQuery = baseQuery.Where("order_models.created_at <= ?", filters.DateTo)
+        baseQuery = baseQuery.Where("created_at <= ?", filters.DateTo)
     }
 
-	if filters.OrderID != "" {
-		baseQuery = baseQuery.Where("order_models.id = ?", filters.OrderID)
-	}
+    if filters.OrderID != "" {
+        baseQuery = baseQuery.Where("id = ?", filters.OrderID)
+    }
 
-	if filters.MerchantOrderID != "" {
-		baseQuery = baseQuery.Where("order_models.merchant_order_id = ?", filters.MerchantOrderID)
-	}
+    if filters.MerchantOrderID != "" {
+        baseQuery = baseQuery.Where("merchant_order_id = ?", filters.MerchantOrderID)
+    }
 
-    // Подсчет общего количества с учетом фильтров
+    // Подсчет общего количества (быстро, без JOIN'ов)
     if err := baseQuery.Count(&total).Error; err != nil {
         return nil, 0, fmt.Errorf("failed to count orders: %w", err)
     }
@@ -186,29 +182,32 @@ func (r *DefaultOrderRepository) GetOrdersByTraderID(
         return nil, 0, fmt.Errorf("failed to find orders: %w", err)
     }
 
-	orders := make([]*domain.Order, len(orderModels))
-	for i, orderModel := range orderModels {
-		orders[i] = mappers.ToDomainOrder(&orderModel)
-	}
+    // Преобразование (BankDetail теперь создается из денормализованных полей)
+    orders := make([]*domain.Order, len(orderModels))
+    for i, orderModel := range orderModels {
+        orders[i] = mappers.ToDomainOrder(&orderModel)
+    }
 
-	return orders, total, nil
+    return orders, total, nil
 }
 
 func (r *DefaultOrderRepository) FindExpiredOrders() ([]*domain.Order, error) {
-	var orderModels []models.OrderModel
-	if err := r.DB.Preload("BankDetail", func(db *gorm.DB) *gorm.DB {
-		return db.Unscoped() // отключаем фильтрацию по DeletedAt
-	}).
-		Where("status = ?", domain.StatusPending).
-		Where("expires_at < ?", time.Now()).
-		Find(&orderModels).Error; err != nil {return nil, err}
-	
-	orders := make([]*domain.Order, len(orderModels))
-	for i, orderModel := range orderModels {
-		orders[i] = mappers.ToDomainOrder(&orderModel)
-	}
+    var orderModels []models.OrderModel
+    
+    // Простой запрос без JOIN'ов и Preload'ов
+    if err := r.DB.
+        Where("status = ?", domain.StatusPending).
+        Where("expires_at < ?", time.Now()).
+        Find(&orderModels).Error; err != nil {
+        return nil, err
+    }
+    
+    orders := make([]*domain.Order, len(orderModels))
+    for i, orderModel := range orderModels {
+        orders[i] = mappers.ToDomainOrder(&orderModel)
+    }
 
-	return orders, nil
+    return orders, nil
 }
 
 func (r *DefaultOrderRepository) GetOrdersByBankDetailID(bankDetailID string) ([]*domain.Order, error) {
@@ -393,57 +392,59 @@ func (r *DefaultOrderRepository) GetAllOrders(
     filter *domain.AllOrdersFilters, 
     sort string,
     page, limit int32,
-) ([]*domain.Order, int64, error) { // Добавляем возврат общего количества
+) ([]*domain.Order, int64, error) {
     var orders []models.OrderModel
     var total int64
 
-    // Базовый запрос с JOIN банковских данных
-    query := r.DB.Model(&models.OrderModel{}).
-        Joins("JOIN bank_detail_models ON bank_detail_models.id = order_models.bank_details_id")
+    // Базовый запрос БЕЗ JOIN'ов - работаем только с order_models
+    query := r.DB.Model(&models.OrderModel{})
 
-    // Применяем фильтры
+    // Применяем фильтры к денормализованным полям
     if filter.TraderID != "" {
-        query = query.Where("bank_detail_models.trader_id = ?", filter.TraderID)
+        query = query.Where("trader_id = ?", filter.TraderID)
     }
     if filter.MerchantID != "" {
-        query = query.Where("order_models.merchant_id = ?", filter.MerchantID)
+        query = query.Where("merchant_id = ?", filter.MerchantID)
     }
     if filter.OrderID != "" {
-        query = query.Where("order_models.id = ?", filter.OrderID)
+        query = query.Where("id = ?", filter.OrderID)
     }
     if filter.MerchantOrderID != "" {
-        query = query.Where("order_models.merchant_order_id = ?", filter.MerchantOrderID)
+        query = query.Where("merchant_order_id = ?", filter.MerchantOrderID)
     }
     if filter.Status != "" {
-        query = query.Where("order_models.status = ?", filter.Status)
+        query = query.Where("status = ?", filter.Status)
     }
     if filter.BankCode != "" {
-        query = query.Where("bank_detail_models.bank_code = ?", filter.BankCode)
+        // Используем денормализованное поле bank_code
+        query = query.Where("bank_code = ?", filter.BankCode)
     }
     if !filter.TimeOpeningStart.IsZero() {
-        query = query.Where("order_models.created_at >= ?", filter.TimeOpeningStart)
+        query = query.Where("created_at >= ?", filter.TimeOpeningStart)
     }
     if !filter.TimeOpeningEnd.IsZero() {
-        query = query.Where("order_models.created_at <= ?", filter.TimeOpeningEnd)
+        query = query.Where("created_at <= ?", filter.TimeOpeningEnd)
     }
     if filter.AmountFiatMin > 0 {
-        query = query.Where("order_models.amount_fiat >= ?", filter.AmountFiatMin)
+        query = query.Where("amount_fiat >= ?", filter.AmountFiatMin)
     }
     if filter.AmountFiatMax > 0 {
-        query = query.Where("order_models.amount_fiat <= ?", filter.AmountFiatMax)
+        query = query.Where("amount_fiat <= ?", filter.AmountFiatMax)
     }
     if filter.Type != "" {
-        query = query.Where("order_models.type = ?", filter.Type)
+        query = query.Where("type = ?", filter.Type)
     }
     if filter.DeviceID != "" {
-        query = query.Where("bank_detail_models.device_id = ?", filter.DeviceID)
+        // Используем денормализованное поле device_id
+        query = query.Where("device_id = ?", filter.DeviceID)
     }
     if filter.PaymentSystem != "" {
-        query = query.Where("bank_detail_models.payment_system = ?", filter.PaymentSystem)
+        // Используем денормализованное поле payment_system
+        query = query.Where("payment_system = ?", filter.PaymentSystem)
     }
 
     // Сортировка (безопасная проверка полей)
-    safeSort := "order_models.created_at DESC" // значение по умолчанию
+    safeSort := "created_at DESC" // значение по умолчанию
     if sort != "" {
         allowedSorts := map[string]bool{
             "amount_fiat": true,
@@ -457,30 +458,30 @@ func (r *DefaultOrderRepository) GetAllOrders(
             order := strings.ToUpper(sortParts[1])
             
             if allowedSorts[field] && (order == "ASC" || order == "DESC") {
-                safeSort = fmt.Sprintf("order_models.%s %s", field, order)
+                safeSort = fmt.Sprintf("%s %s", field, order)
             }
         }
     }
     query = query.Order(safeSort)
 
-    // Пагинация
+    // Сначала получаем общее количество записей
+    countQuery := query.Session(&gorm.Session{})
+    if err := countQuery.Count(&total).Error; err != nil {
+        return nil, 0, err
+    }
+
+    // Пагинация и получение данных
     offset := (page - 1) * limit
     err := query.
         Offset(int(offset)).
         Limit(int(limit)).
-        Preload("BankDetail"). // Подгружаем связанные банковские данные
         Find(&orders).Error
         
     if err != nil {
         return nil, 0, err
     }
 
-    // Получаем общее количество записей (без лимита)
-    if err := query.Offset(-1).Limit(-1).Count(&total).Error; err != nil {
-        return nil, 0, err
-    }
-
-    // Преобразуем в доменные объекты
+    // Преобразуем в доменные объекты (без дополнительных запросов)
     domainOrders := make([]*domain.Order, len(orders))
     for i, order := range orders {
         domainOrders[i] = mappers.ToDomainOrder(&order)
@@ -489,27 +490,29 @@ func (r *DefaultOrderRepository) GetAllOrders(
     return domainOrders, total, nil
 }
 
+
 func (r *DefaultOrderRepository) FindPendingOrdersByDeviceID(deviceID string) ([]*domain.Order, error) {
-	var orders []*models.OrderModel
-	
-	err := r.DB.
-		Joins("JOIN bank_detail_models ON order_models.bank_details_id = bank_detail_models.id").
-		Where("order_models.status = ?", domain.StatusPending).
-		Where("bank_detail_models.device_id = ?", deviceID).
-		Where("order_models.expires_at > ?", time.Now()).
-		Find(&orders).Error
-	
-	if err != nil {
-		return nil, fmt.Errorf("failed to find pending orders: %w", err)
-	}
+    var orders []models.OrderModel
+    
+    // Прямой запрос по денормализованному полю device_id
+    err := r.DB.
+        Where("status = ?", domain.StatusPending).
+        Where("device_id = ?", deviceID).
+        Where("expires_at > ?", time.Now()).
+        Find(&orders).Error
+    
+    if err != nil {
+        return nil, fmt.Errorf("failed to find pending orders: %w", err)
+    }
 
     domainOrders := make([]*domain.Order, len(orders))
     for i, order := range orders {
-        domainOrders[i] = mappers.ToDomainOrder(order)
+        domainOrders[i] = mappers.ToDomainOrder(&order)
     }
-	
-	return domainOrders, nil
+    
+    return domainOrders, nil
 }
+
 
 // Метод для идемпотентности - проверка, не обрабатывалась ли уже сделка
 func (r *DefaultOrderRepository) CheckDuplicatePayment(ctx context.Context, orderID string, paymentHash string) (bool, error) {

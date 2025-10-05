@@ -5,6 +5,7 @@ import (
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 type TrafficHandler struct {
@@ -24,6 +25,18 @@ func (h *TrafficHandler) AddTraffic(ctx context.Context, r *orderpb.AddTrafficRe
 		TraderPriority: r.TraderPriority,
 		Enabled: r.Enabled,
 		PlatformFee: r.PlatformFee,
+		ActivityParams: domain.TrafficActivityParams{
+			MerchantUnlocked: r.ActivityParams.MerchantUnlocked,
+			TraderUnlocked: r.ActivityParams.TraderUnlocked,
+			AntifraudUnlocked: r.ActivityParams.AntifraudUnlocked,
+			ManuallyUnlocked: r.ActivityParams.ManuallyUnlocked,
+		},
+		AntifraudParams: domain.TrafficAntifraudParams{
+			AntifraudRequired: r.AntifraudParams.AntifraudRequired,
+		},
+		BusinessParams: domain.TrafficBusinessParams{
+			MerchantDealsDuration: r.BusinessParams.MerchantDealsDuration.AsDuration(),
+		},
 	}
 
 	if err := h.trafficUsecase.AddTraffic(traffic); err != nil {
@@ -89,6 +102,18 @@ func (h *TrafficHandler) GetTrafficRecords(ctx context.Context, r *orderpb.GetTr
 			TraderPriority: trafficRecord.TraderPriority,
 			PlatformFee: trafficRecord.PlatformFee,
 			Enabled: trafficRecord.Enabled,
+			ActivityParams: &orderpb.TrafficActivityParameters{
+				MerchantUnlocked: trafficRecord.ActivityParams.MerchantUnlocked,
+				TraderUnlocked: trafficRecord.ActivityParams.TraderUnlocked,
+				ManuallyUnlocked: trafficRecord.ActivityParams.ManuallyUnlocked,
+				AntifraudUnlocked: trafficRecord.ActivityParams.AntifraudUnlocked,
+			},
+			AntifraudParams: &orderpb.TrafficAntifraudParameters{
+				AntifraudRequired: trafficRecord.AntifraudParams.AntifraudRequired,
+			},
+			BusinessParams: &orderpb.TrafficBusinessParameters{
+				MerchantDealsDuration: durationpb.New(trafficRecord.BusinessParams.MerchantDealsDuration),
+			},
 		}
 	}
 

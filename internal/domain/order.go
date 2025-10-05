@@ -56,7 +56,17 @@ type Order struct {
 	PlatformFee		float64
 	CallbackUrl 	string
 
-	// Параметры реквизитв
+	// Параметры реквизита
+	RequisiteDetails RequisiteDetails
+	// Метрики
+	Metrics Metrics
+
+	ExpiresAt 		time.Time
+	CreatedAt 		time.Time
+	UpdatedAt 		time.Time
+}
+
+type RequisiteDetails struct {
 	TraderID 			string
 	CardNumber 			string 
 	Phone 				string
@@ -66,17 +76,14 @@ type Order struct {
 	BankCode 			string
 	NspkCode 			string
 	DeviceID			string
+}
 
-	// Метрики
+type Metrics struct {
 	AutomaticCompleted  bool
 	ManuallyCompleted   bool
 
-	// Тайминги
 	CompletedAt		time.Time
 	CanceledAt		time.Time
-	ExpiresAt 		time.Time
-	CreatedAt 		time.Time
-	UpdatedAt 		time.Time
 }
 
 type MerchantInfo struct {

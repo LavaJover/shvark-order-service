@@ -25,8 +25,8 @@ import (
 
 type OrderUsecase interface {
 	CreateOrder(input *orderdto.CreateOrderInput) (*orderdto.OrderOutput, error)
-	GetOrderByID(orderID string) (*orderdto.OrderOutput, error)
-	GetOrderByMerchantOrderID(merchantOrderID string) (*orderdto.OrderOutput, error)
+	GetOrderByID(orderID string) (*domain.Order, error)
+	GetOrderByMerchantOrderID(merchantOrderID string) (*domain.Order, error)
 	GetOrdersByTraderID(
 		orderID string, page, 
 		limit int64, sortBy, 
@@ -337,6 +337,19 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 		PlatformFee:   platformFee,
 		CallbackUrl:   createOrderInput.CallbackUrl,
 		ExpiresAt:     createOrderInput.ExpiresAt,
+
+		RequisiteDetails: domain.RequisiteDetails{
+			TraderID: chosenBankDetail.TraderID,
+			CardNumber: chosenBankDetail.CardNumber,
+			Phone: chosenBankDetail.Phone,
+			Owner: chosenBankDetail.Owner,
+			PaymentSystem: chosenBankDetail.PaymentSystem,
+			BankName: chosenBankDetail.BankName,
+			BankCode: chosenBankDetail.BankCode,
+			NspkCode: chosenBankDetail.NspkCode,
+			DeviceID: chosenBankDetail.DeviceID,
+		},
+		Metrics: domain.Metrics{},
 	}
 	t = time.Now()
 	err = uc.OrderRepo.CreateOrder(&order)
@@ -359,14 +372,14 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 		}
 	}(publisher.OrderEvent{
 		OrderID:   order.ID,
-		TraderID:  chosenBankDetail.TraderID,
+		TraderID:  order.RequisiteDetails.TraderID,
 		Status:    "🔥Новая сделка",
 		AmountFiat: order.AmountInfo.AmountFiat,
 		Currency:  order.AmountInfo.Currency,
-		BankName:  chosenBankDetail.BankName,
-		Phone:     chosenBankDetail.Phone,
-		CardNumber: chosenBankDetail.CardNumber,
-		Owner:     chosenBankDetail.Owner,
+		BankName:  order.RequisiteDetails.BankName,
+		Phone:     order.RequisiteDetails.Phone,
+		CardNumber: order.RequisiteDetails.CardNumber,
+		Owner:     order.RequisiteDetails.Owner,
 	})
 
 	if order.CallbackUrl != "" {
@@ -387,36 +400,12 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 }
 
 
-func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*orderdto.OrderOutput, error) {
-	order, err := uc.OrderRepo.GetOrderByID(orderID)
-	if err != nil {
-		return nil, err
-	}
-	bankDetailID := order.BankDetailID
-	bankDetail, err := uc.BankDetailUsecase.GetBankDetailByID(bankDetailID)
-	if err != nil {
-		return nil, err
-	}
-	return &orderdto.OrderOutput{
-		Order: *order,
-		BankDetail: *bankDetail,
-	}, nil
+func (uc *DefaultOrderUsecase) GetOrderByID(orderID string) (*domain.Order, error) {
+	return uc.OrderRepo.GetOrderByID(orderID)
 }
 
-func (uc *DefaultOrderUsecase) GetOrderByMerchantOrderID(merchantOrderID string) (*orderdto.OrderOutput, error) {
-	order, err := uc.OrderRepo.GetOrderByMerchantOrderID(merchantOrderID)
-	if err != nil {
-		return nil, err
-	}
-	bankDetailID := order.BankDetailID
-	bankDetail, err := uc.BankDetailUsecase.GetBankDetailByID(bankDetailID)
-	if err != nil {
-		return nil, err
-	}
-	return &orderdto.OrderOutput{
-		Order: *order,
-		BankDetail: *bankDetail,
-	}, nil
+func (uc *DefaultOrderUsecase) GetOrderByMerchantOrderID(merchantOrderID string) (*domain.Order, error) {
+	return uc.OrderRepo.GetOrderByMerchantOrderID(merchantOrderID)
 }
 
 func (uc *DefaultOrderUsecase) GetOrdersByTraderID(
@@ -495,13 +484,13 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 		return err
 	}
 
-	if order.Order.Status != domain.StatusPending {
+	if order.Status != domain.StatusPending {
 		return domain.ErrResolveDisputeFailed
 	}
 
 	// Search for team relations to find commission users
 	var commissionUsers []walletRequest.CommissionUser
-	teamRelations, err := uc.TeamRelationsUsecase.GetRelationshipsByTraderID(order.BankDetail.TraderID)
+	teamRelations, err := uc.TeamRelationsUsecase.GetRelationshipsByTraderID(order.RequisiteDetails.TraderID)
 	if err == nil {
 		for _, teamRelation := range teamRelations {
 			commissionUsers = append(commissionUsers, walletRequest.CommissionUser{
@@ -518,11 +507,11 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
         WalletOp: &WalletOperation{
             Type: "release",
             Request: walletRequest.ReleaseRequest{
-                TraderID:        order.BankDetail.TraderID,
-                MerchantID:      order.Order.MerchantInfo.MerchantID,
-                OrderID:         order.Order.ID,
-                RewardPercent:   order.Order.TraderReward,
-                PlatformFee:     order.Order.PlatformFee,
+                TraderID:        order.RequisiteDetails.TraderID,
+                MerchantID:      order.MerchantInfo.MerchantID,
+                OrderID:         order.ID,
+                RewardPercent:   order.TraderReward,
+                PlatformFee:     order.PlatformFee,
                 CommissionUsers: commissionUsers,
             },
         },
@@ -538,21 +527,21 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 			slog.Error("failed to publish kafka OrderEvent", "stage", "approving", "error", err.Error())
 		}
 	}(publisher.OrderEvent{
-		OrderID: order.Order.ID,
-		TraderID: order.BankDetail.TraderID,
+		OrderID: order.ID,
+		TraderID: order.RequisiteDetails.TraderID,
 		Status: "✅Сделка закрыта",
-		AmountFiat: order.Order.AmountInfo.AmountFiat,
-		Currency: order.Order.AmountInfo.Currency,
-		BankName: order.BankDetail.BankName,
-		Phone: order.BankDetail.Phone,
-		CardNumber: order.BankDetail.CardNumber,
-		Owner: order.BankDetail.Owner,
+		AmountFiat: order.AmountInfo.AmountFiat,
+		Currency: order.AmountInfo.Currency,
+		BankName: order.RequisiteDetails.BankName,
+		Phone: order.RequisiteDetails.Phone,
+		CardNumber: order.RequisiteDetails.CardNumber,
+		Owner: order.RequisiteDetails.Owner,
 	})
 
-	if order.Order.CallbackUrl != "" {
+	if order.CallbackUrl != "" {
 		notifier.SendCallback(
-			order.Order.CallbackUrl,
-			order.Order.MerchantInfo.MerchantOrderID,
+			order.CallbackUrl,
+			order.MerchantInfo.MerchantOrderID,
 			string(domain.StatusCompleted),
 			0, 0, 0,
 		)
@@ -568,21 +557,21 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 		return err
 	}
 
-	if order.Order.Status != domain.StatusPending && order.Order.Status != domain.StatusDisputeCreated{
+	if order.Status != domain.StatusPending && order.Status != domain.StatusDisputeCreated{
 		return domain.ErrCancelOrder
 	}
 
 	op := &OrderOperation{
         OrderID:   orderID,
         Operation: "cancel",
-        OldStatus: order.Order.Status,
+        OldStatus: order.Status,
         NewStatus: domain.StatusCanceled,
         WalletOp: &WalletOperation{
             Type: "release",
             Request: walletRequest.ReleaseRequest{
-                TraderID:      order.BankDetail.TraderID,
-                MerchantID:    order.Order.MerchantInfo.MerchantID,
-                OrderID:       order.Order.ID,
+                TraderID:      order.RequisiteDetails.TraderID,
+                MerchantID:    order.MerchantInfo.MerchantID,
+                OrderID:       order.ID,
                 RewardPercent: 1, // При отмене не даем вознаграждение !!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 PlatformFee:   1, // При отмене не берем комиссию
             },
@@ -599,21 +588,21 @@ func (uc *DefaultOrderUsecase) CancelOrder(orderID string) error {
 			slog.Error("failed to publish kafka order event", "stage", "cancelling", "error", err.Error())
 		}
 	}(publisher.OrderEvent{
-		OrderID: order.Order.ID,
-		TraderID: order.BankDetail.TraderID,
+		OrderID: order.ID,
+		TraderID: order.RequisiteDetails.TraderID,
 		Status: "⛔️Отмена сделки",
-		AmountFiat: order.Order.AmountInfo.AmountFiat,
-		Currency: order.Order.AmountInfo.Currency,
-		BankName: order.BankDetail.BankName,
-		Phone: order.BankDetail.Phone,
-		CardNumber: order.BankDetail.CardNumber,
-		Owner: order.BankDetail.Owner,
+		AmountFiat: order.AmountInfo.AmountFiat,
+		Currency: order.AmountInfo.Currency,
+		BankName: order.RequisiteDetails.BankName,
+		Phone: order.RequisiteDetails.Phone,
+		CardNumber: order.RequisiteDetails.CardNumber,
+		Owner: order.RequisiteDetails.Owner,
 	})
 
-	if order.Order.CallbackUrl != "" {
+	if order.CallbackUrl != "" {
 		notifier.SendCallback(
-			order.Order.CallbackUrl,
-			order.Order.MerchantInfo.MerchantOrderID,
+			order.CallbackUrl,
+			order.MerchantInfo.MerchantOrderID,
 			string(domain.StatusCanceled),
 			0, 0, 0,
 		)
