@@ -1,6 +1,9 @@
 package usecase
 
-import "github.com/LavaJover/shvark-order-service/internal/domain"
+import (
+	"github.com/LavaJover/shvark-order-service/internal/domain"
+	trafficdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/traffic"
+)
 
 type DefaultTrafficUsecase struct {
 	TrafficRepo domain.TrafficRepository
@@ -14,8 +17,8 @@ func (uc *DefaultTrafficUsecase) AddTraffic(traffic *domain.Traffic) error {
 	return uc.TrafficRepo.CreateTraffic(traffic)
 }
 
-func (uc *DefaultTrafficUsecase) EditTraffic(traffic *domain.Traffic) error {
-	return uc.TrafficRepo.UpdateTraffic(traffic)
+func (uc *DefaultTrafficUsecase) EditTraffic(input *trafficdto.EditTrafficInput) error {
+	return uc.TrafficRepo.UpdateTraffic(input)
 }
 
 func (uc *DefaultTrafficUsecase) DeleteTraffic(trafficID string) error {

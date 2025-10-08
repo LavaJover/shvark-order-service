@@ -9,6 +9,7 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jaevor/go-nanoid v1.4.0
 	github.com/joho/godotenv v1.5.1
+	github.com/lib/pq v1.10.9
 	github.com/segmentio/kafka-go v0.4.48
 	google.golang.org/grpc v1.72.2
 	google.golang.org/protobuf v1.36.6
@@ -29,7 +30,6 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/klauspost/compress v1.15.11 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/pierrec/lz4/v4 v4.1.16 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect

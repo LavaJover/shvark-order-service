@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	trafficdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/traffic"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -51,17 +52,30 @@ func (h *TrafficHandler) AddTraffic(ctx context.Context, r *orderpb.AddTrafficRe
 }
 
 func (h *TrafficHandler) EditTraffic(ctx context.Context, r *orderpb.EditTrafficRequest) (*orderpb.EditTrafficResponse, error) {
-	traffic := &domain.Traffic{
-		ID: r.Traffic.Id,
-		MerchantID: r.Traffic.MerchantId,
-		TraderID: r.Traffic.TraderId,
-		TraderRewardPercent: r.Traffic.TraderRewardPercent,
-		TraderPriority: r.Traffic.TraderPriority,
-		PlatformFee: r.Traffic.PlatformFee,
-		Enabled: r.Traffic.Enabled,
+
+	input := &trafficdto.EditTrafficInput{
+		ID: r.Id,
+		MerchantID: r.MerchantId,
+		TraderID: r.TraderId,
+		TraderReward: r.TraderReward,
+		TraderPriority: r.TraderProirity,
+		PlatformFee: r.PlatformFee,
+		Enabled: r.Enabled,
+		ActivityParams: &trafficdto.TrafficActivityParams{
+			MerchantUnlocked: r.ActivityParams.MerchantUnlocked,
+			TraderUnlocked: r.ActivityParams.TraderUnlocked,
+			AntifraudUnlocked: r.ActivityParams.AntifraudUnlocked,
+			ManuallyUnlocked: r.ActivityParams.ManuallyUnlocked,
+		},
+		AntifraudParams: &trafficdto.TrafficAntifraudParams{
+			AntifraudRequired: r.AntifraudParams.AntifraudRequired,
+		},
+		BusinessParams: &trafficdto.TrafficBusinessParams{
+			MerchantDealsDuration: r.BusinessParams.MerchantDealsDuration.AsDuration(),
+		},
 	}
 
-	if err := h.trafficUsecase.EditTraffic(traffic); err != nil {
+	if err := h.trafficUsecase.EditTraffic(input); err != nil {
 		return &orderpb.EditTrafficResponse{
 			Message: "failed to update traffic",
 		}, nil

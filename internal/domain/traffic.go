@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	trafficdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/traffic"
+)
 
 // message ActivityParameters {
 // 	bool merchant_unlocked = 1;
@@ -62,7 +66,7 @@ type TrafficBusinessParams struct {
 
 type TrafficUsecase interface {
 	AddTraffic(traffic *Traffic) error
-	EditTraffic(traffic *Traffic) error
+	EditTraffic(input *trafficdto.EditTrafficInput) error
 	GetTrafficRecords(page, limit int32) ([]*Traffic, error)
 	GetTrafficByID(trafficID string) (*Traffic, error)
 	DeleteTraffic(trafficID string) error
@@ -74,7 +78,7 @@ type TrafficUsecase interface {
 
 type TrafficRepository interface {
 	CreateTraffic(traffic *Traffic) error
-	UpdateTraffic(traffic *Traffic) error
+	UpdateTraffic(input *trafficdto.EditTrafficInput) error
 	GetTrafficRecords(page, limit int32) ([]*Traffic, error)
 	GetTrafficByID(trafficID string) (*Traffic, error)
 	DeleteTraffic(trafficID string) error

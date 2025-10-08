@@ -3,6 +3,7 @@ package repository
 import (
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
+	trafficdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/traffic"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -44,23 +45,8 @@ func (r *DefaultTrafficRepository) CreateTraffic(traffic *domain.Traffic) error 
 	return nil
 }
 
-func (r *DefaultTrafficRepository) UpdateTraffic(traffic *domain.Traffic) error {
-    // Используем карту для явного указания полей к обновлению
-    updateData := map[string]interface{}{
-        "trader_reward_percent": traffic.TraderRewardPercent,
-        "trader_priority":      traffic.TraderPriority,
-        "enabled":              traffic.Enabled,
-        "platform_fee":         traffic.PlatformFee,
-    }
-
-    // Обновляем запись с явным указанием полей
-    if err := r.DB.Model(&models.TrafficModel{}).
-        Where("id = ?", traffic.ID).
-        Updates(updateData).Error; err != nil {
-        return err
-    }
-
-    return nil
+func (r *DefaultTrafficRepository) UpdateTraffic(input *trafficdto.EditTrafficInput) error {
+	return nil
 }
 
 func (r *DefaultTrafficRepository) DeleteTraffic(trafficID string) error {

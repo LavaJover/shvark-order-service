@@ -449,7 +449,16 @@ message AddTrafficResponse {
 }
 
 message EditTrafficRequest {
-    Traffic traffic = 1;
+    string id = 1;
+    optional string merchant_id = 2;
+    optional string trader_id = 3;
+    optional double trader_reward = 4;
+    optional double trader_proirity = 5;
+    optional double platform_fee = 6;
+    optional bool enabled = 7;
+    optional TrafficActivityParameters activity_params = 8;
+    optional TrafficAntifraudParameters antifraud_params = 9;
+    optional TrafficBusinessParameters business_params = 10;
 }
 
 message EditTrafficResponse {
