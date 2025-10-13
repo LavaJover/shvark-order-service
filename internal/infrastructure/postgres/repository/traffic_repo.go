@@ -1,6 +1,9 @@
 package repository
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
 	trafficdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/traffic"
@@ -30,9 +33,6 @@ func (r *DefaultTrafficRepository) CreateTraffic(traffic *domain.Traffic) error 
 		AntifraudUnlocked: traffic.ActivityParams.AntifraudUnlocked,
 		ManuallyUnlocked: traffic.ActivityParams.ManuallyUnlocked,
 		AntifraudRequired: traffic.AntifraudParams.AntifraudRequired,
-		LockedAt: traffic.LockDetails.LockedAt,
-		UnlockedAt: traffic.LockDetails.UnlockedAt,
-		Reason: traffic.LockDetails.Reason,
 		MerchantDealsDuration: traffic.BusinessParams.MerchantDealsDuration,
 
 	}
@@ -46,6 +46,60 @@ func (r *DefaultTrafficRepository) CreateTraffic(traffic *domain.Traffic) error 
 }
 
 func (r *DefaultTrafficRepository) UpdateTraffic(input *trafficdto.EditTrafficInput) error {
+	updates := make(map[string]interface{})
+	
+	// Обновляем простые поля если они переданы
+	if input.MerchantID != nil {
+		updates["merchant_id"] = *input.MerchantID
+	}
+	if input.TraderID != nil {
+		updates["trader_id"] = *input.TraderID
+	}
+	if input.TraderReward != nil {
+		updates["trader_reward_percent"] = *input.TraderReward
+	}
+	if input.TraderPriority != nil {
+		updates["trader_priority"] = *input.TraderPriority
+	}
+	if input.PlatformFee != nil {
+		updates["platform_fee"] = *input.PlatformFee
+	}
+	if input.Enabled != nil {
+		updates["enabled"] = *input.Enabled
+	}
+
+	// Обновляем вложенные структуры если они переданы
+	if input.ActivityParams != nil {
+		updates["merchant_unlocked"] = input.ActivityParams.MerchantUnlocked
+		updates["trader_unlocked"] = input.ActivityParams.TraderUnlocked
+		updates["antifraud_unlocked"] = input.ActivityParams.AntifraudUnlocked
+		updates["manually_unlocked"] = input.ActivityParams.ManuallyUnlocked
+	}
+
+	if input.AntifraudParams != nil {
+		updates["antifraud_required"] = input.AntifraudParams.AntifraudRequired
+	}
+
+	if input.BusinessParams != nil {
+		updates["merchant_deals_duration"] = input.BusinessParams.MerchantDealsDuration
+	}
+
+	// Добавляем updated_at
+	updates["updated_at"] = time.Now()
+
+	// Выполняем обновление
+	result := r.DB.Model(&models.TrafficModel{}).
+		Where("id = ?", input.ID).
+		Updates(updates)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("traffic record with id %s not found", input.ID)
+	}
+
 	return nil
 }
 
@@ -91,11 +145,6 @@ func (r *DefaultTrafficRepository) GetTrafficRecords(page, limit int32) ([]*doma
 			AntifraudParams: domain.TrafficAntifraudParams{
 				AntifraudRequired: trafficModel.AntifraudRequired,
 			},
-			LockDetails: &domain.TrafficLockDetails{
-				LockedAt: trafficModel.LockedAt,
-				UnlockedAt: trafficModel.UnlockedAt,
-				Reason: trafficModel.Reason,
-			},
 			BusinessParams: domain.TrafficBusinessParams{
 				MerchantDealsDuration: trafficModel.MerchantDealsDuration,
 			},
@@ -128,11 +177,6 @@ func (r *DefaultTrafficRepository) GetTrafficByID(trafficID string) (*domain.Tra
 		AntifraudParams: domain.TrafficAntifraudParams{
 			AntifraudRequired: trafficModel.AntifraudRequired,
 		},
-		LockDetails: &domain.TrafficLockDetails{
-			LockedAt: trafficModel.LockedAt,
-			UnlockedAt: trafficModel.UnlockedAt,
-			Reason: trafficModel.Reason,
-		},
 		BusinessParams: domain.TrafficBusinessParams{
 			MerchantDealsDuration: trafficModel.MerchantDealsDuration,
 		},
@@ -162,11 +206,6 @@ func (r *DefaultTrafficRepository) GetTrafficByTraderMerchant(traderID, merchant
 		AntifraudParams: domain.TrafficAntifraudParams{
 			AntifraudRequired: trafficModel.AntifraudRequired,
 		},
-		LockDetails: &domain.TrafficLockDetails{
-			LockedAt: trafficModel.LockedAt,
-			UnlockedAt: trafficModel.UnlockedAt,
-			Reason: trafficModel.Reason,
-		},
 		BusinessParams: domain.TrafficBusinessParams{
 			MerchantDealsDuration: trafficModel.MerchantDealsDuration,
 		},
@@ -190,4 +229,156 @@ func (r *DefaultTrafficRepository) GetTraderTrafficStatus(traderID string) (bool
 	}
 
 	return count > 0, nil
+}
+
+func (r *DefaultTrafficRepository) SetTraderLockTrafficStatus(traderID string, unlocked bool) error {
+	result := r.DB.Model(&models.TrafficModel{}).
+		Where("trader_id = ?", traderID).
+		Updates(map[string]interface{}{
+			"trader_unlocked": unlocked,
+			"updated_at":      time.Now(),
+		})
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to update trader lock status for trader %s: %w", traderID, result.Error)
+	}
+
+	return nil
+}
+
+func (r *DefaultTrafficRepository) SetMerchantLockTrafficStatus(merchantID string, unlocked bool) error {
+	result := r.DB.Model(&models.TrafficModel{}).
+		Where("merchant_id = ?", merchantID).
+		Updates(map[string]interface{}{
+			"merchant_unlocked": unlocked,
+			"updated_at":        time.Now(),
+		})
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to update merchant lock status for merchant %s: %w", merchantID, result.Error)
+	}
+
+	return nil
+}
+
+func (r *DefaultTrafficRepository) SetManuallyLockTrafficStatus(trafficID string, unlocked bool) error {
+	result := r.DB.Model(&models.TrafficModel{}).
+		Where("id = ?", trafficID).
+		Updates(map[string]interface{}{
+			"manually_unlocked": unlocked,
+			"updated_at":        time.Now(),
+		})
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to update manual lock status for traffic %s: %w", trafficID, result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("traffic record with id %s not found", trafficID)
+	}
+
+	return nil
+}
+
+func (r *DefaultTrafficRepository) SetAntifraudLockTrafficStatus(traderID string, unlocked bool) error {
+	result := r.DB.Model(&models.TrafficModel{}).
+		Where("trader_id = ?", traderID).
+		Updates(map[string]interface{}{
+			"antifraud_unlocked": unlocked,
+			"updated_at":         time.Now(),
+		})
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to update antifraud lock status for trader %s: %w", traderID, result.Error)
+	}
+
+	return nil
+}
+
+// Блокировка/разблокировка всех статусов для конкретного трафика
+func (r *DefaultTrafficRepository) SetAllLockStatuses(trafficID string, statuses struct {
+	MerchantUnlocked *bool
+	TraderUnlocked   *bool
+	AntifraudUnlocked *bool
+	ManuallyUnlocked  *bool
+}) error {
+	updates := make(map[string]interface{})
+	updates["updated_at"] = time.Now()
+
+	if statuses.MerchantUnlocked != nil {
+		updates["merchant_unlocked"] = *statuses.MerchantUnlocked
+	}
+	if statuses.TraderUnlocked != nil {
+		updates["trader_unlocked"] = *statuses.TraderUnlocked
+	}
+	if statuses.AntifraudUnlocked != nil {
+		updates["antifraud_unlocked"] = *statuses.AntifraudUnlocked
+	}
+	if statuses.ManuallyUnlocked != nil {
+		updates["manually_unlocked"] = *statuses.ManuallyUnlocked
+	}
+
+	result := r.DB.Model(&models.TrafficModel{}).
+		Where("id = ?", trafficID).
+		Updates(updates)
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to update lock statuses for traffic %s: %w", trafficID, result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("traffic record with id %s not found", trafficID)
+	}
+
+	return nil
+}
+
+// Получение текущих статусов блокировки
+func (r *DefaultTrafficRepository) GetLockStatuses(trafficID string) (*struct {
+	MerchantUnlocked  bool
+	TraderUnlocked    bool
+	AntifraudUnlocked bool
+	ManuallyUnlocked  bool
+}, error) {
+	var traffic models.TrafficModel
+	result := r.DB.Select(
+		"merchant_unlocked",
+		"trader_unlocked", 
+		"antifraud_unlocked",
+		"manually_unlocked",
+	).First(&traffic, "id = ?", trafficID)
+
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to get lock statuses for traffic %s: %w", trafficID, result.Error)
+	}
+
+	return &struct {
+		MerchantUnlocked  bool
+		TraderUnlocked    bool
+		AntifraudUnlocked bool
+		ManuallyUnlocked  bool
+	}{
+		MerchantUnlocked:  traffic.MerchantUnlocked,
+		TraderUnlocked:    traffic.TraderUnlocked,
+		AntifraudUnlocked: traffic.AntifraudUnlocked,
+		ManuallyUnlocked:  traffic.ManuallyUnlocked,
+	}, nil
+}
+
+// Проверка, разблокирован ли трафик (хотя бы одним способом)
+func (r *DefaultTrafficRepository) IsTrafficUnlocked(trafficID string) (bool, error) {
+	var traffic models.TrafficModel
+	result := r.DB.Select(
+		"merchant_unlocked",
+		"trader_unlocked",
+		"antifraud_unlocked", 
+		"manually_unlocked",
+	).First(&traffic, "id = ?", trafficID)
+
+	if result.Error != nil {
+		return false, fmt.Errorf("failed to check traffic unlock status for %s: %w", trafficID, result.Error)
+	}
+
+	return traffic.MerchantUnlocked || traffic.TraderUnlocked || 
+	       traffic.AntifraudUnlocked || traffic.ManuallyUnlocked, nil
 }

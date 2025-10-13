@@ -36,9 +36,6 @@ type Traffic struct {
 	// Для антифрода
 	AntifraudParams		TrafficAntifraudParams
 
-	// Детали блокировки
-	LockDetails			*TrafficLockDetails
-
 	// Бизнес-параметры
 	BusinessParams		TrafficBusinessParams
 }
@@ -74,6 +71,11 @@ type TrafficUsecase interface {
 	DisableTraderTraffic(traderID string) error
 	EnableTraderTraffic(traderID string) error
 	GetTraderTrafficStatus(traderID string) (bool, error)
+	SetTraderLockTrafficStatus(traderID string, unlocked bool) error
+	SetMerchantLockTrafficStatus(traderID string, unlocked bool) error
+	SetManuallyLockTrafficStatus(trafficID string, unlocked bool) error
+	SetAntifraudLockTrafficStatus(traderID string, unlocked bool) error
+	IsTrafficUnlocked(trafficID string) (bool, error)
 }
 
 type TrafficRepository interface {
@@ -86,4 +88,9 @@ type TrafficRepository interface {
 	DisableTraderTraffic(traderID string) error
 	EnableTraderTraffic(traderID string) error
 	GetTraderTrafficStatus(traderID string) (bool, error)
+	SetTraderLockTrafficStatus(traderID string, unlocked bool) error
+	SetMerchantLockTrafficStatus(traderID string, unlocked bool) error
+	SetManuallyLockTrafficStatus(trafficID string, unlocked bool) error
+	SetAntifraudLockTrafficStatus(traderID string, unlocked bool) error
+	IsTrafficUnlocked(trafficID string) (bool, error)
 }

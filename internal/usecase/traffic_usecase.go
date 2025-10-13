@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"fmt"
+
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	trafficdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/traffic"
 )
@@ -18,6 +20,11 @@ func (uc *DefaultTrafficUsecase) AddTraffic(traffic *domain.Traffic) error {
 }
 
 func (uc *DefaultTrafficUsecase) EditTraffic(input *trafficdto.EditTrafficInput) error {
+	// Можно добавить валидацию или бизнес-логику перед обновлением
+	if input.ID == "" {
+		return fmt.Errorf("id is required")
+	}
+
 	return uc.TrafficRepo.UpdateTraffic(input)
 }
 
@@ -47,4 +54,21 @@ func (uc *DefaultTrafficUsecase) EnableTraderTraffic(traderID string) error {
 
 func (uc *DefaultTrafficUsecase) GetTraderTrafficStatus(traderID string) (bool, error) {
 	return uc.TrafficRepo.GetTraderTrafficStatus(traderID)
+}
+
+func (uc *DefaultTrafficUsecase) SetTraderLockTrafficStatus(traderID string, unlocked bool) error {
+	return uc.TrafficRepo.SetTraderLockTrafficStatus(traderID, unlocked)
+}
+func (uc *DefaultTrafficUsecase) SetMerchantLockTrafficStatus(merchantID string, unlocked bool) error {
+	return uc.TrafficRepo.SetMerchantLockTrafficStatus(merchantID, unlocked)
+}
+func (uc *DefaultTrafficUsecase) SetManuallyLockTrafficStatus(trafficID string, unlocked bool) error {
+	return uc.TrafficRepo.SetManuallyLockTrafficStatus(trafficID, unlocked)
+}
+func (uc *DefaultTrafficUsecase) SetAntifraudLockTrafficStatus(traderID string, unlocked bool) error {
+	return uc.TrafficRepo.SetAntifraudLockTrafficStatus(traderID, unlocked)
+}
+
+func (uc *DefaultTrafficUsecase) IsTrafficUnlocked(trafficID string) (bool, error) {
+	return uc.TrafficRepo.IsTrafficUnlocked(trafficID)
 }

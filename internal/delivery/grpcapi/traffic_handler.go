@@ -165,3 +165,39 @@ func (h *TrafficHandler) GetTraderTrafficStatus(ctx context.Context, r *orderpb.
 		Status: status,
 	}, nil
 }
+
+func (h *TrafficHandler) SetTraderLockTrafficStatus(ctx context.Context, r *orderpb.SetTraderLockTrafficStatusRequest)(*orderpb.SetTraderLockTrafficStatusResponse, error) {
+	err := h.trafficUsecase.SetTraderLockTrafficStatus(r.TraderId, r.Unlocked)
+	if err != nil {
+		return nil, err
+	}
+
+	return &orderpb.SetTraderLockTrafficStatusResponse{}, nil
+}
+
+func (h *TrafficHandler) SetMerchantLockTrafficStatus(ctx context.Context, r *orderpb.SetMerchantLockTrafficStatusRequest) (*orderpb.SetMerchantLockTrafficStatusResponse, error) {
+	err := h.trafficUsecase.SetMerchantLockTrafficStatus(r.MerchantId, r.Ubnlocked)
+	if err != nil {
+		return nil, err
+	}
+
+	return &orderpb.SetMerchantLockTrafficStatusResponse{}, nil
+}
+
+func (h *TrafficHandler) SetManuallyLockTrafficStatus(ctx context.Context, r *orderpb.SetManuallyLockTrafficStatusRequest) (*orderpb.SetManuallyLockTrafficStatusResponse, error) {
+	err := h.trafficUsecase.SetManuallyLockTrafficStatus(r.TrafficId, r.Unlocked)
+	if err != nil {
+		return nil, err
+	}
+
+	return &orderpb.SetManuallyLockTrafficStatusResponse{}, nil
+}
+
+func (h *TrafficHandler) SetAntifraudLockTrafficStatus(ctx context.Context, r *orderpb.SetAntifraudLockTrafficStatusRequest) (*orderpb.SetAntifraudLockTrafficStatusResponse, error) {
+	err := h.trafficUsecase.SetAntifraudLockTrafficStatus(r.TraderId, r.Unlocked)
+	if err != nil {
+		return nil, err
+	}
+
+	return &orderpb.SetAntifraudLockTrafficStatusResponse{}, nil
+}

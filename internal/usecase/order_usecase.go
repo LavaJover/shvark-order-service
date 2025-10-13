@@ -127,7 +127,7 @@ func (uc *DefaultOrderUsecase) FilterByTraffic(bankDetails []*domain.BankDetail,
 		if err != nil {
 			continue
 		}
-		if traffic.Enabled {
+		if traffic.ActivityParams.AntifraudUnlocked && traffic.ActivityParams.ManuallyUnlocked && traffic.ActivityParams.MerchantUnlocked && traffic.ActivityParams.TraderUnlocked {
 			result = append(result, bankDetail)
 		}
 	}
@@ -336,7 +336,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrde
 		TraderReward:  traderReward,
 		PlatformFee:   platformFee,
 		CallbackUrl:   createOrderInput.CallbackUrl,
-		ExpiresAt:     createOrderInput.ExpiresAt,
+		ExpiresAt:     time.Now().Add(traffic.BusinessParams.MerchantDealsDuration),
 
 		RequisiteDetails: domain.RequisiteDetails{
 			TraderID: chosenBankDetail.TraderID,
@@ -810,7 +810,7 @@ func (uc *DefaultOrderUsecase) findMatchingOrders(ctx context.Context, req *Auto
 func (uc *DefaultOrderUsecase) isAmountMatching(orderAmount, paymentAmount float64) bool {
 	// Допуск 1% для учета возможных расхождений
 	diff := math.Abs((orderAmount - paymentAmount))
-	allowedDiff := orderAmount * 0.01
+	allowedDiff := orderAmount * 0
 	return diff <= allowedDiff
 }
 
@@ -824,20 +824,9 @@ func (uc *DefaultOrderUsecase) processSingleOrder(ctx context.Context, order *do
 		}, nil
 	}
 
-	bankDetail, err := uc.BankDetailUsecase.GetBankDetailByID(order.BankDetailID)
-	if err != nil {
-		slog.Error("failed to get bank detail %s for order %s", bankDetail.ID, order.ID)
-		return domain.OrderProcessingResult{
-			OrderID: order.ID,
-			Action:  "failed",
-			Success: false,
-			Error: err.Error(),
-		}, err
-	}
-
 	// Search for team relations to find commission users
 	var commissionUsers []walletRequest.CommissionUser
-	teamRelations, err := uc.TeamRelationsUsecase.GetRelationshipsByTraderID(bankDetail.TraderID)
+	teamRelations, err := uc.TeamRelationsUsecase.GetRelationshipsByTraderID(order.RequisiteDetails.TraderID)
 	if err == nil {
 		for _, teamRelation := range teamRelations {
 			commissionUsers = append(commissionUsers, walletRequest.CommissionUser{
@@ -856,7 +845,7 @@ func (uc *DefaultOrderUsecase) processSingleOrder(ctx context.Context, order *do
 		WalletOp: &WalletOperation{
 			Type: "release",
 			Request: walletRequest.ReleaseRequest{
-				TraderID:        bankDetail.TraderID,
+				TraderID:        order.RequisiteDetails.TraderID,
 				MerchantID:      order.MerchantInfo.MerchantID,
 				OrderID:         order.ID,
 				RewardPercent:   order.TraderReward,
@@ -886,6 +875,15 @@ func (uc *DefaultOrderUsecase) processSingleOrder(ctx context.Context, order *do
 	// Публикуем событие
 	go uc.publishAutomaticApprovalEvent(order, req)
 
+	if order.CallbackUrl != "" {
+		notifier.SendCallback(
+			order.CallbackUrl,
+			order.MerchantInfo.MerchantOrderID,
+			string(domain.StatusCompleted),
+			0, 0, 0,
+		)
+	}
+
 	return domain.OrderProcessingResult{
 		OrderID: order.ID,
 		Action:  "approved",
@@ -909,23 +907,16 @@ func (uc *DefaultOrderUsecase) ensureIdempotency(ctx context.Context, orderID st
 }
 
 func (uc *DefaultOrderUsecase) publishAutomaticApprovalEvent(order *domain.Order, req *AutomaticPaymentRequest) {
-
-	bankDetail, err := uc.BankDetailUsecase.GetBankDetailByID(order.BankDetailID)
-	if err != nil {
-		slog.Error("failed to find relevant bank detail %s for order %s", order.BankDetailID, order.ID)
-		return
-	}
-
 	event := publisher.OrderEvent{
 		OrderID:     order.ID,
-		TraderID:    bankDetail.TraderID,
+		TraderID:    order.RequisiteDetails.TraderID,
 		Status:      "✅ Автоматически закрыта",
 		AmountFiat:  order.AmountInfo.AmountFiat,
 		Currency:    order.AmountInfo.Currency,
-		BankName:    bankDetail.BankName,
-		Phone:       bankDetail.Phone,
-		CardNumber:  bankDetail.CardNumber,
-		Owner:       bankDetail.Owner,
+		BankName:    order.RequisiteDetails.BankName,
+		Phone:       order.RequisiteDetails.Phone,
+		CardNumber:  order.RequisiteDetails.CardNumber,
+		Owner:       order.RequisiteDetails.Owner,
 		// Metadata: map[string]interface{}{
 		// 	"automatic":    true,
 		// 	"payment_system": req.PaymentSystem,

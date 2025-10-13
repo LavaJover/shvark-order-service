@@ -361,7 +361,41 @@ service TrafficService {
     rpc DisableTraderTraffic (DisableTraderTrafficRequest) returns (DisableTraderTrafficResponse);
     rpc EnableTraderTraffic (EnableTraderTrafficRequest) returns (EnableTraderTrafficResponse);
     rpc GetTraderTrafficStatus (GetTraderTrafficStatusRequest) returns (GetTraderTrafficStatusResponse);
+
+    rpc SetTraderLockTrafficStatus (SetTraderLockTrafficStatusRequest) returns (SetTraderLockTrafficStatusResponse);
+    rpc SetMerchantLockTrafficStatus (SetMerchantLockTrafficStatusRequest) returns (SetMerchantLockTrafficStatusResponse);
+    rpc SetManuallyLockTrafficStatus (SetManuallyLockTrafficStatusRequest) returns (SetManuallyLockTrafficStatusResponse);
+    rpc SetAntifraudLockTrafficStatus (SetAntifraudLockTrafficStatusRequest) returns (SetAntifraudLockTrafficStatusResponse);
 }
+
+message SetTraderLockTrafficStatusRequest {
+    string trader_id = 1;
+    bool unlocked = 2;
+}
+
+message SetTraderLockTrafficStatusResponse {}
+
+message SetMerchantLockTrafficStatusRequest {
+    string merchant_id = 1;
+    bool ubnlocked = 2;
+}
+
+message SetMerchantLockTrafficStatusResponse {}
+
+message SetManuallyLockTrafficStatusRequest {
+    string traffic_id = 1;
+    bool unlocked = 2;
+}
+
+message SetManuallyLockTrafficStatusResponse {}
+
+message SetAntifraudLockTrafficStatusRequest {
+    string trader_id = 1;
+    bool unlocked = 2;
+}
+
+message SetAntifraudLockTrafficStatusResponse{}
+
 
 // type Traffic struct {
 // 	ID 					string

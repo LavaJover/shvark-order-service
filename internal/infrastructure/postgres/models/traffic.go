@@ -19,10 +19,6 @@ type TrafficModel struct {
 
 	AntifraudRequired bool	
 
-	LockedAt			time.Time
-	UnlockedAt			time.Time
-	Reason				string
-
 	MerchantDealsDuration time.Duration
 
 	CreatedAt 			time.Time
