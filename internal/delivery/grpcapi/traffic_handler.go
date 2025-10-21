@@ -2,6 +2,7 @@ package grpcapi
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	trafficdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/traffic"
@@ -200,4 +201,41 @@ func (h *TrafficHandler) SetAntifraudLockTrafficStatus(ctx context.Context, r *o
 	}
 
 	return &orderpb.SetAntifraudLockTrafficStatusResponse{}, nil
+}
+
+// GetTrafficLockStatuses возвращает все статусы блокировки для указанного трафика
+func (h *TrafficHandler) GetTrafficLockStatuses(ctx context.Context, req *orderpb.GetTrafficLockStatusesRequest) (*orderpb.GetTrafficLockStatusesResponse, error) {
+	if req.TrafficId == "" {
+		return nil, fmt.Errorf("traffic_id is required")
+	}
+
+	statuses, err := h.trafficUsecase.GetLockStatuses(req.TrafficId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get traffic lock statuses: %w", err)
+	}
+
+	return &orderpb.GetTrafficLockStatusesResponse{
+		TrafficId:         statuses.TrafficID,
+		MerchantUnlocked:  statuses.MerchantUnlocked,
+		TraderUnlocked:    statuses.TraderUnlocked,
+		AntifraudUnlocked: statuses.AntifraudUnlocked,
+		ManuallyUnlocked:  statuses.ManuallyUnlocked,
+	}, nil
+}
+
+// CheckTrafficUnlocked проверяет, разблокирован ли трафик хотя бы одним способом
+func (h *TrafficHandler) CheckTrafficUnlocked(ctx context.Context, req *orderpb.CheckTrafficUnlockedRequest) (*orderpb.CheckTrafficUnlockedResponse, error) {
+	if req.TrafficId == "" {
+		return nil, fmt.Errorf("traffic_id is required")
+	}
+
+	result, err := h.trafficUsecase.IsTrafficUnlocked(req.TrafficId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check traffic unlock status: %w", err)
+	}
+
+	return &orderpb.CheckTrafficUnlockedResponse{
+		TrafficId: result.TrafficID,
+		Unlocked:  result.Unlocked,
+	}, nil
 }

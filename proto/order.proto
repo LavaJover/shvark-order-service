@@ -362,11 +362,40 @@ service TrafficService {
     rpc EnableTraderTraffic (EnableTraderTrafficRequest) returns (EnableTraderTrafficResponse);
     rpc GetTraderTrafficStatus (GetTraderTrafficStatusRequest) returns (GetTraderTrafficStatusResponse);
 
+    // Traffic control
     rpc SetTraderLockTrafficStatus (SetTraderLockTrafficStatusRequest) returns (SetTraderLockTrafficStatusResponse);
     rpc SetMerchantLockTrafficStatus (SetMerchantLockTrafficStatusRequest) returns (SetMerchantLockTrafficStatusResponse);
     rpc SetManuallyLockTrafficStatus (SetManuallyLockTrafficStatusRequest) returns (SetManuallyLockTrafficStatusResponse);
     rpc SetAntifraudLockTrafficStatus (SetAntifraudLockTrafficStatusRequest) returns (SetAntifraudLockTrafficStatusResponse);
+
+    // Traffic monitoring
+    // New lock status getting methods
+    rpc GetTrafficLockStatuses(GetTrafficLockStatusesRequest) returns (GetTrafficLockStatusesResponse);
+    rpc CheckTrafficUnlocked(CheckTrafficUnlockedRequest) returns (CheckTrafficUnlockedResponse);
 }
+
+// Request/Response for getting lock statuses
+message GetTrafficLockStatusesRequest {
+    string traffic_id = 1;
+  }
+  
+  message GetTrafficLockStatusesResponse {
+    string traffic_id = 1;
+    bool merchant_unlocked = 2;
+    bool trader_unlocked = 3;
+    bool antifraud_unlocked = 4;
+    bool manually_unlocked = 5;
+  }
+  
+  // Request/Response for checking if traffic is unlocked
+  message CheckTrafficUnlockedRequest {
+    string traffic_id = 1;
+  }
+  
+  message CheckTrafficUnlockedResponse {
+    string traffic_id = 1;
+    bool unlocked = 2;
+  }
 
 message SetTraderLockTrafficStatusRequest {
     string trader_id = 1;

@@ -69,6 +69,39 @@ func (uc *DefaultTrafficUsecase) SetAntifraudLockTrafficStatus(traderID string, 
 	return uc.TrafficRepo.SetAntifraudLockTrafficStatus(traderID, unlocked)
 }
 
-func (uc *DefaultTrafficUsecase) IsTrafficUnlocked(trafficID string) (bool, error) {
-	return uc.TrafficRepo.IsTrafficUnlocked(trafficID)
+// GetLockStatuses возвращает все статусы блокировки для указанного трафика
+func (uc *DefaultTrafficUsecase) GetLockStatuses(trafficID string) (*trafficdto.LockStatusesResponse, error) {
+	if trafficID == "" {
+		return nil, fmt.Errorf("trafficID cannot be empty")
+	}
+
+	statuses, err := uc.TrafficRepo.GetLockStatuses(trafficID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get lock statuses: %w", err)
+	}
+
+	return &trafficdto.LockStatusesResponse{
+		TrafficID:         trafficID,
+		MerchantUnlocked:  statuses.MerchantUnlocked,
+		TraderUnlocked:    statuses.TraderUnlocked,
+		AntifraudUnlocked: statuses.AntifraudUnlocked,
+		ManuallyUnlocked:  statuses.ManuallyUnlocked,
+	}, nil
+}
+
+// IsTrafficUnlocked проверяет, разблокирован ли трафик хотя бы одним способом
+func (uc *DefaultTrafficUsecase) IsTrafficUnlocked(trafficID string) (*trafficdto.TrafficUnlockedResponse, error) {
+	if trafficID == "" {
+		return nil, fmt.Errorf("trafficID cannot be empty")
+	}
+
+	unlocked, err := uc.TrafficRepo.IsTrafficUnlocked(trafficID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check traffic unlock status: %w", err)
+	}
+
+	return &trafficdto.TrafficUnlockedResponse{
+		TrafficID: trafficID,
+		Unlocked:  unlocked,
+	}, nil
 }

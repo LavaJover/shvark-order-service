@@ -702,6 +702,8 @@ const (
 	TrafficService_SetMerchantLockTrafficStatus_FullMethodName  = "/order.TrafficService/SetMerchantLockTrafficStatus"
 	TrafficService_SetManuallyLockTrafficStatus_FullMethodName  = "/order.TrafficService/SetManuallyLockTrafficStatus"
 	TrafficService_SetAntifraudLockTrafficStatus_FullMethodName = "/order.TrafficService/SetAntifraudLockTrafficStatus"
+	TrafficService_GetTrafficLockStatuses_FullMethodName        = "/order.TrafficService/GetTrafficLockStatuses"
+	TrafficService_CheckTrafficUnlocked_FullMethodName          = "/order.TrafficService/CheckTrafficUnlocked"
 )
 
 // TrafficServiceClient is the client API for TrafficService service.
@@ -715,10 +717,15 @@ type TrafficServiceClient interface {
 	DisableTraderTraffic(ctx context.Context, in *DisableTraderTrafficRequest, opts ...grpc.CallOption) (*DisableTraderTrafficResponse, error)
 	EnableTraderTraffic(ctx context.Context, in *EnableTraderTrafficRequest, opts ...grpc.CallOption) (*EnableTraderTrafficResponse, error)
 	GetTraderTrafficStatus(ctx context.Context, in *GetTraderTrafficStatusRequest, opts ...grpc.CallOption) (*GetTraderTrafficStatusResponse, error)
+	// Traffic control
 	SetTraderLockTrafficStatus(ctx context.Context, in *SetTraderLockTrafficStatusRequest, opts ...grpc.CallOption) (*SetTraderLockTrafficStatusResponse, error)
 	SetMerchantLockTrafficStatus(ctx context.Context, in *SetMerchantLockTrafficStatusRequest, opts ...grpc.CallOption) (*SetMerchantLockTrafficStatusResponse, error)
 	SetManuallyLockTrafficStatus(ctx context.Context, in *SetManuallyLockTrafficStatusRequest, opts ...grpc.CallOption) (*SetManuallyLockTrafficStatusResponse, error)
 	SetAntifraudLockTrafficStatus(ctx context.Context, in *SetAntifraudLockTrafficStatusRequest, opts ...grpc.CallOption) (*SetAntifraudLockTrafficStatusResponse, error)
+	// Traffic monitoring
+	// New lock status getting methods
+	GetTrafficLockStatuses(ctx context.Context, in *GetTrafficLockStatusesRequest, opts ...grpc.CallOption) (*GetTrafficLockStatusesResponse, error)
+	CheckTrafficUnlocked(ctx context.Context, in *CheckTrafficUnlockedRequest, opts ...grpc.CallOption) (*CheckTrafficUnlockedResponse, error)
 }
 
 type trafficServiceClient struct {
@@ -839,6 +846,26 @@ func (c *trafficServiceClient) SetAntifraudLockTrafficStatus(ctx context.Context
 	return out, nil
 }
 
+func (c *trafficServiceClient) GetTrafficLockStatuses(ctx context.Context, in *GetTrafficLockStatusesRequest, opts ...grpc.CallOption) (*GetTrafficLockStatusesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTrafficLockStatusesResponse)
+	err := c.cc.Invoke(ctx, TrafficService_GetTrafficLockStatuses_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trafficServiceClient) CheckTrafficUnlocked(ctx context.Context, in *CheckTrafficUnlockedRequest, opts ...grpc.CallOption) (*CheckTrafficUnlockedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckTrafficUnlockedResponse)
+	err := c.cc.Invoke(ctx, TrafficService_CheckTrafficUnlocked_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TrafficServiceServer is the server API for TrafficService service.
 // All implementations must embed UnimplementedTrafficServiceServer
 // for forward compatibility.
@@ -850,10 +877,15 @@ type TrafficServiceServer interface {
 	DisableTraderTraffic(context.Context, *DisableTraderTrafficRequest) (*DisableTraderTrafficResponse, error)
 	EnableTraderTraffic(context.Context, *EnableTraderTrafficRequest) (*EnableTraderTrafficResponse, error)
 	GetTraderTrafficStatus(context.Context, *GetTraderTrafficStatusRequest) (*GetTraderTrafficStatusResponse, error)
+	// Traffic control
 	SetTraderLockTrafficStatus(context.Context, *SetTraderLockTrafficStatusRequest) (*SetTraderLockTrafficStatusResponse, error)
 	SetMerchantLockTrafficStatus(context.Context, *SetMerchantLockTrafficStatusRequest) (*SetMerchantLockTrafficStatusResponse, error)
 	SetManuallyLockTrafficStatus(context.Context, *SetManuallyLockTrafficStatusRequest) (*SetManuallyLockTrafficStatusResponse, error)
 	SetAntifraudLockTrafficStatus(context.Context, *SetAntifraudLockTrafficStatusRequest) (*SetAntifraudLockTrafficStatusResponse, error)
+	// Traffic monitoring
+	// New lock status getting methods
+	GetTrafficLockStatuses(context.Context, *GetTrafficLockStatusesRequest) (*GetTrafficLockStatusesResponse, error)
+	CheckTrafficUnlocked(context.Context, *CheckTrafficUnlockedRequest) (*CheckTrafficUnlockedResponse, error)
 	mustEmbedUnimplementedTrafficServiceServer()
 }
 
@@ -896,6 +928,12 @@ func (UnimplementedTrafficServiceServer) SetManuallyLockTrafficStatus(context.Co
 }
 func (UnimplementedTrafficServiceServer) SetAntifraudLockTrafficStatus(context.Context, *SetAntifraudLockTrafficStatusRequest) (*SetAntifraudLockTrafficStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetAntifraudLockTrafficStatus not implemented")
+}
+func (UnimplementedTrafficServiceServer) GetTrafficLockStatuses(context.Context, *GetTrafficLockStatusesRequest) (*GetTrafficLockStatusesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTrafficLockStatuses not implemented")
+}
+func (UnimplementedTrafficServiceServer) CheckTrafficUnlocked(context.Context, *CheckTrafficUnlockedRequest) (*CheckTrafficUnlockedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckTrafficUnlocked not implemented")
 }
 func (UnimplementedTrafficServiceServer) mustEmbedUnimplementedTrafficServiceServer() {}
 func (UnimplementedTrafficServiceServer) testEmbeddedByValue()                        {}
@@ -1116,6 +1154,42 @@ func _TrafficService_SetAntifraudLockTrafficStatus_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TrafficService_GetTrafficLockStatuses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTrafficLockStatusesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).GetTrafficLockStatuses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_GetTrafficLockStatuses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).GetTrafficLockStatuses(ctx, req.(*GetTrafficLockStatusesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrafficService_CheckTrafficUnlocked_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckTrafficUnlockedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).CheckTrafficUnlocked(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_CheckTrafficUnlocked_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).CheckTrafficUnlocked(ctx, req.(*CheckTrafficUnlockedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TrafficService_ServiceDesc is the grpc.ServiceDesc for TrafficService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1166,6 +1240,14 @@ var TrafficService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetAntifraudLockTrafficStatus",
 			Handler:    _TrafficService_SetAntifraudLockTrafficStatus_Handler,
+		},
+		{
+			MethodName: "GetTrafficLockStatuses",
+			Handler:    _TrafficService_GetTrafficLockStatuses_Handler,
+		},
+		{
+			MethodName: "CheckTrafficUnlocked",
+			Handler:    _TrafficService_CheckTrafficUnlocked_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -75,7 +75,8 @@ type TrafficUsecase interface {
 	SetMerchantLockTrafficStatus(traderID string, unlocked bool) error
 	SetManuallyLockTrafficStatus(trafficID string, unlocked bool) error
 	SetAntifraudLockTrafficStatus(traderID string, unlocked bool) error
-	IsTrafficUnlocked(trafficID string) (bool, error)
+	IsTrafficUnlocked(trafficID string) (*trafficdto.TrafficUnlockedResponse, error)
+	GetLockStatuses(trafficID string) (*trafficdto.LockStatusesResponse, error)
 }
 
 type TrafficRepository interface {
@@ -93,4 +94,10 @@ type TrafficRepository interface {
 	SetManuallyLockTrafficStatus(trafficID string, unlocked bool) error
 	SetAntifraudLockTrafficStatus(traderID string, unlocked bool) error
 	IsTrafficUnlocked(trafficID string) (bool, error)
+	GetLockStatuses(trafficID string) (*struct {
+		MerchantUnlocked  bool
+		TraderUnlocked    bool
+		AntifraudUnlocked bool
+		ManuallyUnlocked  bool
+	}, error)
 }
