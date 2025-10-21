@@ -9,7 +9,8 @@ type EditTrafficInput struct {
 	TraderReward 			*float64 				
 	TraderPriority 			*float64 				
 	PlatformFee 			*float64				
-	Enabled 				*bool 					
+	Enabled 				*bool
+	Name					*string 					
 	ActivityParams 			*TrafficActivityParams 	
 	AntifraudParams 		*TrafficAntifraudParams 
 	BusinessParams 			*TrafficBusinessParams 	

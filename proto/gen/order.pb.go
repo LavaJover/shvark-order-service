@@ -3615,6 +3615,7 @@ type AddTrafficRequest struct {
 	TraderPriority      float64                     `protobuf:"fixed64,4,opt,name=trader_priority,json=traderPriority,proto3" json:"trader_priority,omitempty"`
 	Enabled             bool                        `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	PlatformFee         float64                     `protobuf:"fixed64,6,opt,name=platform_fee,json=platformFee,proto3" json:"platform_fee,omitempty"`
+	Name                string                      `protobuf:"bytes,10,opt,name=name,proto3" json:"name,omitempty"`
 	ActivityParams      *TrafficActivityParameters  `protobuf:"bytes,7,opt,name=activity_params,json=activityParams,proto3" json:"activity_params,omitempty"`
 	AntifraudParams     *TrafficAntifraudParameters `protobuf:"bytes,8,opt,name=antifraud_params,json=antifraudParams,proto3" json:"antifraud_params,omitempty"`
 	BusinessParams      *TrafficBusinessParameters  `protobuf:"bytes,9,opt,name=business_params,json=businessParams,proto3" json:"business_params,omitempty"`
@@ -3692,6 +3693,13 @@ func (x *AddTrafficRequest) GetPlatformFee() float64 {
 		return x.PlatformFee
 	}
 	return 0
+}
+
+func (x *AddTrafficRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
 }
 
 func (x *AddTrafficRequest) GetActivityParams() *TrafficActivityParameters {
@@ -3880,6 +3888,7 @@ type Traffic struct {
 	TraderPriority      float64                     `protobuf:"fixed64,5,opt,name=trader_priority,json=traderPriority,proto3" json:"trader_priority,omitempty"`
 	Enabled             bool                        `protobuf:"varint,6,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	PlatformFee         float64                     `protobuf:"fixed64,7,opt,name=platform_fee,json=platformFee,proto3" json:"platform_fee,omitempty"`
+	Name                string                      `protobuf:"bytes,11,opt,name=name,proto3" json:"name,omitempty"`
 	ActivityParams      *TrafficActivityParameters  `protobuf:"bytes,8,opt,name=activity_params,json=activityParams,proto3" json:"activity_params,omitempty"`
 	AntifraudParams     *TrafficAntifraudParameters `protobuf:"bytes,9,opt,name=antifraud_params,json=antifraudParams,proto3" json:"antifraud_params,omitempty"`
 	BusinessParams      *TrafficBusinessParameters  `protobuf:"bytes,10,opt,name=business_params,json=businessParams,proto3" json:"business_params,omitempty"`
@@ -3966,6 +3975,13 @@ func (x *Traffic) GetPlatformFee() float64 {
 	return 0
 }
 
+func (x *Traffic) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
 func (x *Traffic) GetActivityParams() *TrafficActivityParameters {
 	if x != nil {
 		return x.ActivityParams
@@ -4043,6 +4059,7 @@ type EditTrafficRequest struct {
 	ActivityParams  *TrafficActivityParameters  `protobuf:"bytes,8,opt,name=activity_params,json=activityParams,proto3,oneof" json:"activity_params,omitempty"`
 	AntifraudParams *TrafficAntifraudParameters `protobuf:"bytes,9,opt,name=antifraud_params,json=antifraudParams,proto3,oneof" json:"antifraud_params,omitempty"`
 	BusinessParams  *TrafficBusinessParameters  `protobuf:"bytes,10,opt,name=business_params,json=businessParams,proto3,oneof" json:"business_params,omitempty"`
+	Name            *string                     `protobuf:"bytes,11,opt,name=name,proto3,oneof" json:"name,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -4145,6 +4162,13 @@ func (x *EditTrafficRequest) GetBusinessParams() *TrafficBusinessParameters {
 		return x.BusinessParams
 	}
 	return nil
+}
+
+func (x *EditTrafficRequest) GetName() string {
+	if x != nil && x.Name != nil {
+		return *x.Name
+	}
+	return ""
 }
 
 type EditTrafficResponse struct {
@@ -7070,7 +7094,7 @@ const file_order_proto_rawDesc = "" +
 	"$SetAntifraudLockTrafficStatusRequest\x12\x1b\n" +
 	"\ttrader_id\x18\x01 \x01(\tR\btraderId\x12\x1a\n" +
 	"\bunlocked\x18\x02 \x01(\bR\bunlocked\"'\n" +
-	"%SetAntifraudLockTrafficStatusResponse\"\xcf\x03\n" +
+	"%SetAntifraudLockTrafficStatusResponse\"\xe3\x03\n" +
 	"\x11AddTrafficRequest\x12\x1f\n" +
 	"\vmerchant_id\x18\x01 \x01(\tR\n" +
 	"merchantId\x12\x1b\n" +
@@ -7078,7 +7102,9 @@ const file_order_proto_rawDesc = "" +
 	"\x15trader_reward_percent\x18\x03 \x01(\x01R\x13traderRewardPercent\x12'\n" +
 	"\x0ftrader_priority\x18\x04 \x01(\x01R\x0etraderPriority\x12\x18\n" +
 	"\aenabled\x18\x05 \x01(\bR\aenabled\x12!\n" +
-	"\fplatform_fee\x18\x06 \x01(\x01R\vplatformFee\x12I\n" +
+	"\fplatform_fee\x18\x06 \x01(\x01R\vplatformFee\x12\x12\n" +
+	"\x04name\x18\n" +
+	" \x01(\tR\x04name\x12I\n" +
 	"\x0factivity_params\x18\a \x01(\v2 .order.TrafficActivityParametersR\x0eactivityParams\x12L\n" +
 	"\x10antifraud_params\x18\b \x01(\v2!.order.TrafficAntifraudParametersR\x0fantifraudParams\x12I\n" +
 	"\x0fbusiness_params\x18\t \x01(\v2 .order.TrafficBusinessParametersR\x0ebusinessParams\"\xcd\x01\n" +
@@ -7090,7 +7116,7 @@ const file_order_proto_rawDesc = "" +
 	"\x1aTrafficAntifraudParameters\x12-\n" +
 	"\x12antifraud_required\x18\x01 \x01(\bR\x11antifraudRequired\"n\n" +
 	"\x19TrafficBusinessParameters\x12Q\n" +
-	"\x17merchant_deals_duration\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\x15merchantDealsDuration\"\xd5\x03\n" +
+	"\x17merchant_deals_duration\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\x15merchantDealsDuration\"\xe9\x03\n" +
 	"\aTraffic\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\vmerchant_id\x18\x02 \x01(\tR\n" +
@@ -7099,13 +7125,14 @@ const file_order_proto_rawDesc = "" +
 	"\x15trader_reward_percent\x18\x04 \x01(\x01R\x13traderRewardPercent\x12'\n" +
 	"\x0ftrader_priority\x18\x05 \x01(\x01R\x0etraderPriority\x12\x18\n" +
 	"\aenabled\x18\x06 \x01(\bR\aenabled\x12!\n" +
-	"\fplatform_fee\x18\a \x01(\x01R\vplatformFee\x12I\n" +
+	"\fplatform_fee\x18\a \x01(\x01R\vplatformFee\x12\x12\n" +
+	"\x04name\x18\v \x01(\tR\x04name\x12I\n" +
 	"\x0factivity_params\x18\b \x01(\v2 .order.TrafficActivityParametersR\x0eactivityParams\x12L\n" +
 	"\x10antifraud_params\x18\t \x01(\v2!.order.TrafficAntifraudParametersR\x0fantifraudParams\x12I\n" +
 	"\x0fbusiness_params\x18\n" +
 	" \x01(\v2 .order.TrafficBusinessParametersR\x0ebusinessParams\".\n" +
 	"\x12AddTrafficResponse\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\"\x9c\x05\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"\xbe\x05\n" +
 	"\x12EditTrafficRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
 	"\vmerchant_id\x18\x02 \x01(\tH\x00R\n" +
@@ -7118,7 +7145,8 @@ const file_order_proto_rawDesc = "" +
 	"\x0factivity_params\x18\b \x01(\v2 .order.TrafficActivityParametersH\x06R\x0eactivityParams\x88\x01\x01\x12Q\n" +
 	"\x10antifraud_params\x18\t \x01(\v2!.order.TrafficAntifraudParametersH\aR\x0fantifraudParams\x88\x01\x01\x12N\n" +
 	"\x0fbusiness_params\x18\n" +
-	" \x01(\v2 .order.TrafficBusinessParametersH\bR\x0ebusinessParams\x88\x01\x01B\x0e\n" +
+	" \x01(\v2 .order.TrafficBusinessParametersH\bR\x0ebusinessParams\x88\x01\x01\x12\x17\n" +
+	"\x04name\x18\v \x01(\tH\tR\x04name\x88\x01\x01B\x0e\n" +
 	"\f_merchant_idB\f\n" +
 	"\n" +
 	"_trader_idB\x10\n" +
@@ -7129,7 +7157,8 @@ const file_order_proto_rawDesc = "" +
 	"\b_enabledB\x12\n" +
 	"\x10_activity_paramsB\x13\n" +
 	"\x11_antifraud_paramsB\x12\n" +
-	"\x10_business_params\"/\n" +
+	"\x10_business_paramsB\a\n" +
+	"\x05_name\"/\n" +
 	"\x13EditTrafficResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"5\n" +
 	"\x14DeleteTrafficRequest\x12\x1d\n" +

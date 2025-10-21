@@ -10,6 +10,7 @@ type TrafficModel struct {
 	PlatformFee			float64 
 	TraderPriority 		float64
 	Enabled 			bool
+	Name				string
 
 	// Гибкие настройки
 	MerchantUnlocked	bool

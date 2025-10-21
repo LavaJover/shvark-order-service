@@ -34,7 +34,7 @@ func (r *DefaultTrafficRepository) CreateTraffic(traffic *domain.Traffic) error 
 		ManuallyUnlocked: traffic.ActivityParams.ManuallyUnlocked,
 		AntifraudRequired: traffic.AntifraudParams.AntifraudRequired,
 		MerchantDealsDuration: traffic.BusinessParams.MerchantDealsDuration,
-
+		Name: traffic.Name,
 	}
 
 	if err := r.DB.Create(&trafficModel).Error; err != nil {
@@ -66,6 +66,9 @@ func (r *DefaultTrafficRepository) UpdateTraffic(input *trafficdto.EditTrafficIn
 	}
 	if input.Enabled != nil {
 		updates["enabled"] = *input.Enabled
+	}
+	if input.Name != nil {
+		updates["name"] = *input.Name
 	}
 
 	// Обновляем вложенные структуры если они переданы
@@ -136,6 +139,7 @@ func (r *DefaultTrafficRepository) GetTrafficRecords(page, limit int32) ([]*doma
 			TraderPriority: trafficModel.TraderPriority,
 			Enabled: trafficModel.Enabled,
 			PlatformFee: trafficModel.PlatformFee,
+			Name: trafficModel.Name,
 			ActivityParams: domain.TrafficActivityParams{
 				MerchantUnlocked: trafficModel.MerchantUnlocked,
 				TraderUnlocked: trafficModel.TraderUnlocked,
@@ -168,6 +172,7 @@ func (r *DefaultTrafficRepository) GetTrafficByID(trafficID string) (*domain.Tra
 		TraderPriority: trafficModel.TraderPriority,
 		Enabled: trafficModel.Enabled,
 		PlatformFee: trafficModel.PlatformFee,
+		Name: trafficModel.Name,
 		ActivityParams: domain.TrafficActivityParams{
 			MerchantUnlocked: trafficModel.MerchantUnlocked,
 			TraderUnlocked: trafficModel.TraderUnlocked,
@@ -197,6 +202,7 @@ func (r *DefaultTrafficRepository) GetTrafficByTraderMerchant(traderID, merchant
 		TraderPriority: trafficModel.TraderPriority,
 		Enabled: trafficModel.Enabled,
 		PlatformFee: trafficModel.PlatformFee,
+		Name: trafficModel.Name,
 		ActivityParams: domain.TrafficActivityParams{
 			MerchantUnlocked: trafficModel.MerchantUnlocked,
 			TraderUnlocked: trafficModel.TraderUnlocked,

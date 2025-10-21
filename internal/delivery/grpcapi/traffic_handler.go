@@ -27,6 +27,7 @@ func (h *TrafficHandler) AddTraffic(ctx context.Context, r *orderpb.AddTrafficRe
 		TraderPriority: r.TraderPriority,
 		Enabled: r.Enabled,
 		PlatformFee: r.PlatformFee,
+		Name: r.Name,
 		ActivityParams: domain.TrafficActivityParams{
 			MerchantUnlocked: r.ActivityParams.MerchantUnlocked,
 			TraderUnlocked: r.ActivityParams.TraderUnlocked,
@@ -62,6 +63,7 @@ func (h *TrafficHandler) EditTraffic(ctx context.Context, r *orderpb.EditTraffic
 		TraderPriority: r.TraderProirity,
 		PlatformFee: r.PlatformFee,
 		Enabled: r.Enabled,
+		Name: r.Name,
 		ActivityParams: &trafficdto.TrafficActivityParams{
 			MerchantUnlocked: r.ActivityParams.MerchantUnlocked,
 			TraderUnlocked: r.ActivityParams.TraderUnlocked,
@@ -117,6 +119,7 @@ func (h *TrafficHandler) GetTrafficRecords(ctx context.Context, r *orderpb.GetTr
 			TraderPriority: trafficRecord.TraderPriority,
 			PlatformFee: trafficRecord.PlatformFee,
 			Enabled: trafficRecord.Enabled,
+			Name: trafficRecord.Name,
 			ActivityParams: &orderpb.TrafficActivityParameters{
 				MerchantUnlocked: trafficRecord.ActivityParams.MerchantUnlocked,
 				TraderUnlocked: trafficRecord.ActivityParams.TraderUnlocked,

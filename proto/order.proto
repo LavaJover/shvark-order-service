@@ -472,6 +472,7 @@ message AddTrafficRequest {
     double trader_priority = 4;
     bool enabled = 5;
     double platform_fee = 6;
+    string name = 10;
 
     TrafficActivityParameters activity_params = 7;
     TrafficAntifraudParameters antifraud_params = 8;
@@ -501,6 +502,7 @@ message Traffic {
     double trader_priority = 5;
     bool enabled = 6;
     double platform_fee = 7;
+    string name = 11;
 
     TrafficActivityParameters activity_params = 8;
     TrafficAntifraudParameters antifraud_params = 9;
@@ -522,6 +524,7 @@ message EditTrafficRequest {
     optional TrafficActivityParameters activity_params = 8;
     optional TrafficAntifraudParameters antifraud_params = 9;
     optional TrafficBusinessParameters business_params = 10;
+    optional string name = 11;
 }
 
 message EditTrafficResponse {

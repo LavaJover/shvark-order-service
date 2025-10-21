@@ -29,6 +29,7 @@ type Traffic struct {
 	PlatformFee			float64
 	TraderPriority 		float64
 	Enabled 			bool // для админов
+	Name 				string
 
 	// Гибкие параметры
 	ActivityParams 		TrafficActivityParams
