@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -85,4 +86,113 @@ func (c *BalanceThresholdConfig) Validate() error {
 
 func (c *BalanceThresholdConfig) GetThreshold() interface{} {
     return c.MinBalance
+}
+
+// ============= Отчеты =============
+
+type AntiFraudReport struct {
+    TraderID    string         `json:"trader_id"`
+    CheckedAt   time.Time      `json:"checked_at"`
+    AllPassed   bool           `json:"all_passed"`
+    Results     []*CheckResult `json:"results"`
+    FailedRules []string       `json:"failed_rules,omitempty"`
+}
+
+type CheckResult struct {
+    RuleName string                 `json:"rule_name"`
+    Passed   bool                   `json:"passed"`
+    Message  string                 `json:"message"`
+    Details  map[string]interface{} `json:"details,omitempty"`
+}
+
+// ============= Правила =============
+
+type AntiFraudRuleResponse struct {
+    ID        string                 `json:"id"`
+    Name      string                 `json:"name"`
+    Type      string                 `json:"type"`
+    Config    map[string]interface{} `json:"config"`
+    IsActive  bool                   `json:"is_active"`
+    Priority  int                    `json:"priority"`
+    CreatedAt time.Time              `json:"created_at"`
+    UpdatedAt time.Time              `json:"updated_at"`
+}
+
+type CreateRuleRequest struct {
+    Name     string                 `json:"name"`
+    Type     string                 `json:"type"`
+    Config   map[string]interface{} `json:"config"`
+    Priority int                    `json:"priority"`
+}
+
+func (r *CreateRuleRequest) Validate() error {
+    if r.Name == "" {
+        return fmt.Errorf("name is required")
+    }
+    if r.Type == "" {
+        return fmt.Errorf("type is required")
+    }
+    if r.Config == nil {
+        return fmt.Errorf("config is required")
+    }
+    return nil
+}
+
+type UpdateRuleRequest struct {
+    RuleID   string                 `json:"rule_id"`
+    Config   map[string]interface{} `json:"config,omitempty"`
+    IsActive *bool                  `json:"is_active,omitempty"`
+    Priority *int                   `json:"priority,omitempty"`
+}
+
+// ============= Аудит =============
+
+type AuditLogResponse struct {
+    ID        string         `json:"id"`
+    TraderID  string         `json:"trader_id"`
+    CheckedAt time.Time      `json:"checked_at"`
+    AllPassed bool           `json:"all_passed"`
+    Results   []*CheckResult `json:"results"`
+    CreatedAt time.Time      `json:"created_at"`
+}
+
+type GetAuditLogsRequest struct {
+    TraderID   string     `json:"trader_id,omitempty"`
+    FromDate   *time.Time `json:"from_date,omitempty"`
+    ToDate     *time.Time `json:"to_date,omitempty"`
+    OnlyFailed bool       `json:"only_failed"`
+    Limit      int        `json:"limit"`
+    Offset     int        `json:"offset"`
+}
+
+type AntiFraudRepository interface {
+    // Правила
+    CreateRule(ctx context.Context, rule *AntiFraudRule) error
+    UpdateRule(ctx context.Context, ruleID string, updates map[string]interface{}) error
+    GetRules(ctx context.Context, activeOnly bool) ([]*AntiFraudRule, error)
+    GetRuleByID(ctx context.Context, ruleID string) (*AntiFraudRule, error)
+    DeleteRule(ctx context.Context, ruleID string) error
+    
+    // Аудит логи
+    CreateAuditLog(ctx context.Context, log *AuditLog) error
+    GetAuditLogs(ctx context.Context, filter *AuditLogFilter) ([]*AuditLog, error)
+    GetTraderAuditHistory(ctx context.Context, traderID string, limit int) ([]*AuditLog, error)
+}
+
+type AuditLog struct {
+    ID        string
+    TraderID  string
+    CheckedAt time.Time
+    AllPassed bool
+    Results   []*CheckResult  // Изменено с interface{} на конкретный тип
+    CreatedAt time.Time
+}
+
+type AuditLogFilter struct {
+    TraderID   string
+    FromDate   *time.Time
+    ToDate     *time.Time
+    OnlyFailed bool
+    Limit      int
+    Offset     int
 }

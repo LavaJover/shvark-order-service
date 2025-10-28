@@ -64,18 +64,22 @@ func (h *TrafficHandler) EditTraffic(ctx context.Context, r *orderpb.EditTraffic
 		PlatformFee: r.PlatformFee,
 		Enabled: r.Enabled,
 		Name: r.Name,
-		ActivityParams: &trafficdto.TrafficActivityParams{
-			MerchantUnlocked: r.ActivityParams.MerchantUnlocked,
-			TraderUnlocked: r.ActivityParams.TraderUnlocked,
-			AntifraudUnlocked: r.ActivityParams.AntifraudUnlocked,
-			ManuallyUnlocked: r.ActivityParams.ManuallyUnlocked,
-		},
-		AntifraudParams: &trafficdto.TrafficAntifraudParams{
-			AntifraudRequired: r.AntifraudParams.AntifraudRequired,
-		},
-		BusinessParams: &trafficdto.TrafficBusinessParams{
-			MerchantDealsDuration: r.BusinessParams.MerchantDealsDuration.AsDuration(),
-		},
+		ActivityParams: &trafficdto.TrafficActivityParams{},
+		AntifraudParams: &trafficdto.TrafficAntifraudParams{},
+		BusinessParams: &trafficdto.TrafficBusinessParams{},
+	}
+	if r.ActivityParams != nil {
+		input.ActivityParams.MerchantUnlocked = r.ActivityParams.MerchantUnlocked
+		input.ActivityParams.TraderUnlocked = r.ActivityParams.TraderUnlocked
+		input.ActivityParams.AntifraudUnlocked = r.ActivityParams.AntifraudUnlocked
+		input.ActivityParams.ManuallyUnlocked = r.ActivityParams.ManuallyUnlocked
+	}
+	if r.AntifraudParams != nil {
+		input.AntifraudParams.AntifraudRequired = r.AntifraudParams.AntifraudRequired
+	}
+
+	if r.BusinessParams != nil {
+		input.BusinessParams.MerchantDealsDuration = r.BusinessParams.MerchantDealsDuration.AsDuration()
 	}
 
 	if err := h.trafficUsecase.EditTraffic(input); err != nil {

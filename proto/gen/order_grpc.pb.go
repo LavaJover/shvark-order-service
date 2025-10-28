@@ -2015,3 +2015,415 @@ var DeviceService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "order.proto",
 }
+
+const (
+	AntiFraudService_CheckTrader_FullMethodName           = "/order.AntiFraudService/CheckTrader"
+	AntiFraudService_ProcessTraderCheck_FullMethodName    = "/order.AntiFraudService/ProcessTraderCheck"
+	AntiFraudService_CreateRule_FullMethodName            = "/order.AntiFraudService/CreateRule"
+	AntiFraudService_UpdateRule_FullMethodName            = "/order.AntiFraudService/UpdateRule"
+	AntiFraudService_GetRules_FullMethodName              = "/order.AntiFraudService/GetRules"
+	AntiFraudService_GetRule_FullMethodName               = "/order.AntiFraudService/GetRule"
+	AntiFraudService_DeleteRule_FullMethodName            = "/order.AntiFraudService/DeleteRule"
+	AntiFraudService_GetAuditLogs_FullMethodName          = "/order.AntiFraudService/GetAuditLogs"
+	AntiFraudService_GetTraderAuditHistory_FullMethodName = "/order.AntiFraudService/GetTraderAuditHistory"
+)
+
+// AntiFraudServiceClient is the client API for AntiFraudService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type AntiFraudServiceClient interface {
+	// Проверка трейдера
+	CheckTrader(ctx context.Context, in *CheckTraderRequest, opts ...grpc.CallOption) (*CheckTraderResponse, error)
+	ProcessTraderCheck(ctx context.Context, in *ProcessTraderCheckRequest, opts ...grpc.CallOption) (*ProcessTraderCheckResponse, error)
+	// Управление правилами
+	CreateRule(ctx context.Context, in *CreateRuleRequest, opts ...grpc.CallOption) (*CreateRuleResponse, error)
+	UpdateRule(ctx context.Context, in *UpdateRuleRequest, opts ...grpc.CallOption) (*UpdateRuleResponse, error)
+	GetRules(ctx context.Context, in *GetRulesRequest, opts ...grpc.CallOption) (*GetRulesResponse, error)
+	GetRule(ctx context.Context, in *GetRuleRequest, opts ...grpc.CallOption) (*GetRuleResponse, error)
+	DeleteRule(ctx context.Context, in *DeleteRuleRequest, opts ...grpc.CallOption) (*DeleteRuleResponse, error)
+	// Аудит
+	GetAuditLogs(ctx context.Context, in *GetAuditLogsRequest, opts ...grpc.CallOption) (*GetAuditLogsResponse, error)
+	GetTraderAuditHistory(ctx context.Context, in *GetTraderAuditHistoryRequest, opts ...grpc.CallOption) (*GetTraderAuditHistoryResponse, error)
+}
+
+type antiFraudServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAntiFraudServiceClient(cc grpc.ClientConnInterface) AntiFraudServiceClient {
+	return &antiFraudServiceClient{cc}
+}
+
+func (c *antiFraudServiceClient) CheckTrader(ctx context.Context, in *CheckTraderRequest, opts ...grpc.CallOption) (*CheckTraderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckTraderResponse)
+	err := c.cc.Invoke(ctx, AntiFraudService_CheckTrader_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *antiFraudServiceClient) ProcessTraderCheck(ctx context.Context, in *ProcessTraderCheckRequest, opts ...grpc.CallOption) (*ProcessTraderCheckResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProcessTraderCheckResponse)
+	err := c.cc.Invoke(ctx, AntiFraudService_ProcessTraderCheck_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *antiFraudServiceClient) CreateRule(ctx context.Context, in *CreateRuleRequest, opts ...grpc.CallOption) (*CreateRuleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateRuleResponse)
+	err := c.cc.Invoke(ctx, AntiFraudService_CreateRule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *antiFraudServiceClient) UpdateRule(ctx context.Context, in *UpdateRuleRequest, opts ...grpc.CallOption) (*UpdateRuleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateRuleResponse)
+	err := c.cc.Invoke(ctx, AntiFraudService_UpdateRule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *antiFraudServiceClient) GetRules(ctx context.Context, in *GetRulesRequest, opts ...grpc.CallOption) (*GetRulesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRulesResponse)
+	err := c.cc.Invoke(ctx, AntiFraudService_GetRules_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *antiFraudServiceClient) GetRule(ctx context.Context, in *GetRuleRequest, opts ...grpc.CallOption) (*GetRuleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRuleResponse)
+	err := c.cc.Invoke(ctx, AntiFraudService_GetRule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *antiFraudServiceClient) DeleteRule(ctx context.Context, in *DeleteRuleRequest, opts ...grpc.CallOption) (*DeleteRuleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteRuleResponse)
+	err := c.cc.Invoke(ctx, AntiFraudService_DeleteRule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *antiFraudServiceClient) GetAuditLogs(ctx context.Context, in *GetAuditLogsRequest, opts ...grpc.CallOption) (*GetAuditLogsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAuditLogsResponse)
+	err := c.cc.Invoke(ctx, AntiFraudService_GetAuditLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *antiFraudServiceClient) GetTraderAuditHistory(ctx context.Context, in *GetTraderAuditHistoryRequest, opts ...grpc.CallOption) (*GetTraderAuditHistoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTraderAuditHistoryResponse)
+	err := c.cc.Invoke(ctx, AntiFraudService_GetTraderAuditHistory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AntiFraudServiceServer is the server API for AntiFraudService service.
+// All implementations must embed UnimplementedAntiFraudServiceServer
+// for forward compatibility.
+type AntiFraudServiceServer interface {
+	// Проверка трейдера
+	CheckTrader(context.Context, *CheckTraderRequest) (*CheckTraderResponse, error)
+	ProcessTraderCheck(context.Context, *ProcessTraderCheckRequest) (*ProcessTraderCheckResponse, error)
+	// Управление правилами
+	CreateRule(context.Context, *CreateRuleRequest) (*CreateRuleResponse, error)
+	UpdateRule(context.Context, *UpdateRuleRequest) (*UpdateRuleResponse, error)
+	GetRules(context.Context, *GetRulesRequest) (*GetRulesResponse, error)
+	GetRule(context.Context, *GetRuleRequest) (*GetRuleResponse, error)
+	DeleteRule(context.Context, *DeleteRuleRequest) (*DeleteRuleResponse, error)
+	// Аудит
+	GetAuditLogs(context.Context, *GetAuditLogsRequest) (*GetAuditLogsResponse, error)
+	GetTraderAuditHistory(context.Context, *GetTraderAuditHistoryRequest) (*GetTraderAuditHistoryResponse, error)
+	mustEmbedUnimplementedAntiFraudServiceServer()
+}
+
+// UnimplementedAntiFraudServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedAntiFraudServiceServer struct{}
+
+func (UnimplementedAntiFraudServiceServer) CheckTrader(context.Context, *CheckTraderRequest) (*CheckTraderResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckTrader not implemented")
+}
+func (UnimplementedAntiFraudServiceServer) ProcessTraderCheck(context.Context, *ProcessTraderCheckRequest) (*ProcessTraderCheckResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessTraderCheck not implemented")
+}
+func (UnimplementedAntiFraudServiceServer) CreateRule(context.Context, *CreateRuleRequest) (*CreateRuleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRule not implemented")
+}
+func (UnimplementedAntiFraudServiceServer) UpdateRule(context.Context, *UpdateRuleRequest) (*UpdateRuleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateRule not implemented")
+}
+func (UnimplementedAntiFraudServiceServer) GetRules(context.Context, *GetRulesRequest) (*GetRulesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRules not implemented")
+}
+func (UnimplementedAntiFraudServiceServer) GetRule(context.Context, *GetRuleRequest) (*GetRuleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRule not implemented")
+}
+func (UnimplementedAntiFraudServiceServer) DeleteRule(context.Context, *DeleteRuleRequest) (*DeleteRuleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRule not implemented")
+}
+func (UnimplementedAntiFraudServiceServer) GetAuditLogs(context.Context, *GetAuditLogsRequest) (*GetAuditLogsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAuditLogs not implemented")
+}
+func (UnimplementedAntiFraudServiceServer) GetTraderAuditHistory(context.Context, *GetTraderAuditHistoryRequest) (*GetTraderAuditHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTraderAuditHistory not implemented")
+}
+func (UnimplementedAntiFraudServiceServer) mustEmbedUnimplementedAntiFraudServiceServer() {}
+func (UnimplementedAntiFraudServiceServer) testEmbeddedByValue()                          {}
+
+// UnsafeAntiFraudServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AntiFraudServiceServer will
+// result in compilation errors.
+type UnsafeAntiFraudServiceServer interface {
+	mustEmbedUnimplementedAntiFraudServiceServer()
+}
+
+func RegisterAntiFraudServiceServer(s grpc.ServiceRegistrar, srv AntiFraudServiceServer) {
+	// If the following call pancis, it indicates UnimplementedAntiFraudServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&AntiFraudService_ServiceDesc, srv)
+}
+
+func _AntiFraudService_CheckTrader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckTraderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AntiFraudServiceServer).CheckTrader(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AntiFraudService_CheckTrader_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AntiFraudServiceServer).CheckTrader(ctx, req.(*CheckTraderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AntiFraudService_ProcessTraderCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessTraderCheckRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AntiFraudServiceServer).ProcessTraderCheck(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AntiFraudService_ProcessTraderCheck_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AntiFraudServiceServer).ProcessTraderCheck(ctx, req.(*ProcessTraderCheckRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AntiFraudService_CreateRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AntiFraudServiceServer).CreateRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AntiFraudService_CreateRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AntiFraudServiceServer).CreateRule(ctx, req.(*CreateRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AntiFraudService_UpdateRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AntiFraudServiceServer).UpdateRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AntiFraudService_UpdateRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AntiFraudServiceServer).UpdateRule(ctx, req.(*UpdateRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AntiFraudService_GetRules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRulesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AntiFraudServiceServer).GetRules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AntiFraudService_GetRules_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AntiFraudServiceServer).GetRules(ctx, req.(*GetRulesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AntiFraudService_GetRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AntiFraudServiceServer).GetRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AntiFraudService_GetRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AntiFraudServiceServer).GetRule(ctx, req.(*GetRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AntiFraudService_DeleteRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AntiFraudServiceServer).DeleteRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AntiFraudService_DeleteRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AntiFraudServiceServer).DeleteRule(ctx, req.(*DeleteRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AntiFraudService_GetAuditLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAuditLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AntiFraudServiceServer).GetAuditLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AntiFraudService_GetAuditLogs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AntiFraudServiceServer).GetAuditLogs(ctx, req.(*GetAuditLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AntiFraudService_GetTraderAuditHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTraderAuditHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AntiFraudServiceServer).GetTraderAuditHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AntiFraudService_GetTraderAuditHistory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AntiFraudServiceServer).GetTraderAuditHistory(ctx, req.(*GetTraderAuditHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// AntiFraudService_ServiceDesc is the grpc.ServiceDesc for AntiFraudService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var AntiFraudService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "order.AntiFraudService",
+	HandlerType: (*AntiFraudServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CheckTrader",
+			Handler:    _AntiFraudService_CheckTrader_Handler,
+		},
+		{
+			MethodName: "ProcessTraderCheck",
+			Handler:    _AntiFraudService_ProcessTraderCheck_Handler,
+		},
+		{
+			MethodName: "CreateRule",
+			Handler:    _AntiFraudService_CreateRule_Handler,
+		},
+		{
+			MethodName: "UpdateRule",
+			Handler:    _AntiFraudService_UpdateRule_Handler,
+		},
+		{
+			MethodName: "GetRules",
+			Handler:    _AntiFraudService_GetRules_Handler,
+		},
+		{
+			MethodName: "GetRule",
+			Handler:    _AntiFraudService_GetRule_Handler,
+		},
+		{
+			MethodName: "DeleteRule",
+			Handler:    _AntiFraudService_DeleteRule_Handler,
+		},
+		{
+			MethodName: "GetAuditLogs",
+			Handler:    _AntiFraudService_GetAuditLogs_Handler,
+		},
+		{
+			MethodName: "GetTraderAuditHistory",
+			Handler:    _AntiFraudService_GetTraderAuditHistory_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "order.proto",
+}

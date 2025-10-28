@@ -164,6 +164,17 @@ func main() {
 	antifraudEngine.RegisterStrategy(strategies.NewConsecutiveOrdersStrategy(db))
 	antifraudEngine.RegisterStrategy(strategies.NewCanceledOrdersStrategy(db))
 
+	// Создаем repository
+	antiFraudRepo := repository.NewAntiFraudRepository(db)
+	// Создаем use case
+	antiFraudUseCase := usecase.NewAntiFraudUseCase(antifraudEngine, antiFraudRepo)
+
+	// Создаем gRPC handler
+	antiFraudHandler := grpcapi.NewAntiFraudHandler(antiFraudUseCase)
+
+	// Регистрируем в gRPC сервере
+	orderpb.RegisterAntiFraudServiceServer(grpcServer, antiFraudHandler)
+
 	ruleManager := engine.NewRuleManager(db)
 
 	  // Создаем правила
