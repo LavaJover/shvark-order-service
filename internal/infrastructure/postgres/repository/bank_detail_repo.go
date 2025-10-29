@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
@@ -126,29 +127,45 @@ func (r *DefaultBankDetailRepo) GetBankDetailsByTraderID(
 }
 
 func (r *DefaultBankDetailRepo) FindSuitableBankDetails(searchQuery *domain.SuitablleBankDetailsQuery) ([]*domain.BankDetail, error) {
+    log.Printf("=== START FindSuitableBankDetails ===")
+    log.Printf("SearchQuery: AmountFiat=%.2f, PaymentSystem=%s, Currency=%s, BankCode=%s, NspkCode=%s",
+        searchQuery.AmountFiat, searchQuery.PaymentSystem, searchQuery.Currency, searchQuery.BankCode, searchQuery.NspkCode)
+    
     // Этап 1: Быстрая предварительная фильтрация по статическим параметрам
     baseCandidates, err := r.findBaseCandidates(searchQuery)
     if err != nil {
+        log.Printf("ERROR: findBaseCandidates failed: %v", err)
         return nil, err
     }
     
+    log.Printf("Stage 1 (findBaseCandidates): Found %d candidates", len(baseCandidates))
+    
     if len(baseCandidates) == 0 {
+        log.Printf("WARNING: No base candidates found. Returning empty result.")
         return []*domain.BankDetail{}, nil
     }
 
     // Этап 2: Проверка динамических ограничений с использованием денормализации
     finalCandidates, err := r.applyDynamicConstraintsOptimized(baseCandidates, searchQuery)
     if err != nil {
+        log.Printf("ERROR: applyDynamicConstraintsOptimized failed: %v", err)
         return nil, err
     }
+
+    log.Printf("Stage 2 (applyDynamicConstraints): Final %d candidates", len(finalCandidates))
+    log.Printf("=== END FindSuitableBankDetails ===\n")
 
     return finalCandidates, nil
 }
 
 // Этап 1 остается без изменений
+// Этап 1: Находим базовые кандидаты по статическим параметрам
 func (r *DefaultBankDetailRepo) findBaseCandidates(searchQuery *domain.SuitablleBankDetailsQuery) ([]models.BankDetailModel, error) {
+    log.Printf("\n--- Stage 1: findBaseCandidates ---")
+    
     var baseCandidates []models.BankDetailModel
     
+    // Строим запрос
     query := r.DB.Model(&models.BankDetailModel{}).
         Where("enabled = ?", true).
         Where("min_amount <= ? AND max_amount >= ?", searchQuery.AmountFiat, searchQuery.AmountFiat).
@@ -156,57 +173,249 @@ func (r *DefaultBankDetailRepo) findBaseCandidates(searchQuery *domain.Suitablle
         Where("currency = ?", searchQuery.Currency).
         Where("deleted_at IS NULL")
     
+    log.Printf("Base filters: enabled=true, amount range [%.2f-%.2f] includes %.2f, payment_system=%s, currency=%s",
+        0.0, 999999.0, searchQuery.AmountFiat, searchQuery.PaymentSystem, searchQuery.Currency)
+    
     if searchQuery.BankCode != "" {
         query = query.Where("bank_code = ?", searchQuery.BankCode)
+        log.Printf("Additional filter: bank_code=%s", searchQuery.BankCode)
     }
     
     if searchQuery.NspkCode != "" {
         query = query.Where("nspk_code = ?", searchQuery.NspkCode)
+        log.Printf("Additional filter: nspk_code=%s", searchQuery.NspkCode)
     }
     
+    // Выполняем запрос
     err := query.Select("id, trader_id, country, currency, inflow_currency, " +
         "min_amount, max_amount, bank_name, bank_code, nspk_code, " +
         "payment_system, delay, enabled, card_number, phone, owner, " +
         "max_orders_simultaneosly, max_amount_day, max_amount_month, " +
         "max_quantity_day, max_quantity_month, device_id, created_at, updated_at").
         Find(&baseCandidates).Error
-        
+    
+    if err != nil {
+        log.Printf("ERROR: Database query failed: %v", err)
+        return nil, err
+    }
+    
+    // Детальное логирование каждого кандидата
+    log.Printf("\nFound %d base candidates:", len(baseCandidates))
+    for i, candidate := range baseCandidates {
+        log.Printf("  [%d] TraderID=%s, Card=***%s, Amount=[%.2f-%.2f], PaymentSystem=%s, Currency=%s, BankCode=%s, Enabled=%v, MaxSimultaneous=%d",
+            i+1,
+            candidate.TraderID,
+            candidate.CardNumber[len(candidate.CardNumber)-4:],
+            candidate.MinAmount,
+            candidate.MaxAmount,
+            candidate.PaymentSystem,
+            candidate.Currency,
+            candidate.BankCode,
+            candidate.Enabled,
+            candidate.MaxOrdersSimultaneosly,
+        )
+    }
+    
     return baseCandidates, err
 }
 
 // КАРДИНАЛЬНО ОПТИМИЗИРОВАННЫЙ этап 2 с использованием денормализации
+// Этап 2: Применяем динамические ограничения
 func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates []models.BankDetailModel, searchQuery *domain.SuitablleBankDetailsQuery) ([]*domain.BankDetail, error) {
+    log.Printf("\n--- Stage 2: applyDynamicConstraintsOptimized ---")
+    
     if len(baseCandidates) == 0 {
         return []*domain.BankDetail{}, nil
     }
     
-    // Получаем trader_id кандидатов для прямого поиска по order_models
+    // Получаем trader_id кандидатов
     traderIDs := make([]string, len(baseCandidates))
     for i, candidate := range baseCandidates {
         traderIDs[i] = candidate.TraderID
     }
     
+    log.Printf("Checking dynamic constraints for %d traders: %v", len(traderIDs), traderIDs)
+    
     now := time.Now()
     startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
     startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
     
-    // ИСПРАВЛЕННЫЙ запрос с правильной обработкой UUID массивов
+    log.Printf("Time ranges: Now=%s, StartOfDay=%s, StartOfMonth=%s",
+        now.Format("2006-01-02 15:04:05"),
+        startOfDay.Format("2006-01-02 15:04:05"),
+        startOfMonth.Format("2006-01-02 15:04:05"))
+    
+    // SQL запрос с детальной статистикой
     sqlQuery := `
         WITH trader_stats AS (
             SELECT 
                 trader_id::text as trader_id_text,
                 -- Количество активных заказов
-                SUM(CASE WHEN status = $1 THEN 1 ELSE 0 END) as pending_count,
+                SUM(CASE WHEN status = $1 THEN 1 ELSE 0 END)::int as pending_count,
                 -- Статистика за день
-                SUM(CASE WHEN status = ANY($2::text[]) AND created_at >= $3 THEN 1 ELSE 0 END) as day_count,
-                SUM(CASE WHEN status = ANY($4::text[]) AND created_at >= $5 THEN amount_fiat ELSE 0 END) as day_amount,
+                SUM(CASE WHEN status = ANY($2::text[]) AND created_at >= $3 THEN 1 ELSE 0 END)::int as day_count,
+                SUM(CASE WHEN status = ANY($4::text[]) AND created_at >= $5 THEN amount_fiat ELSE 0 END)::float as day_amount,
                 -- Статистика за месяц
-                SUM(CASE WHEN status = ANY($6::text[]) AND created_at >= $7 THEN 1 ELSE 0 END) as month_count,
-                SUM(CASE WHEN status = ANY($8::text[]) AND created_at >= $9 THEN amount_fiat ELSE 0 END) as month_amount,
+                SUM(CASE WHEN status = ANY($6::text[]) AND created_at >= $7 THEN 1 ELSE 0 END)::int as month_count,
+                SUM(CASE WHEN status = ANY($8::text[]) AND created_at >= $9 THEN amount_fiat ELSE 0 END)::float as month_amount,
                 -- Время последнего завершенного заказа
                 MAX(CASE WHEN status = $10 THEN created_at END) as last_completed_time,
                 -- Проверка на дублирующие заказы
-                SUM(CASE WHEN status = $11 AND amount_fiat = $12 THEN 1 ELSE 0 END) as duplicate_count
+                SUM(CASE WHEN status = $11 AND amount_fiat = $12 THEN 1 ELSE 0 END)::int as duplicate_count
+            FROM order_models 
+            WHERE trader_id::text = ANY($13::text[])
+            GROUP BY trader_id
+        ),
+        debug_stats AS (
+            SELECT 
+                bd.trader_id::text,
+                bd.card_number,
+                bd.max_orders_simultaneosly,
+                bd.max_quantity_day,
+                bd.max_amount_day,
+                bd.max_quantity_month,
+                bd.max_amount_month,
+                bd.delay,
+                COALESCE(ts.pending_count, 0) as pending_count,
+                COALESCE(ts.day_count, 0) as day_count,
+                COALESCE(ts.day_amount, 0) as day_amount,
+                COALESCE(ts.month_count, 0) as month_count,
+                COALESCE(ts.month_amount, 0) as month_amount,
+                ts.last_completed_time,
+                COALESCE(ts.duplicate_count, 0) as duplicate_count,
+                -- Вычисляем причины отсеивания
+                CASE WHEN COALESCE(ts.pending_count, 0) >= bd.max_orders_simultaneosly THEN 'max_simultaneous' ELSE NULL END as reason_1,
+                CASE WHEN COALESCE(ts.day_count, 0) + 1 > bd.max_quantity_day THEN 'max_day_count' ELSE NULL END as reason_2,
+                CASE WHEN COALESCE(ts.day_amount, 0) + $15 > bd.max_amount_day THEN 'max_day_amount' ELSE NULL END as reason_3,
+                CASE WHEN COALESCE(ts.month_count, 0) + 1 > bd.max_quantity_month THEN 'max_month_count' ELSE NULL END as reason_4,
+                CASE WHEN COALESCE(ts.month_amount, 0) + $16 > bd.max_amount_month THEN 'max_month_amount' ELSE NULL END as reason_5,
+                CASE WHEN ts.last_completed_time IS NOT NULL AND ts.last_completed_time > NOW() - (bd.delay / 1000000000.0) * INTERVAL '1 SECOND' THEN 'delay_not_passed' ELSE NULL END as reason_6,
+                CASE WHEN COALESCE(ts.duplicate_count, 0) > 0 THEN 'duplicate_order' ELSE NULL END as reason_7
+            FROM bank_detail_models bd
+            LEFT JOIN trader_stats ts ON bd.trader_id::text = ts.trader_id_text
+            WHERE bd.trader_id::text = ANY($14::text[])
+              AND bd.enabled = true
+              AND bd.deleted_at IS NULL
+        )
+        SELECT * FROM debug_stats
+    `
+    
+    type DebugStats struct {
+        TraderID              string
+        CardNumber            string
+        MaxOrdersSimultaneous int32
+        MaxQuantityDay        int32
+        MaxAmountDay          float64
+        MaxQuantityMonth      int32
+        MaxAmountMonth        float64
+        Delay                 time.Duration
+        PendingCount          int
+        DayCount              int
+        DayAmount             float64
+        MonthCount            int
+        MonthAmount           float64
+        LastCompletedTime     *time.Time
+        DuplicateCount        int
+        Reason1               *string
+        Reason2               *string
+        Reason3               *string
+        Reason4               *string
+        Reason5               *string
+        Reason6               *string
+        Reason7               *string
+    }
+    
+    var debugStats []DebugStats
+    
+    pendingCompletedStatuses := []string{string(domain.StatusPending), string(domain.StatusCompleted)}
+    
+    // Выполняем debug запрос
+    err := r.DB.Raw(sqlQuery,
+        string(domain.StatusPending),           // $1
+        pq.Array(pendingCompletedStatuses),     // $2
+        startOfDay,                             // $3
+        pq.Array(pendingCompletedStatuses),     // $4
+        startOfDay,                             // $5
+        pq.Array(pendingCompletedStatuses),     // $6
+        startOfMonth,                           // $7
+        pq.Array(pendingCompletedStatuses),     // $8
+        startOfMonth,                           // $9
+        string(domain.StatusCompleted),         // $10
+        string(domain.StatusPending),           // $11
+        searchQuery.AmountFiat,                 // $12
+        pq.Array(traderIDs),                   // $13
+        pq.Array(traderIDs),                   // $14
+        searchQuery.AmountFiat,                 // $15
+        searchQuery.AmountFiat,                 // $16
+    ).Scan(&debugStats).Error
+    
+    if err != nil {
+        log.Printf("ERROR: Debug stats query failed: %v", err)
+        return nil, fmt.Errorf("failed to get debug stats: %w", err)
+    }
+    
+    // Логируем детальную статистику по каждому кандидату
+    log.Printf("\nDetailed stats for %d candidates:", len(debugStats))
+    for i, stat := range debugStats {
+        reasons := []string{}
+        if stat.Reason1 != nil {
+            reasons = append(reasons, *stat.Reason1)
+        }
+        if stat.Reason2 != nil {
+            reasons = append(reasons, *stat.Reason2)
+        }
+        if stat.Reason3 != nil {
+            reasons = append(reasons, *stat.Reason3)
+        }
+        if stat.Reason4 != nil {
+            reasons = append(reasons, *stat.Reason4)
+        }
+        if stat.Reason5 != nil {
+            reasons = append(reasons, *stat.Reason5)
+        }
+        if stat.Reason6 != nil {
+            reasons = append(reasons, *stat.Reason6)
+        }
+        if stat.Reason7 != nil {
+            reasons = append(reasons, *stat.Reason7)
+        }
+        
+        passed := len(reasons) == 0
+        status := "✓ PASSED"
+        if !passed {
+            status = fmt.Sprintf("✗ REJECTED: %v", reasons)
+        }
+        
+        lastCompleted := "NEVER"
+        if stat.LastCompletedTime != nil {
+            lastCompleted = stat.LastCompletedTime.Format("15:04:05")
+        }
+        
+        log.Printf("  [%d] %s", i+1, status)
+        log.Printf("      TraderID=%s, Card=***%s", stat.TraderID, stat.CardNumber[len(stat.CardNumber)-4:])
+        log.Printf("      Pending: %d/%d, DayCount: %d+1/%d, DayAmount: %.2f+%.2f/%.2f",
+            stat.PendingCount, stat.MaxOrdersSimultaneous,
+            stat.DayCount, stat.MaxQuantityDay,
+            stat.DayAmount, searchQuery.AmountFiat, stat.MaxAmountDay)
+        log.Printf("      MonthCount: %d+1/%d, MonthAmount: %.2f+%.2f/%.2f",
+            stat.MonthCount, stat.MaxQuantityMonth,
+            stat.MonthAmount, searchQuery.AmountFiat, stat.MaxAmountMonth)
+        log.Printf("      LastCompleted: %s, Delay: %v, Duplicates: %d",
+            lastCompleted, stat.Delay, stat.DuplicateCount)
+    }
+    
+    // Теперь выполняем основной запрос для получения финальных кандидатов
+    finalQuery := `
+        WITH trader_stats AS (
+            SELECT 
+                trader_id::text as trader_id_text,
+                SUM(CASE WHEN status = $1 THEN 1 ELSE 0 END)::int as pending_count,
+                SUM(CASE WHEN status = ANY($2::text[]) AND created_at >= $3 THEN 1 ELSE 0 END)::int as day_count,
+                SUM(CASE WHEN status = ANY($4::text[]) AND created_at >= $5 THEN amount_fiat ELSE 0 END)::float as day_amount,
+                SUM(CASE WHEN status = ANY($6::text[]) AND created_at >= $7 THEN 1 ELSE 0 END)::int as month_count,
+                SUM(CASE WHEN status = ANY($8::text[]) AND created_at >= $9 THEN amount_fiat ELSE 0 END)::float as month_amount,
+                MAX(CASE WHEN status = $10 THEN created_at END) as last_completed_time,
+                SUM(CASE WHEN status = $11 AND amount_fiat = $12 THEN 1 ELSE 0 END)::int as duplicate_count
             FROM order_models 
             WHERE trader_id::text = ANY($13::text[])
             GROUP BY trader_id
@@ -228,42 +437,42 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
     
     var finalCandidates []models.BankDetailModel
     
-    // Подготавливаем массивы статусов
-    pendingCompletedStatuses := []string{string(domain.StatusPending), string(domain.StatusCompleted)}
-    
-    // Выполняем запрос с правильными параметрами
-    err := r.DB.Raw(sqlQuery,
-        string(domain.StatusPending),                    // $1 - pending status
-        pq.Array(pendingCompletedStatuses),             // $2 - day count statuses
-        startOfDay,                                     // $3 - day start
-        pq.Array(pendingCompletedStatuses),             // $4 - day amount statuses
-        startOfDay,                                     // $5 - day start
-        pq.Array(pendingCompletedStatuses),             // $6 - month count statuses
-        startOfMonth,                                   // $7 - month start
-        pq.Array(pendingCompletedStatuses),             // $8 - month amount statuses
-        startOfMonth,                                   // $9 - month start
-        string(domain.StatusCompleted),                 // $10 - completed status
-        string(domain.StatusPending),                   // $11 - duplicate status
-        searchQuery.AmountFiat,                         // $12 - duplicate amount
-        pq.Array(traderIDs),                           // $13 - trader IDs for WHERE
-        pq.Array(traderIDs),                           // $14 - trader IDs for JOIN
-        searchQuery.AmountFiat,                         // $15 - day amount limit
-        searchQuery.AmountFiat,                         // $16 - month amount limit
+    err = r.DB.Raw(finalQuery,
+        string(domain.StatusPending),           // $1
+        pq.Array(pendingCompletedStatuses),     // $2
+        startOfDay,                             // $3
+        pq.Array(pendingCompletedStatuses),     // $4
+        startOfDay,                             // $5
+        pq.Array(pendingCompletedStatuses),     // $6
+        startOfMonth,                           // $7
+        pq.Array(pendingCompletedStatuses),     // $8
+        startOfMonth,                           // $9
+        string(domain.StatusCompleted),         // $10
+        string(domain.StatusPending),           // $11
+        searchQuery.AmountFiat,                 // $12
+        pq.Array(traderIDs),                   // $13
+        pq.Array(traderIDs),                   // $14
+        searchQuery.AmountFiat,                 // $15
+        searchQuery.AmountFiat,                 // $16
     ).Scan(&finalCandidates).Error
     
     if err != nil {
+        log.Printf("ERROR: Final query failed: %v", err)
         return nil, fmt.Errorf("failed to apply dynamic constraints: %w", err)
     }
+    
+    log.Printf("\nFinal result: %d candidates passed all checks", len(finalCandidates))
     
     // Преобразование в доменные объекты
     bankDetails := make([]*domain.BankDetail, len(finalCandidates))
     for i, bankDetail := range finalCandidates {
         bankDetails[i] = mappers.ToDomainBankDetail(&bankDetail)
+        log.Printf("  Final [%d] TraderID=%s, Card=***%s", 
+            i+1, bankDetail.TraderID, bankDetail.CardNumber[len(bankDetail.CardNumber)-4:])
     }
     
     return bankDetails, nil
 }
-
 
 func (r *DefaultBankDetailRepo) GetBankDetailsStatsByTraderID(traderID string) ([]*domain.BankDetailStat, error) {
 	var bankDetails []models.BankDetailModel
