@@ -704,6 +704,7 @@ const (
 	TrafficService_SetAntifraudLockTrafficStatus_FullMethodName = "/order.TrafficService/SetAntifraudLockTrafficStatus"
 	TrafficService_GetTrafficLockStatuses_FullMethodName        = "/order.TrafficService/GetTrafficLockStatuses"
 	TrafficService_CheckTrafficUnlocked_FullMethodName          = "/order.TrafficService/CheckTrafficUnlocked"
+	TrafficService_GetTraderTraffic_FullMethodName              = "/order.TrafficService/GetTraderTraffic"
 )
 
 // TrafficServiceClient is the client API for TrafficService service.
@@ -726,6 +727,7 @@ type TrafficServiceClient interface {
 	// New lock status getting methods
 	GetTrafficLockStatuses(ctx context.Context, in *GetTrafficLockStatusesRequest, opts ...grpc.CallOption) (*GetTrafficLockStatusesResponse, error)
 	CheckTrafficUnlocked(ctx context.Context, in *CheckTrafficUnlockedRequest, opts ...grpc.CallOption) (*CheckTrafficUnlockedResponse, error)
+	GetTraderTraffic(ctx context.Context, in *GetTraderTrafficRequest, opts ...grpc.CallOption) (*GetTraderTrafficResponse, error)
 }
 
 type trafficServiceClient struct {
@@ -866,6 +868,16 @@ func (c *trafficServiceClient) CheckTrafficUnlocked(ctx context.Context, in *Che
 	return out, nil
 }
 
+func (c *trafficServiceClient) GetTraderTraffic(ctx context.Context, in *GetTraderTrafficRequest, opts ...grpc.CallOption) (*GetTraderTrafficResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTraderTrafficResponse)
+	err := c.cc.Invoke(ctx, TrafficService_GetTraderTraffic_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TrafficServiceServer is the server API for TrafficService service.
 // All implementations must embed UnimplementedTrafficServiceServer
 // for forward compatibility.
@@ -886,6 +898,7 @@ type TrafficServiceServer interface {
 	// New lock status getting methods
 	GetTrafficLockStatuses(context.Context, *GetTrafficLockStatusesRequest) (*GetTrafficLockStatusesResponse, error)
 	CheckTrafficUnlocked(context.Context, *CheckTrafficUnlockedRequest) (*CheckTrafficUnlockedResponse, error)
+	GetTraderTraffic(context.Context, *GetTraderTrafficRequest) (*GetTraderTrafficResponse, error)
 	mustEmbedUnimplementedTrafficServiceServer()
 }
 
@@ -934,6 +947,9 @@ func (UnimplementedTrafficServiceServer) GetTrafficLockStatuses(context.Context,
 }
 func (UnimplementedTrafficServiceServer) CheckTrafficUnlocked(context.Context, *CheckTrafficUnlockedRequest) (*CheckTrafficUnlockedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckTrafficUnlocked not implemented")
+}
+func (UnimplementedTrafficServiceServer) GetTraderTraffic(context.Context, *GetTraderTrafficRequest) (*GetTraderTrafficResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTraderTraffic not implemented")
 }
 func (UnimplementedTrafficServiceServer) mustEmbedUnimplementedTrafficServiceServer() {}
 func (UnimplementedTrafficServiceServer) testEmbeddedByValue()                        {}
@@ -1190,6 +1206,24 @@ func _TrafficService_CheckTrafficUnlocked_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TrafficService_GetTraderTraffic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTraderTrafficRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).GetTraderTraffic(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_GetTraderTraffic_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).GetTraderTraffic(ctx, req.(*GetTraderTrafficRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TrafficService_ServiceDesc is the grpc.ServiceDesc for TrafficService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1248,6 +1282,10 @@ var TrafficService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckTrafficUnlocked",
 			Handler:    _TrafficService_CheckTrafficUnlocked_Handler,
+		},
+		{
+			MethodName: "GetTraderTraffic",
+			Handler:    _TrafficService_GetTraderTraffic_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -2029,7 +2067,6 @@ const (
 	AntiFraudService_ManualUnlock_FullMethodName          = "/order.AntiFraudService/ManualUnlock"
 	AntiFraudService_ResetGracePeriod_FullMethodName      = "/order.AntiFraudService/ResetGracePeriod"
 	AntiFraudService_GetUnlockHistory_FullMethodName      = "/order.AntiFraudService/GetUnlockHistory"
-	AntiFraudService_GetTraderTraffic_FullMethodName      = "/order.AntiFraudService/GetTraderTraffic"
 )
 
 // AntiFraudServiceClient is the client API for AntiFraudService service.
@@ -2051,7 +2088,6 @@ type AntiFraudServiceClient interface {
 	ManualUnlock(ctx context.Context, in *ManualUnlockRequest, opts ...grpc.CallOption) (*ManualUnlockResponse, error)
 	ResetGracePeriod(ctx context.Context, in *ResetGracePeriodRequest, opts ...grpc.CallOption) (*ResetGracePeriodResponse, error)
 	GetUnlockHistory(ctx context.Context, in *GetUnlockHistoryRequest, opts ...grpc.CallOption) (*GetUnlockHistoryResponse, error)
-	GetTraderTraffic(ctx context.Context, in *GetTraderTrafficRequest, opts ...grpc.CallOption) (*GetTraderTrafficResponse, error)
 }
 
 type antiFraudServiceClient struct {
@@ -2182,16 +2218,6 @@ func (c *antiFraudServiceClient) GetUnlockHistory(ctx context.Context, in *GetUn
 	return out, nil
 }
 
-func (c *antiFraudServiceClient) GetTraderTraffic(ctx context.Context, in *GetTraderTrafficRequest, opts ...grpc.CallOption) (*GetTraderTrafficResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetTraderTrafficResponse)
-	err := c.cc.Invoke(ctx, AntiFraudService_GetTraderTraffic_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // AntiFraudServiceServer is the server API for AntiFraudService service.
 // All implementations must embed UnimplementedAntiFraudServiceServer
 // for forward compatibility.
@@ -2211,7 +2237,6 @@ type AntiFraudServiceServer interface {
 	ManualUnlock(context.Context, *ManualUnlockRequest) (*ManualUnlockResponse, error)
 	ResetGracePeriod(context.Context, *ResetGracePeriodRequest) (*ResetGracePeriodResponse, error)
 	GetUnlockHistory(context.Context, *GetUnlockHistoryRequest) (*GetUnlockHistoryResponse, error)
-	GetTraderTraffic(context.Context, *GetTraderTrafficRequest) (*GetTraderTrafficResponse, error)
 	mustEmbedUnimplementedAntiFraudServiceServer()
 }
 
@@ -2257,9 +2282,6 @@ func (UnimplementedAntiFraudServiceServer) ResetGracePeriod(context.Context, *Re
 }
 func (UnimplementedAntiFraudServiceServer) GetUnlockHistory(context.Context, *GetUnlockHistoryRequest) (*GetUnlockHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUnlockHistory not implemented")
-}
-func (UnimplementedAntiFraudServiceServer) GetTraderTraffic(context.Context, *GetTraderTrafficRequest) (*GetTraderTrafficResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTraderTraffic not implemented")
 }
 func (UnimplementedAntiFraudServiceServer) mustEmbedUnimplementedAntiFraudServiceServer() {}
 func (UnimplementedAntiFraudServiceServer) testEmbeddedByValue()                          {}
@@ -2498,24 +2520,6 @@ func _AntiFraudService_GetUnlockHistory_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AntiFraudService_GetTraderTraffic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTraderTrafficRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AntiFraudServiceServer).GetTraderTraffic(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AntiFraudService_GetTraderTraffic_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AntiFraudServiceServer).GetTraderTraffic(ctx, req.(*GetTraderTrafficRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // AntiFraudService_ServiceDesc is the grpc.ServiceDesc for AntiFraudService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2570,10 +2574,6 @@ var AntiFraudService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUnlockHistory",
 			Handler:    _AntiFraudService_GetUnlockHistory_Handler,
-		},
-		{
-			MethodName: "GetTraderTraffic",
-			Handler:    _AntiFraudService_GetTraderTraffic_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

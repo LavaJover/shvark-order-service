@@ -372,6 +372,8 @@ service TrafficService {
     // New lock status getting methods
     rpc GetTrafficLockStatuses(GetTrafficLockStatusesRequest) returns (GetTrafficLockStatusesResponse);
     rpc CheckTrafficUnlocked(CheckTrafficUnlockedRequest) returns (CheckTrafficUnlockedResponse);
+
+    rpc GetTraderTraffic(GetTraderTrafficRequest) returns (GetTraderTrafficResponse);
 }
 
 // Request/Response for getting lock statuses
@@ -819,7 +821,6 @@ service AntiFraudService {
     rpc ResetGracePeriod(ResetGracePeriodRequest) returns (ResetGracePeriodResponse);
 
     rpc GetUnlockHistory(GetUnlockHistoryRequest) returns (GetUnlockHistoryResponse);
-    rpc GetTraderTraffic(GetTraderTrafficRequest) returns (GetTraderTrafficResponse);
 }
 
 message GetTraderTrafficRequest {

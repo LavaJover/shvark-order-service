@@ -9210,7 +9210,7 @@ const file_order_proto_rawDesc = "" +
 	"\x12GetOrderStatistics\x12 .order.GetOrderStatisticsRequest\x1a!.order.GetOrderStatisticsResponse\x12>\n" +
 	"\tGetOrders\x12\x17.order.GetOrdersRequest\x1a\x18.order.GetOrdersResponse\x12G\n" +
 	"\fGetAllOrders\x12\x1a.order.GetAllOrdersRequest\x1a\x1b.order.GetAllOrdersResponse\x12h\n" +
-	"\x17ProcessAutomaticPayment\x12%.order.ProcessAutomaticPaymentRequest\x1a&.order.ProcessAutomaticPaymentResponse2\x8c\n" +
+	"\x17ProcessAutomaticPayment\x12%.order.ProcessAutomaticPaymentRequest\x1a&.order.ProcessAutomaticPaymentResponse2\xe1\n" +
 	"\n" +
 	"\x0eTrafficService\x12A\n" +
 	"\n" +
@@ -9226,7 +9226,8 @@ const file_order_proto_rawDesc = "" +
 	"\x1cSetManuallyLockTrafficStatus\x12*.order.SetManuallyLockTrafficStatusRequest\x1a+.order.SetManuallyLockTrafficStatusResponse\x12z\n" +
 	"\x1dSetAntifraudLockTrafficStatus\x12+.order.SetAntifraudLockTrafficStatusRequest\x1a,.order.SetAntifraudLockTrafficStatusResponse\x12e\n" +
 	"\x16GetTrafficLockStatuses\x12$.order.GetTrafficLockStatusesRequest\x1a%.order.GetTrafficLockStatusesResponse\x12_\n" +
-	"\x14CheckTrafficUnlocked\x12\".order.CheckTrafficUnlockedRequest\x1a#.order.CheckTrafficUnlockedResponse2\xa2\x05\n" +
+	"\x14CheckTrafficUnlocked\x12\".order.CheckTrafficUnlockedRequest\x1a#.order.CheckTrafficUnlockedResponse\x12S\n" +
+	"\x10GetTraderTraffic\x12\x1e.order.GetTraderTrafficRequest\x1a\x1f.order.GetTraderTrafficResponse2\xa2\x05\n" +
 	"\x11BankDetailService\x12S\n" +
 	"\x10CreateBankDetail\x12\x1e.order.CreateBankDetailRequest\x1a\x1f.order.CreateBankDetailResponse\x12S\n" +
 	"\x10UpdateBankDetail\x12\x1e.order.UpdateBankDetailRequest\x1a\x1f.order.UpdateBankDetailResponse\x12S\n" +
@@ -9245,7 +9246,7 @@ const file_order_proto_rawDesc = "" +
 	"\x10GetTraderDevices\x12\x1e.order.GetTraderDevicesRequest\x1a\x1f.order.GetTraderDevicesResponse\x12G\n" +
 	"\fDeleteDevice\x12\x1a.order.DeleteDeviceRequest\x1a\x1b.order.DeleteDeviceResponse\x12A\n" +
 	"\n" +
-	"EditDevice\x12\x18.order.EditDeviceRequest\x1a\x19.order.EditDeviceResponse2\xe8\a\n" +
+	"EditDevice\x12\x18.order.EditDeviceRequest\x1a\x19.order.EditDeviceResponse2\x93\a\n" +
 	"\x10AntiFraudService\x12D\n" +
 	"\vCheckTrader\x12\x19.order.CheckTraderRequest\x1a\x1a.order.CheckTraderResponse\x12Y\n" +
 	"\x12ProcessTraderCheck\x12 .order.ProcessTraderCheckRequest\x1a!.order.ProcessTraderCheckResponse\x12A\n" +
@@ -9261,8 +9262,7 @@ const file_order_proto_rawDesc = "" +
 	"\x15GetTraderAuditHistory\x12#.order.GetTraderAuditHistoryRequest\x1a$.order.GetTraderAuditHistoryResponse\x12G\n" +
 	"\fManualUnlock\x12\x1a.order.ManualUnlockRequest\x1a\x1b.order.ManualUnlockResponse\x12S\n" +
 	"\x10ResetGracePeriod\x12\x1e.order.ResetGracePeriodRequest\x1a\x1f.order.ResetGracePeriodResponse\x12S\n" +
-	"\x10GetUnlockHistory\x12\x1e.order.GetUnlockHistoryRequest\x1a\x1f.order.GetUnlockHistoryResponse\x12S\n" +
-	"\x10GetTraderTraffic\x12\x1e.order.GetTraderTrafficRequest\x1a\x1f.order.GetTraderTrafficResponseB=Z;github.com/LavaJover/shvark-order-service/proto/gen;orderpbb\x06proto3"
+	"\x10GetUnlockHistory\x12\x1e.order.GetUnlockHistoryRequest\x1a\x1f.order.GetUnlockHistoryResponseB=Z;github.com/LavaJover/shvark-order-service/proto/gen;orderpbb\x06proto3"
 
 var (
 	file_order_proto_rawDescOnce sync.Once
@@ -9543,34 +9543,34 @@ var file_order_proto_depIdxs = []int32{
 	52,  // 119: order.TrafficService.SetAntifraudLockTrafficStatus:input_type -> order.SetAntifraudLockTrafficStatusRequest
 	42,  // 120: order.TrafficService.GetTrafficLockStatuses:input_type -> order.GetTrafficLockStatusesRequest
 	44,  // 121: order.TrafficService.CheckTrafficUnlocked:input_type -> order.CheckTrafficUnlockedRequest
-	73,  // 122: order.BankDetailService.CreateBankDetail:input_type -> order.CreateBankDetailRequest
-	75,  // 123: order.BankDetailService.UpdateBankDetail:input_type -> order.UpdateBankDetailRequest
-	79,  // 124: order.BankDetailService.DeleteBankDetail:input_type -> order.DeleteBankDetailRequest
-	77,  // 125: order.BankDetailService.GetBankDetailByID:input_type -> order.GetBankDetailByIDRequest
-	81,  // 126: order.BankDetailService.GetBankDetailsByTraderID:input_type -> order.GetBankDetailsByTraderIDRequest
-	84,  // 127: order.BankDetailService.GetBankDetailsStatsByTraderID:input_type -> order.GetBankDetailsStatsByTraderIDRequest
-	86,  // 128: order.BankDetailService.GetBankDetails:input_type -> order.GetBankDetailsRequest
-	91,  // 129: order.TeamRelationsService.CreateTeamRelation:input_type -> order.CreateTeamRelationRequest
-	93,  // 130: order.TeamRelationsService.GetRelationsByTeamLeadID:input_type -> order.GetRelationsByTeamLeadIDRequest
-	95,  // 131: order.TeamRelationsService.UpdateRelationParams:input_type -> order.UpdateRelationParamsRequest
-	88,  // 132: order.TeamRelationsService.DeleteTeamRelationship:input_type -> order.DeleteTeamRelationshipRequest
-	98,  // 133: order.DeviceService.CreateDevice:input_type -> order.CreateDeviceRequest
-	100, // 134: order.DeviceService.GetTraderDevices:input_type -> order.GetTraderDevicesRequest
-	105, // 135: order.DeviceService.DeleteDevice:input_type -> order.DeleteDeviceRequest
-	103, // 136: order.DeviceService.EditDevice:input_type -> order.EditDeviceRequest
-	116, // 137: order.AntiFraudService.CheckTrader:input_type -> order.CheckTraderRequest
-	118, // 138: order.AntiFraudService.ProcessTraderCheck:input_type -> order.ProcessTraderCheckRequest
-	121, // 139: order.AntiFraudService.CreateRule:input_type -> order.CreateRuleRequest
-	123, // 140: order.AntiFraudService.UpdateRule:input_type -> order.UpdateRuleRequest
-	125, // 141: order.AntiFraudService.GetRules:input_type -> order.GetRulesRequest
-	127, // 142: order.AntiFraudService.GetRule:input_type -> order.GetRuleRequest
-	129, // 143: order.AntiFraudService.DeleteRule:input_type -> order.DeleteRuleRequest
-	132, // 144: order.AntiFraudService.GetAuditLogs:input_type -> order.GetAuditLogsRequest
-	134, // 145: order.AntiFraudService.GetTraderAuditHistory:input_type -> order.GetTraderAuditHistoryRequest
-	112, // 146: order.AntiFraudService.ManualUnlock:input_type -> order.ManualUnlockRequest
-	114, // 147: order.AntiFraudService.ResetGracePeriod:input_type -> order.ResetGracePeriodRequest
-	109, // 148: order.AntiFraudService.GetUnlockHistory:input_type -> order.GetUnlockHistoryRequest
-	107, // 149: order.AntiFraudService.GetTraderTraffic:input_type -> order.GetTraderTrafficRequest
+	107, // 122: order.TrafficService.GetTraderTraffic:input_type -> order.GetTraderTrafficRequest
+	73,  // 123: order.BankDetailService.CreateBankDetail:input_type -> order.CreateBankDetailRequest
+	75,  // 124: order.BankDetailService.UpdateBankDetail:input_type -> order.UpdateBankDetailRequest
+	79,  // 125: order.BankDetailService.DeleteBankDetail:input_type -> order.DeleteBankDetailRequest
+	77,  // 126: order.BankDetailService.GetBankDetailByID:input_type -> order.GetBankDetailByIDRequest
+	81,  // 127: order.BankDetailService.GetBankDetailsByTraderID:input_type -> order.GetBankDetailsByTraderIDRequest
+	84,  // 128: order.BankDetailService.GetBankDetailsStatsByTraderID:input_type -> order.GetBankDetailsStatsByTraderIDRequest
+	86,  // 129: order.BankDetailService.GetBankDetails:input_type -> order.GetBankDetailsRequest
+	91,  // 130: order.TeamRelationsService.CreateTeamRelation:input_type -> order.CreateTeamRelationRequest
+	93,  // 131: order.TeamRelationsService.GetRelationsByTeamLeadID:input_type -> order.GetRelationsByTeamLeadIDRequest
+	95,  // 132: order.TeamRelationsService.UpdateRelationParams:input_type -> order.UpdateRelationParamsRequest
+	88,  // 133: order.TeamRelationsService.DeleteTeamRelationship:input_type -> order.DeleteTeamRelationshipRequest
+	98,  // 134: order.DeviceService.CreateDevice:input_type -> order.CreateDeviceRequest
+	100, // 135: order.DeviceService.GetTraderDevices:input_type -> order.GetTraderDevicesRequest
+	105, // 136: order.DeviceService.DeleteDevice:input_type -> order.DeleteDeviceRequest
+	103, // 137: order.DeviceService.EditDevice:input_type -> order.EditDeviceRequest
+	116, // 138: order.AntiFraudService.CheckTrader:input_type -> order.CheckTraderRequest
+	118, // 139: order.AntiFraudService.ProcessTraderCheck:input_type -> order.ProcessTraderCheckRequest
+	121, // 140: order.AntiFraudService.CreateRule:input_type -> order.CreateRuleRequest
+	123, // 141: order.AntiFraudService.UpdateRule:input_type -> order.UpdateRuleRequest
+	125, // 142: order.AntiFraudService.GetRules:input_type -> order.GetRulesRequest
+	127, // 143: order.AntiFraudService.GetRule:input_type -> order.GetRuleRequest
+	129, // 144: order.AntiFraudService.DeleteRule:input_type -> order.DeleteRuleRequest
+	132, // 145: order.AntiFraudService.GetAuditLogs:input_type -> order.GetAuditLogsRequest
+	134, // 146: order.AntiFraudService.GetTraderAuditHistory:input_type -> order.GetTraderAuditHistoryRequest
+	112, // 147: order.AntiFraudService.ManualUnlock:input_type -> order.ManualUnlockRequest
+	114, // 148: order.AntiFraudService.ResetGracePeriod:input_type -> order.ResetGracePeriodRequest
+	109, // 149: order.AntiFraudService.GetUnlockHistory:input_type -> order.GetUnlockHistoryRequest
 	29,  // 150: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
 	31,  // 151: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
 	33,  // 152: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
@@ -9600,34 +9600,34 @@ var file_order_proto_depIdxs = []int32{
 	53,  // 176: order.TrafficService.SetAntifraudLockTrafficStatus:output_type -> order.SetAntifraudLockTrafficStatusResponse
 	43,  // 177: order.TrafficService.GetTrafficLockStatuses:output_type -> order.GetTrafficLockStatusesResponse
 	45,  // 178: order.TrafficService.CheckTrafficUnlocked:output_type -> order.CheckTrafficUnlockedResponse
-	74,  // 179: order.BankDetailService.CreateBankDetail:output_type -> order.CreateBankDetailResponse
-	76,  // 180: order.BankDetailService.UpdateBankDetail:output_type -> order.UpdateBankDetailResponse
-	80,  // 181: order.BankDetailService.DeleteBankDetail:output_type -> order.DeleteBankDetailResponse
-	78,  // 182: order.BankDetailService.GetBankDetailByID:output_type -> order.GetBankDetailByIDResponse
-	82,  // 183: order.BankDetailService.GetBankDetailsByTraderID:output_type -> order.GetBankDetailsByTraderIDResponse
-	85,  // 184: order.BankDetailService.GetBankDetailsStatsByTraderID:output_type -> order.GetBankDetailsStatsByTraderIDResponse
-	87,  // 185: order.BankDetailService.GetBankDetails:output_type -> order.GetBankDetailsResponse
-	92,  // 186: order.TeamRelationsService.CreateTeamRelation:output_type -> order.CreateTeamRelationResponse
-	94,  // 187: order.TeamRelationsService.GetRelationsByTeamLeadID:output_type -> order.GetRelationsByTeamLeadIDResponse
-	96,  // 188: order.TeamRelationsService.UpdateRelationParams:output_type -> order.UpdateRelationParamsResponse
-	89,  // 189: order.TeamRelationsService.DeleteTeamRelationship:output_type -> order.DeleteTeamRelationshipResponse
-	99,  // 190: order.DeviceService.CreateDevice:output_type -> order.CreateDeviceResponse
-	101, // 191: order.DeviceService.GetTraderDevices:output_type -> order.GetTraderDevicesResponse
-	106, // 192: order.DeviceService.DeleteDevice:output_type -> order.DeleteDeviceResponse
-	104, // 193: order.DeviceService.EditDevice:output_type -> order.EditDeviceResponse
-	117, // 194: order.AntiFraudService.CheckTrader:output_type -> order.CheckTraderResponse
-	119, // 195: order.AntiFraudService.ProcessTraderCheck:output_type -> order.ProcessTraderCheckResponse
-	122, // 196: order.AntiFraudService.CreateRule:output_type -> order.CreateRuleResponse
-	124, // 197: order.AntiFraudService.UpdateRule:output_type -> order.UpdateRuleResponse
-	126, // 198: order.AntiFraudService.GetRules:output_type -> order.GetRulesResponse
-	128, // 199: order.AntiFraudService.GetRule:output_type -> order.GetRuleResponse
-	130, // 200: order.AntiFraudService.DeleteRule:output_type -> order.DeleteRuleResponse
-	133, // 201: order.AntiFraudService.GetAuditLogs:output_type -> order.GetAuditLogsResponse
-	135, // 202: order.AntiFraudService.GetTraderAuditHistory:output_type -> order.GetTraderAuditHistoryResponse
-	113, // 203: order.AntiFraudService.ManualUnlock:output_type -> order.ManualUnlockResponse
-	115, // 204: order.AntiFraudService.ResetGracePeriod:output_type -> order.ResetGracePeriodResponse
-	111, // 205: order.AntiFraudService.GetUnlockHistory:output_type -> order.GetUnlockHistoryResponse
-	108, // 206: order.AntiFraudService.GetTraderTraffic:output_type -> order.GetTraderTrafficResponse
+	108, // 179: order.TrafficService.GetTraderTraffic:output_type -> order.GetTraderTrafficResponse
+	74,  // 180: order.BankDetailService.CreateBankDetail:output_type -> order.CreateBankDetailResponse
+	76,  // 181: order.BankDetailService.UpdateBankDetail:output_type -> order.UpdateBankDetailResponse
+	80,  // 182: order.BankDetailService.DeleteBankDetail:output_type -> order.DeleteBankDetailResponse
+	78,  // 183: order.BankDetailService.GetBankDetailByID:output_type -> order.GetBankDetailByIDResponse
+	82,  // 184: order.BankDetailService.GetBankDetailsByTraderID:output_type -> order.GetBankDetailsByTraderIDResponse
+	85,  // 185: order.BankDetailService.GetBankDetailsStatsByTraderID:output_type -> order.GetBankDetailsStatsByTraderIDResponse
+	87,  // 186: order.BankDetailService.GetBankDetails:output_type -> order.GetBankDetailsResponse
+	92,  // 187: order.TeamRelationsService.CreateTeamRelation:output_type -> order.CreateTeamRelationResponse
+	94,  // 188: order.TeamRelationsService.GetRelationsByTeamLeadID:output_type -> order.GetRelationsByTeamLeadIDResponse
+	96,  // 189: order.TeamRelationsService.UpdateRelationParams:output_type -> order.UpdateRelationParamsResponse
+	89,  // 190: order.TeamRelationsService.DeleteTeamRelationship:output_type -> order.DeleteTeamRelationshipResponse
+	99,  // 191: order.DeviceService.CreateDevice:output_type -> order.CreateDeviceResponse
+	101, // 192: order.DeviceService.GetTraderDevices:output_type -> order.GetTraderDevicesResponse
+	106, // 193: order.DeviceService.DeleteDevice:output_type -> order.DeleteDeviceResponse
+	104, // 194: order.DeviceService.EditDevice:output_type -> order.EditDeviceResponse
+	117, // 195: order.AntiFraudService.CheckTrader:output_type -> order.CheckTraderResponse
+	119, // 196: order.AntiFraudService.ProcessTraderCheck:output_type -> order.ProcessTraderCheckResponse
+	122, // 197: order.AntiFraudService.CreateRule:output_type -> order.CreateRuleResponse
+	124, // 198: order.AntiFraudService.UpdateRule:output_type -> order.UpdateRuleResponse
+	126, // 199: order.AntiFraudService.GetRules:output_type -> order.GetRulesResponse
+	128, // 200: order.AntiFraudService.GetRule:output_type -> order.GetRuleResponse
+	130, // 201: order.AntiFraudService.DeleteRule:output_type -> order.DeleteRuleResponse
+	133, // 202: order.AntiFraudService.GetAuditLogs:output_type -> order.GetAuditLogsResponse
+	135, // 203: order.AntiFraudService.GetTraderAuditHistory:output_type -> order.GetTraderAuditHistoryResponse
+	113, // 204: order.AntiFraudService.ManualUnlock:output_type -> order.ManualUnlockResponse
+	115, // 205: order.AntiFraudService.ResetGracePeriod:output_type -> order.ResetGracePeriodResponse
+	111, // 206: order.AntiFraudService.GetUnlockHistory:output_type -> order.GetUnlockHistoryResponse
 	150, // [150:207] is the sub-list for method output_type
 	93,  // [93:150] is the sub-list for method input_type
 	93,  // [93:93] is the sub-list for extension type_name
