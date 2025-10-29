@@ -229,12 +229,13 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
         return []*domain.BankDetail{}, nil
     }
     
-    traderIDs := make([]string, len(baseCandidates))
+    // Получаем IDs реквизитов (НЕ trader_id!)
+    bankDetailIDs := make([]string, len(baseCandidates))
     for i, candidate := range baseCandidates {
-        traderIDs[i] = candidate.TraderID
+        bankDetailIDs[i] = candidate.ID
     }
     
-    log.Printf("Checking dynamic constraints for %d traders", len(traderIDs))
+    log.Printf("Checking dynamic constraints for %d bank details", len(bankDetailIDs))
     
     now := time.Now()
     startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
@@ -245,23 +246,30 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
         startOfDay.Format("2006-01-02 15:04:05"),
         startOfMonth.Format("2006-01-02 15:04:05"))
     
+    // ИСПРАВЛЕННЫЙ SQL - группируем по bank_details_id
     sqlQuery := `
-        WITH trader_stats AS (
+        WITH bank_detail_stats AS (
             SELECT 
-                trader_id::text as trader_id_text,
+                bank_details_id::text as bank_details_id_text,
+                -- Количество активных заказов
                 SUM(CASE WHEN status = $1 THEN 1 ELSE 0 END)::int as pending_count,
+                -- Статистика за день
                 SUM(CASE WHEN status = ANY($2::text[]) AND created_at >= $3 THEN 1 ELSE 0 END)::int as day_count,
                 SUM(CASE WHEN status = ANY($4::text[]) AND created_at >= $5 THEN amount_fiat ELSE 0 END)::float as day_amount,
+                -- Статистика за месяц
                 SUM(CASE WHEN status = ANY($6::text[]) AND created_at >= $7 THEN 1 ELSE 0 END)::int as month_count,
                 SUM(CASE WHEN status = ANY($8::text[]) AND created_at >= $9 THEN amount_fiat ELSE 0 END)::float as month_amount,
+                -- Время последнего завершенного заказа
                 MAX(CASE WHEN status = $10 THEN created_at END) as last_completed_time,
+                -- Проверка на дублирующие заказы
                 SUM(CASE WHEN status = $11 AND amount_fiat = $12 THEN 1 ELSE 0 END)::int as duplicate_count
             FROM order_models 
-            WHERE trader_id::text = ANY($13::text[])
-            GROUP BY trader_id
+            WHERE bank_details_id::text = ANY($13::text[])
+            GROUP BY bank_details_id
         ),
         debug_stats AS (
             SELECT 
+                bd.id::text as bank_detail_id,
                 bd.trader_id::text as trader_id,
                 bd.card_number,
                 bd.max_orders_simultaneosly,
@@ -270,23 +278,23 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
                 bd.max_quantity_month,
                 bd.max_amount_month,
                 bd.delay,
-                COALESCE(ts.pending_count, 0) as pending_count,
-                COALESCE(ts.day_count, 0) as day_count,
-                COALESCE(ts.day_amount, 0) as day_amount,
-                COALESCE(ts.month_count, 0) as month_count,
-                COALESCE(ts.month_amount, 0) as month_amount,
-                ts.last_completed_time,
-                COALESCE(ts.duplicate_count, 0) as duplicate_count,
-                CASE WHEN COALESCE(ts.pending_count, 0) >= bd.max_orders_simultaneosly THEN 'max_simultaneous' ELSE NULL END as reason_1,
-                CASE WHEN COALESCE(ts.day_count, 0) + 1 > bd.max_quantity_day THEN 'max_day_count' ELSE NULL END as reason_2,
-                CASE WHEN COALESCE(ts.day_amount, 0) + $15 > bd.max_amount_day THEN 'max_day_amount' ELSE NULL END as reason_3,
-                CASE WHEN COALESCE(ts.month_count, 0) + 1 > bd.max_quantity_month THEN 'max_month_count' ELSE NULL END as reason_4,
-                CASE WHEN COALESCE(ts.month_amount, 0) + $16 > bd.max_amount_month THEN 'max_month_amount' ELSE NULL END as reason_5,
-                CASE WHEN ts.last_completed_time IS NOT NULL AND ts.last_completed_time > NOW() - (bd.delay / 1000000000.0) * INTERVAL '1 SECOND' THEN 'delay_not_passed' ELSE NULL END as reason_6,
-                CASE WHEN COALESCE(ts.duplicate_count, 0) > 0 THEN 'duplicate_order' ELSE NULL END as reason_7
+                COALESCE(bds.pending_count, 0) as pending_count,
+                COALESCE(bds.day_count, 0) as day_count,
+                COALESCE(bds.day_amount, 0) as day_amount,
+                COALESCE(bds.month_count, 0) as month_count,
+                COALESCE(bds.month_amount, 0) as month_amount,
+                bds.last_completed_time,
+                COALESCE(bds.duplicate_count, 0) as duplicate_count,
+                CASE WHEN COALESCE(bds.pending_count, 0) >= bd.max_orders_simultaneosly THEN 'max_simultaneous' ELSE NULL END as reason_1,
+                CASE WHEN COALESCE(bds.day_count, 0) + 1 > bd.max_quantity_day THEN 'max_day_count' ELSE NULL END as reason_2,
+                CASE WHEN COALESCE(bds.day_amount, 0) + $15 > bd.max_amount_day THEN 'max_day_amount' ELSE NULL END as reason_3,
+                CASE WHEN COALESCE(bds.month_count, 0) + 1 > bd.max_quantity_month THEN 'max_month_count' ELSE NULL END as reason_4,
+                CASE WHEN COALESCE(bds.month_amount, 0) + $16 > bd.max_amount_month THEN 'max_month_amount' ELSE NULL END as reason_5,
+                CASE WHEN bds.last_completed_time IS NOT NULL AND bds.last_completed_time > NOW() - (bd.delay / 1000000000.0) * INTERVAL '1 SECOND' THEN 'delay_not_passed' ELSE NULL END as reason_6,
+                CASE WHEN COALESCE(bds.duplicate_count, 0) > 0 THEN 'duplicate_order' ELSE NULL END as reason_7
             FROM bank_detail_models bd
-            LEFT JOIN trader_stats ts ON bd.trader_id::text = ts.trader_id_text
-            WHERE bd.trader_id::text = ANY($14::text[])
+            LEFT JOIN bank_detail_stats bds ON bd.id::text = bds.bank_details_id_text
+            WHERE bd.id::text = ANY($14::text[])
               AND bd.enabled = true
               AND bd.deleted_at IS NULL
         )
@@ -294,6 +302,7 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
     `
     
     type DebugStats struct {
+        BankDetailID          string
         TraderID              string
         CardNumber            string
         MaxOrdersSimultaneous int32
@@ -323,22 +332,22 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
     pendingCompletedStatuses := []string{string(domain.StatusPending), string(domain.StatusCompleted)}
     
     err := r.DB.Raw(sqlQuery,
-        string(domain.StatusPending),
-        pq.Array(pendingCompletedStatuses),
-        startOfDay,
-        pq.Array(pendingCompletedStatuses),
-        startOfDay,
-        pq.Array(pendingCompletedStatuses),
-        startOfMonth,
-        pq.Array(pendingCompletedStatuses),
-        startOfMonth,
-        string(domain.StatusCompleted),
-        string(domain.StatusPending),
-        searchQuery.AmountFiat,
-        pq.Array(traderIDs),
-        pq.Array(traderIDs),
-        searchQuery.AmountFiat,
-        searchQuery.AmountFiat,
+        string(domain.StatusPending),           // $1
+        pq.Array(pendingCompletedStatuses),     // $2
+        startOfDay,                             // $3
+        pq.Array(pendingCompletedStatuses),     // $4
+        startOfDay,                             // $5
+        pq.Array(pendingCompletedStatuses),     // $6
+        startOfMonth,                           // $7
+        pq.Array(pendingCompletedStatuses),     // $8
+        startOfMonth,                           // $9
+        string(domain.StatusCompleted),         // $10
+        string(domain.StatusPending),           // $11
+        searchQuery.AmountFiat,                 // $12
+        pq.Array(bankDetailIDs),               // $13 - bank_details_id
+        pq.Array(bankDetailIDs),               // $14 - bank_details_id
+        searchQuery.AmountFiat,                 // $15
+        searchQuery.AmountFiat,                 // $16
     ).Scan(&debugStats).Error
     
     if err != nil {
@@ -346,6 +355,7 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
         return nil, fmt.Errorf("failed to get debug stats: %w", err)
     }
     
+    // Логируем детальную статистику
     log.Printf("\nDetailed stats for %d candidates:", len(debugStats))
     for i, stat := range debugStats {
         reasons := []string{}
@@ -368,7 +378,8 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
         }
         
         log.Printf("  [%d] %s", i+1, status)
-        log.Printf("      TraderID=%s, Card=%s", stat.TraderID, maskCardNumber(stat.CardNumber))
+        log.Printf("      BankDetailID=%s, TraderID=%s, Card=%s", 
+            stat.BankDetailID, stat.TraderID, maskCardNumber(stat.CardNumber))
         log.Printf("      Pending: %d/%d, DayCount: %d+1/%d, DayAmount: %.2f+%.2f/%.2f",
             stat.PendingCount, stat.MaxOrdersSimultaneous,
             stat.DayCount, stat.MaxQuantityDay,
@@ -380,10 +391,11 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
             lastCompleted, stat.Delay, stat.DuplicateCount)
     }
     
+    // Финальный запрос с правильной группировкой
     finalQuery := `
-        WITH trader_stats AS (
+        WITH bank_detail_stats AS (
             SELECT 
-                trader_id::text as trader_id_text,
+                bank_details_id::text as bank_details_id_text,
                 SUM(CASE WHEN status = $1 THEN 1 ELSE 0 END)::int as pending_count,
                 SUM(CASE WHEN status = ANY($2::text[]) AND created_at >= $3 THEN 1 ELSE 0 END)::int as day_count,
                 SUM(CASE WHEN status = ANY($4::text[]) AND created_at >= $5 THEN amount_fiat ELSE 0 END)::float as day_amount,
@@ -392,22 +404,22 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
                 MAX(CASE WHEN status = $10 THEN created_at END) as last_completed_time,
                 SUM(CASE WHEN status = $11 AND amount_fiat = $12 THEN 1 ELSE 0 END)::int as duplicate_count
             FROM order_models 
-            WHERE trader_id::text = ANY($13::text[])
-            GROUP BY trader_id
+            WHERE bank_details_id::text = ANY($13::text[])
+            GROUP BY bank_details_id
         )
         SELECT bd.* 
         FROM bank_detail_models bd
-        LEFT JOIN trader_stats ts ON bd.trader_id::text = ts.trader_id_text
-        WHERE bd.trader_id::text = ANY($14::text[])
+        LEFT JOIN bank_detail_stats bds ON bd.id::text = bds.bank_details_id_text
+        WHERE bd.id::text = ANY($14::text[])
           AND bd.enabled = true
           AND bd.deleted_at IS NULL
-          AND COALESCE(ts.pending_count, 0) < bd.max_orders_simultaneosly
-          AND COALESCE(ts.day_count, 0) + 1 <= bd.max_quantity_day
-          AND COALESCE(ts.day_amount, 0) + $15 <= bd.max_amount_day
-          AND COALESCE(ts.month_count, 0) + 1 <= bd.max_quantity_month
-          AND COALESCE(ts.month_amount, 0) + $16 <= bd.max_amount_month
-          AND (ts.last_completed_time IS NULL OR ts.last_completed_time <= NOW() - (bd.delay / 1000000000.0) * INTERVAL '1 SECOND')
-          AND COALESCE(ts.duplicate_count, 0) = 0
+          AND COALESCE(bds.pending_count, 0) < bd.max_orders_simultaneosly
+          AND COALESCE(bds.day_count, 0) + 1 <= bd.max_quantity_day
+          AND COALESCE(bds.day_amount, 0) + $15 <= bd.max_amount_day
+          AND COALESCE(bds.month_count, 0) + 1 <= bd.max_quantity_month
+          AND COALESCE(bds.month_amount, 0) + $16 <= bd.max_amount_month
+          AND (bds.last_completed_time IS NULL OR bds.last_completed_time <= NOW() - (bd.delay / 1000000000.0) * INTERVAL '1 SECOND')
+          AND COALESCE(bds.duplicate_count, 0) = 0
     `
     
     var finalCandidates []models.BankDetailModel
@@ -425,8 +437,8 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
         string(domain.StatusCompleted),
         string(domain.StatusPending),
         searchQuery.AmountFiat,
-        pq.Array(traderIDs),
-        pq.Array(traderIDs),
+        pq.Array(bankDetailIDs),              // $13 - используем bank_details_id
+        pq.Array(bankDetailIDs),              // $14 - используем bank_details_id
         searchQuery.AmountFiat,
         searchQuery.AmountFiat,
     ).Scan(&finalCandidates).Error
@@ -441,8 +453,8 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
     bankDetails := make([]*domain.BankDetail, len(finalCandidates))
     for i, bankDetail := range finalCandidates {
         bankDetails[i] = mappers.ToDomainBankDetail(&bankDetail)
-        log.Printf("  Final [%d] TraderID=%s, Card=%s", 
-            i+1, bankDetail.TraderID, maskCardNumber(bankDetail.CardNumber))
+        log.Printf("  Final [%d] BankDetailID=%s, TraderID=%s, Card=%s", 
+            i+1, bankDetail.ID, bankDetail.TraderID, maskCardNumber(bankDetail.CardNumber))
     }
     
     return bankDetails, nil
