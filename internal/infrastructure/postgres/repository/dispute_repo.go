@@ -68,6 +68,12 @@ func (r *DefaultDisputeRepository) ProcessDisputeCriticalOperation(
             return fmt.Errorf("failed to update order_status_disputed field in dispute model: %w", err)
         }
     }else if operation == "freeze" {
+        if err := tx.Model(&models.OrderModel{}).Where("id = ?", orderID).Updates(map[string]interface{}{
+            "status": newOrderStatus,
+		}).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to update order amount values: %w", err)
+		}
         if err := tx.Model(&models.DisputeModel{}).Where("id = ?", disputeID).Update("order_status_disputed", newOrderStatus).Error; err != nil {
             tx.Rollback()
             return fmt.Errorf("failed to update order_status_disputed field in dispute model: %w", err)
