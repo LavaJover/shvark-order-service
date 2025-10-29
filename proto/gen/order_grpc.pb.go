@@ -2026,6 +2026,8 @@ const (
 	AntiFraudService_DeleteRule_FullMethodName            = "/order.AntiFraudService/DeleteRule"
 	AntiFraudService_GetAuditLogs_FullMethodName          = "/order.AntiFraudService/GetAuditLogs"
 	AntiFraudService_GetTraderAuditHistory_FullMethodName = "/order.AntiFraudService/GetTraderAuditHistory"
+	AntiFraudService_ManualUnlock_FullMethodName          = "/order.AntiFraudService/ManualUnlock"
+	AntiFraudService_ResetGracePeriod_FullMethodName      = "/order.AntiFraudService/ResetGracePeriod"
 )
 
 // AntiFraudServiceClient is the client API for AntiFraudService service.
@@ -2044,6 +2046,8 @@ type AntiFraudServiceClient interface {
 	// Аудит
 	GetAuditLogs(ctx context.Context, in *GetAuditLogsRequest, opts ...grpc.CallOption) (*GetAuditLogsResponse, error)
 	GetTraderAuditHistory(ctx context.Context, in *GetTraderAuditHistoryRequest, opts ...grpc.CallOption) (*GetTraderAuditHistoryResponse, error)
+	ManualUnlock(ctx context.Context, in *ManualUnlockRequest, opts ...grpc.CallOption) (*ManualUnlockResponse, error)
+	ResetGracePeriod(ctx context.Context, in *ResetGracePeriodRequest, opts ...grpc.CallOption) (*ResetGracePeriodResponse, error)
 }
 
 type antiFraudServiceClient struct {
@@ -2144,6 +2148,26 @@ func (c *antiFraudServiceClient) GetTraderAuditHistory(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *antiFraudServiceClient) ManualUnlock(ctx context.Context, in *ManualUnlockRequest, opts ...grpc.CallOption) (*ManualUnlockResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ManualUnlockResponse)
+	err := c.cc.Invoke(ctx, AntiFraudService_ManualUnlock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *antiFraudServiceClient) ResetGracePeriod(ctx context.Context, in *ResetGracePeriodRequest, opts ...grpc.CallOption) (*ResetGracePeriodResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResetGracePeriodResponse)
+	err := c.cc.Invoke(ctx, AntiFraudService_ResetGracePeriod_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AntiFraudServiceServer is the server API for AntiFraudService service.
 // All implementations must embed UnimplementedAntiFraudServiceServer
 // for forward compatibility.
@@ -2160,6 +2184,8 @@ type AntiFraudServiceServer interface {
 	// Аудит
 	GetAuditLogs(context.Context, *GetAuditLogsRequest) (*GetAuditLogsResponse, error)
 	GetTraderAuditHistory(context.Context, *GetTraderAuditHistoryRequest) (*GetTraderAuditHistoryResponse, error)
+	ManualUnlock(context.Context, *ManualUnlockRequest) (*ManualUnlockResponse, error)
+	ResetGracePeriod(context.Context, *ResetGracePeriodRequest) (*ResetGracePeriodResponse, error)
 	mustEmbedUnimplementedAntiFraudServiceServer()
 }
 
@@ -2196,6 +2222,12 @@ func (UnimplementedAntiFraudServiceServer) GetAuditLogs(context.Context, *GetAud
 }
 func (UnimplementedAntiFraudServiceServer) GetTraderAuditHistory(context.Context, *GetTraderAuditHistoryRequest) (*GetTraderAuditHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTraderAuditHistory not implemented")
+}
+func (UnimplementedAntiFraudServiceServer) ManualUnlock(context.Context, *ManualUnlockRequest) (*ManualUnlockResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ManualUnlock not implemented")
+}
+func (UnimplementedAntiFraudServiceServer) ResetGracePeriod(context.Context, *ResetGracePeriodRequest) (*ResetGracePeriodResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResetGracePeriod not implemented")
 }
 func (UnimplementedAntiFraudServiceServer) mustEmbedUnimplementedAntiFraudServiceServer() {}
 func (UnimplementedAntiFraudServiceServer) testEmbeddedByValue()                          {}
@@ -2380,6 +2412,42 @@ func _AntiFraudService_GetTraderAuditHistory_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AntiFraudService_ManualUnlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ManualUnlockRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AntiFraudServiceServer).ManualUnlock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AntiFraudService_ManualUnlock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AntiFraudServiceServer).ManualUnlock(ctx, req.(*ManualUnlockRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AntiFraudService_ResetGracePeriod_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetGracePeriodRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AntiFraudServiceServer).ResetGracePeriod(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AntiFraudService_ResetGracePeriod_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AntiFraudServiceServer).ResetGracePeriod(ctx, req.(*ResetGracePeriodRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AntiFraudService_ServiceDesc is the grpc.ServiceDesc for AntiFraudService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2422,6 +2490,14 @@ var AntiFraudService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTraderAuditHistory",
 			Handler:    _AntiFraudService_GetTraderAuditHistory_Handler,
+		},
+		{
+			MethodName: "ManualUnlock",
+			Handler:    _AntiFraudService_ManualUnlock_Handler,
+		},
+		{
+			MethodName: "ResetGracePeriod",
+			Handler:    _AntiFraudService_ResetGracePeriod_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

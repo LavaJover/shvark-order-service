@@ -26,7 +26,7 @@ func (r *antiFraudRepository) CreateRule(ctx context.Context, rule *domain.AntiF
         ID:       rule.ID,
         Name:     rule.Name,
         Type:     rule.Type,
-        Config:   rule.Config,
+        Config:   rules.JSONB(rule.Config), // Конвертируем в custom JSONB тип
         IsActive: rule.IsActive,
         Priority: rule.Priority,
     }
@@ -35,6 +35,13 @@ func (r *antiFraudRepository) CreateRule(ctx context.Context, rule *domain.AntiF
 }
 
 func (r *antiFraudRepository) UpdateRule(ctx context.Context, ruleID string, updates map[string]interface{}) error {
+    // Конвертируем config если он есть
+    if config, ok := updates["config"]; ok {
+        if configMap, ok := config.(map[string]interface{}); ok {
+            updates["config"] = rules.JSONB(configMap)
+        }
+    }
+
     updates["updated_at"] = time.Now()
 
     return r.db.WithContext(ctx).
@@ -97,7 +104,7 @@ func (r *antiFraudRepository) CreateAuditLog(ctx context.Context, log *domain.Au
         TraderID:  log.TraderID,
         CheckedAt: log.CheckedAt,
         AllPassed: log.AllPassed,
-        Results:   strategyResults,
+        Results:   engine.CheckResultsJSON(strategyResults), // Используем custom тип
         CreatedAt: time.Now(),
     }
 
@@ -138,7 +145,6 @@ func (r *antiFraudRepository) GetAuditLogs(ctx context.Context, filter *domain.A
     for _, dbLog := range dbLogs {
         domainLog, err := r.convertDBAuditLogToDomain(&dbLog)
         if err != nil {
-            // Логируем ошибку, но продолжаем
             continue
         }
         result = append(result, domainLog)
@@ -167,7 +173,6 @@ func (r *antiFraudRepository) GetTraderAuditHistory(ctx context.Context, traderI
     for _, dbLog := range dbLogs {
         domainLog, err := r.convertDBAuditLogToDomain(&dbLog)
         if err != nil {
-            // Логируем ошибку, но продолжаем
             continue
         }
         result = append(result, domainLog)
@@ -183,7 +188,7 @@ func (r *antiFraudRepository) convertDBRuleToDomain(dbRule *rules.AntiFraudRule)
         ID:        dbRule.ID,
         Name:      dbRule.Name,
         Type:      dbRule.Type,
-        Config:    dbRule.Config,
+        Config:    map[string]interface{}(dbRule.Config), // Конвертируем JSONB в map
         IsActive:  dbRule.IsActive,
         Priority:  dbRule.Priority,
         CreatedAt: dbRule.CreatedAt,
@@ -192,7 +197,6 @@ func (r *antiFraudRepository) convertDBRuleToDomain(dbRule *rules.AntiFraudRule)
 }
 
 func (r *antiFraudRepository) convertDBAuditLogToDomain(dbLog *engine.AntiFraudAuditLog) (*domain.AuditLog, error) {
-    // Конвертируем strategies.CheckResult в domain.CheckResult
     domainResults := make([]*domain.CheckResult, 0, len(dbLog.Results))
     
     for _, res := range dbLog.Results {

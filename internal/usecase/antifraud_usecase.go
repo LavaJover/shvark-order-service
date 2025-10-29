@@ -24,16 +24,22 @@ type AntiFraudUseCase interface {
     // Аудит
     GetAuditLogs(ctx context.Context, req *domain.GetAuditLogsRequest) ([]*domain.AuditLogResponse, error)
     GetTraderAuditHistory(ctx context.Context, traderID string, limit int) ([]*domain.AuditLogResponse, error)
+
+	// Добавляем новые методы
+	ManualUnlock(ctx context.Context, req *domain.ManualUnlockRequest) error
+	ResetGracePeriod(ctx context.Context, traderID string) error
 }
 
 type antiFraudUseCase struct {
     engine *engine.AntiFraudEngine
     repo   domain.AntiFraudRepository
+	snapshotManager *engine.SnapshotManager // Добавили поле
 }
 
 func NewAntiFraudUseCase(
     engine *engine.AntiFraudEngine,
     repo domain.AntiFraudRepository,
+	snapshotManager *engine.SnapshotManager, // Добавили параметр
 ) AntiFraudUseCase {
     return &antiFraudUseCase{
         engine: engine,
@@ -240,4 +246,55 @@ func (uc *antiFraudUseCase) convertAuditLogToResponse(log *domain.AuditLog) *dom
         Results:   log.Results,
         CreatedAt: log.CreatedAt,
     }
+}
+
+// internal/usecase/antifraud_usecase.go
+
+// ManualUnlock вручную разблокирует трейдера с грейс-периодом
+func (uc *antiFraudUseCase) ManualUnlock(ctx context.Context, req *domain.ManualUnlockRequest) error {
+    if req.TraderID == "" {
+        return fmt.Errorf("trader_id is required")
+    }
+
+    if req.AdminID == "" {
+        return fmt.Errorf("admin_id is required")
+    }
+
+    if req.GracePeriodHours <= 0 {
+        req.GracePeriodHours = 24
+    }
+
+    // Получаем текущий отчет о проверке
+    report, err := uc.engine.CheckTrader(ctx, req.TraderID)
+    if err != nil {
+        return fmt.Errorf("failed to check trader: %w", err)
+    }
+
+    // Собираем текущие метрики для снепшота
+    metrics := make(map[string]interface{})
+    for _, result := range report.Results {
+        metrics[result.RuleName] = result.Details
+    }
+
+    // Создаём снепшот разблокировки
+    err = uc.snapshotManager.CreateUnlockSnapshot(
+        ctx,
+        req.TraderID,
+        req.AdminID,
+        req.Reason,
+        report.FailedRules,
+        metrics,
+        req.GracePeriodHours,
+    )
+
+    if err != nil {
+        return fmt.Errorf("failed to create unlock snapshot: %w", err)
+    }
+
+    return nil
+}
+
+// ResetGracePeriod сбрасывает грейс-период
+func (uc *antiFraudUseCase) ResetGracePeriod(ctx context.Context, traderID string) error {
+    return uc.snapshotManager.ResetGracePeriod(ctx, traderID)
 }

@@ -160,6 +160,7 @@ func main() {
 	// Init antifraud
 	antifraudLogger := slog.Default()
 	antifraudEngine := engine.NewAntiFraudEngine(db, antifraudLogger)
+	snapshotManager := engine.NewSnapshotManager(db)
 
 	antifraudEngine.RegisterStrategy(strategies.NewConsecutiveOrdersStrategy(db))
 	antifraudEngine.RegisterStrategy(strategies.NewCanceledOrdersStrategy(db))
@@ -167,7 +168,7 @@ func main() {
 	// Создаем repository
 	antiFraudRepo := repository.NewAntiFraudRepository(db)
 	// Создаем use case
-	antiFraudUseCase := usecase.NewAntiFraudUseCase(antifraudEngine, antiFraudRepo)
+	antiFraudUseCase := usecase.NewAntiFraudUseCase(antifraudEngine, antiFraudRepo, snapshotManager)
 
 	// Создаем gRPC handler
 	antiFraudHandler := grpcapi.NewAntiFraudHandler(antiFraudUseCase)

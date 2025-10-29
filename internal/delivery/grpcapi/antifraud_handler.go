@@ -295,3 +295,62 @@ func (h *AntiFraudHandler) convertDomainAuditLogToProto(log *domain.AuditLogResp
         CreatedAt: timestamppb.New(log.CreatedAt),
     }
 }
+
+// ManualUnlock вручную разблокирует трейдера
+func (h *AntiFraudHandler) ManualUnlock(ctx context.Context, req *antifraudpb.ManualUnlockRequest) (*antifraudpb.ManualUnlockResponse, error) {
+    if req.TraderId == "" {
+        return nil, status.Error(codes.InvalidArgument, "trader_id is required")
+    }
+
+    if req.AdminId == "" {
+        return nil, status.Error(codes.InvalidArgument, "admin_id is required")
+    }
+
+    domainReq := &domain.ManualUnlockRequest{
+        TraderID:         req.TraderId,
+        AdminID:          req.AdminId,
+        Reason:           req.Reason,
+        GracePeriodHours: int(req.GracePeriodHours),
+    }
+
+    if domainReq.GracePeriodHours <= 0 {
+        domainReq.GracePeriodHours = 24
+    }
+
+    err := h.useCase.ManualUnlock(ctx, domainReq)
+    if err != nil {
+        return &antifraudpb.ManualUnlockResponse{
+            Success: false,
+            Message: err.Error(),
+        }, nil
+    }
+
+    gracePeriodUntil := timestamppb.Now()
+    gracePeriodUntil.Seconds += int64(domainReq.GracePeriodHours * 3600)
+
+    return &antifraudpb.ManualUnlockResponse{
+        Success:          true,
+        Message:          "Trader unlocked successfully",
+        GracePeriodUntil: gracePeriodUntil,
+    }, nil
+}
+
+// ResetGracePeriod сбрасывает грейс-период
+func (h *AntiFraudHandler) ResetGracePeriod(ctx context.Context, req *antifraudpb.ResetGracePeriodRequest) (*antifraudpb.ResetGracePeriodResponse, error) {
+    if req.TraderId == "" {
+        return nil, status.Error(codes.InvalidArgument, "trader_id is required")
+    }
+
+    err := h.useCase.ResetGracePeriod(ctx, req.TraderId)
+    if err != nil {
+        return &antifraudpb.ResetGracePeriodResponse{
+            Success: false,
+            Message: err.Error(),
+        }, nil
+    }
+
+    return &antifraudpb.ResetGracePeriodResponse{
+        Success: true,
+        Message: "Grace period reset successfully",
+    }, nil
+}

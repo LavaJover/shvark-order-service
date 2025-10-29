@@ -12,10 +12,24 @@ type TrafficModel struct {
 	Enabled 			bool
 	Name				string
 
+	// Поля для антифрода
+	AntifraudUnlocked     bool                   `gorm:"default:true"`
+	AntifraudLockedAt     *time.Time             
+	AntifraudUnlockedAt   *time.Time             
+	AntifraudLockReason   string
+
+	// Новые поля для грейс-периода
+	ManualUnlockBy        string                 `gorm:"type:uuid"` // ID админа, который разблокировал
+	ManualUnlockAt        *time.Time             
+	ManualUnlockReason    string                 // Причина разблокировки от админа
+	GracePeriodUntil      *time.Time             // До какого времени действует грейс-период
+
+	// Снепшоты состояния на момент разблокировки
+	UnlockSnapshot        map[string]interface{} `gorm:"type:jsonb"` // Сохраняем метрики на момент разблокировки
+
 	// Гибкие настройки
-	MerchantUnlocked	bool
+	MerchantUnlocked	bool	`gorm:"default:true"`
 	TraderUnlocked		bool
-	AntifraudUnlocked	bool
 	ManuallyUnlocked	bool
 
 	AntifraudRequired bool	

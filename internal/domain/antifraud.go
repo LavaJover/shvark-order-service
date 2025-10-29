@@ -90,13 +90,13 @@ func (c *BalanceThresholdConfig) GetThreshold() interface{} {
 
 // ============= Отчеты =============
 
-type AntiFraudReport struct {
-    TraderID    string         `json:"trader_id"`
-    CheckedAt   time.Time      `json:"checked_at"`
-    AllPassed   bool           `json:"all_passed"`
-    Results     []*CheckResult `json:"results"`
-    FailedRules []string       `json:"failed_rules,omitempty"`
-}
+// type AntiFraudReport struct {
+//     TraderID    string         `json:"trader_id"`
+//     CheckedAt   time.Time      `json:"checked_at"`
+//     AllPassed   bool           `json:"all_passed"`
+//     Results     []*CheckResult `json:"results"`
+//     FailedRules []string       `json:"failed_rules,omitempty"`
+// }
 
 type CheckResult struct {
     RuleName string                 `json:"rule_name"`
@@ -195,4 +195,20 @@ type AuditLogFilter struct {
     OnlyFailed bool
     Limit      int
     Offset     int
+}
+
+type ManualUnlockRequest struct {
+    TraderID         string `json:"trader_id"`
+    AdminID          string `json:"admin_id"`
+    Reason           string `json:"reason"`
+    GracePeriodHours int    `json:"grace_period_hours"` // Длительность грейс-периода в часах
+}
+
+type AntiFraudReport struct {
+    TraderID      string         `json:"trader_id"`
+    CheckedAt     time.Time      `json:"checked_at"`
+    AllPassed     bool           `json:"all_passed"`
+    Results       []*CheckResult `json:"results"`
+    FailedRules   []string       `json:"failed_rules,omitempty"`
+    InGracePeriod bool           `json:"in_grace_period"`
 }

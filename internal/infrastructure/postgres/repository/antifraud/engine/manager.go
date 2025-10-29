@@ -1,16 +1,14 @@
 package engine
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"time"
+    "context"
+    "encoding/json"
+    "fmt"
+    "time"
 
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/rules"
-	"gorm.io/gorm"
+    "github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/rules"
+    "gorm.io/gorm"
 )
-
-// ============= УПРАВЛЕНИЕ ПРАВИЛАМИ =============
 
 // RuleManager управляет правилами антифрода
 type RuleManager struct {
@@ -35,7 +33,7 @@ func (rm *RuleManager) CreateRule(ctx context.Context, name, ruleType string, co
         ID:       GenerateUUID(),
         Name:     name,
         Type:     ruleType,
-        Config:   configMap,
+        Config:   rules.JSONB(configMap), // Конвертируем в JSONB
         IsActive: true,
         Priority: priority,
     }
@@ -59,7 +57,7 @@ func (rm *RuleManager) UpdateRule(ctx context.Context, ruleID string, config rul
         configMap := make(map[string]interface{})
         configBytes, _ := json.Marshal(config)
         json.Unmarshal(configBytes, &configMap)
-        updates["config"] = configMap
+        updates["config"] = rules.JSONB(configMap) // Конвертируем в JSONB
     }
 
     if isActive != nil {
@@ -80,13 +78,13 @@ func (rm *RuleManager) UpdateRule(ctx context.Context, ruleID string, config rul
 
 // GetRules получает все правила с фильтрацией
 func (rm *RuleManager) GetRules(ctx context.Context, activeOnly bool) ([]rules.AntiFraudRule, error) {
-    var rules []rules.AntiFraudRule
+    var rulesSlice []rules.AntiFraudRule
     query := rm.db.WithContext(ctx)
 
     if activeOnly {
         query = query.Where("is_active = ?", true)
     }
 
-    err := query.Order("priority DESC").Find(&rules).Error
-    return rules, err
+    err := query.Order("priority DESC").Find(&rulesSlice).Error
+    return rulesSlice, err
 }
