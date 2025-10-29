@@ -365,6 +365,7 @@ func (h *OrderHandler) CreateOrderDispute(ctx context.Context, r *orderpb.Create
 func (h *OrderHandler) AcceptOrderDispute(ctx context.Context, r *orderpb.AcceptOrderDisputeRequest) (*orderpb.AcceptOrderDisputeResponse, error) {
 	disputeID := r.DisputeId
 	if err := h.disputeUc.AcceptDispute(disputeID); err != nil {
+		slog.Error("failed to accept dispute", "error", err.Error())
 		return nil, err
 	}
 

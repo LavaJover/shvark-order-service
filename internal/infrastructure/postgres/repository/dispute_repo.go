@@ -67,6 +67,11 @@ func (r *DefaultDisputeRepository) ProcessDisputeCriticalOperation(
             tx.Rollback()
             return fmt.Errorf("failed to update order_status_disputed field in dispute model: %w", err)
         }
+    }else if operation == "freeze" {
+        if err := tx.Model(&models.DisputeModel{}).Where("id = ?", disputeID).Update("order_status_disputed", newOrderStatus).Error; err != nil {
+            tx.Rollback()
+            return fmt.Errorf("failed to update order_status_disputed field in dispute model: %w", err)
+        }
     }
 
     // 3. Выполняем операцию с кошельком
