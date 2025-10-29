@@ -817,6 +817,27 @@ service AntiFraudService {
 
     rpc ManualUnlock(ManualUnlockRequest) returns (ManualUnlockResponse);
     rpc ResetGracePeriod(ResetGracePeriodRequest) returns (ResetGracePeriodResponse);
+
+    rpc GetUnlockHistory(GetUnlockHistoryRequest) returns (GetUnlockHistoryResponse);
+}
+
+message GetUnlockHistoryRequest {
+    string trader_id = 1;
+    int32 limit = 2;
+}
+
+message UnlockHistoryItem {
+    string id = 1;
+    string trader_id = 2;
+    string admin_id = 3;
+    string reason = 4;
+    int32 grace_period_hours = 5;
+    google.protobuf.Timestamp unlocked_at = 6;
+    google.protobuf.Timestamp created_at = 7;
+}
+
+message GetUnlockHistoryResponse {
+    repeated UnlockHistoryItem items = 1;
 }
 
 message ManualUnlockRequest {

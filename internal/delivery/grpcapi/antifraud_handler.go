@@ -354,3 +354,37 @@ func (h *AntiFraudHandler) ResetGracePeriod(ctx context.Context, req *antifraudp
         Message: "Grace period reset successfully",
     }, nil
 }
+
+// GetUnlockHistory получает историю разблокировок трейдера
+func (h *AntiFraudHandler) GetUnlockHistory(ctx context.Context, req *antifraudpb.GetUnlockHistoryRequest) (*antifraudpb.GetUnlockHistoryResponse, error) {
+    if req.TraderId == "" {
+        return nil, status.Error(codes.InvalidArgument, "trader_id is required")
+    }
+
+    limit := int(req.Limit)
+    if limit <= 0 {
+        limit = 20
+    }
+
+    logs, err := h.useCase.GetUnlockHistory(ctx, req.TraderId, limit)
+    if err != nil {
+        return nil, status.Errorf(codes.Internal, "failed to get unlock history: %v", err)
+    }
+
+    items := make([]*antifraudpb.UnlockHistoryItem, 0, len(logs))
+    for _, log := range logs {
+        items = append(items, &antifraudpb.UnlockHistoryItem{
+            Id:               log.ID,
+            TraderId:         log.TraderID,
+            AdminId:          log.AdminID,
+            Reason:           log.Reason,
+            GracePeriodHours: int32(log.GracePeriodHours),
+            UnlockedAt:       timestamppb.New(log.UnlockedAt),
+            CreatedAt:        timestamppb.New(log.CreatedAt),
+        })
+    }
+
+    return &antifraudpb.GetUnlockHistoryResponse{
+        Items: items,
+    }, nil
+}

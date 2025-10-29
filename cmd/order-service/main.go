@@ -160,7 +160,13 @@ func main() {
 	// Init antifraud
 	antifraudLogger := slog.Default()
 	antifraudEngine := engine.NewAntiFraudEngine(db, antifraudLogger)
-	snapshotManager := engine.NewSnapshotManager(db)
+	// Получаем snapshotManager из engine (вместо создания нового)
+	snapshotManager := antifraudEngine.GetSnapshotManager()
+	// DEBUG
+	if snapshotManager == nil {
+	    log.Fatal("CRITICAL: snapshotManager is nil after GetSnapshotManager()")
+	}
+	log.Printf("✓ SnapshotManager initialized successfully: %p", snapshotManager)
 
 	antifraudEngine.RegisterStrategy(strategies.NewConsecutiveOrdersStrategy(db))
 	antifraudEngine.RegisterStrategy(strategies.NewCanceledOrdersStrategy(db))
@@ -169,6 +175,9 @@ func main() {
 	antiFraudRepo := repository.NewAntiFraudRepository(db)
 	// Создаем use case
 	antiFraudUseCase := usecase.NewAntiFraudUseCase(antifraudEngine, antiFraudRepo, snapshotManager)
+
+	// DEBUG: проверяем через рефлексию
+	log.Printf("✓ AntiFraudUseCase initialized: %+v", antiFraudUseCase)
 
 	// Создаем gRPC handler
 	antiFraudHandler := grpcapi.NewAntiFraudHandler(antiFraudUseCase)

@@ -217,3 +217,48 @@ func (r *antiFraudRepository) convertDBAuditLogToDomain(dbLog *engine.AntiFraudA
         CreatedAt: dbLog.CreatedAt,
     }, nil
 }
+
+// CreateUnlockAuditLog сохраняет запись о ручной разблокировке
+func (r *antiFraudRepository) CreateUnlockAuditLog(ctx context.Context, log *domain.UnlockAuditLog) error {
+    dbLog := &engine.UnlockAuditLog{
+        ID:               log.ID,
+        TraderID:         log.TraderID,
+        AdminID:          log.AdminID,
+        Reason:           log.Reason,
+        GracePeriodHours: log.GracePeriodHours,
+        UnlockedAt:       log.UnlockedAt,
+        CreatedAt:        time.Now(),
+    }
+
+    return r.db.WithContext(ctx).Create(dbLog).Error
+}
+
+// GetUnlockHistory получает историю разблокировок трейдера
+func (r *antiFraudRepository) GetUnlockHistory(ctx context.Context, traderID string, limit int) ([]*domain.UnlockAuditLog, error) {
+    var dbLogs []engine.UnlockAuditLog
+    
+    err := r.db.WithContext(ctx).
+        Where("trader_id = ?", traderID).
+        Order("created_at DESC").
+        Limit(limit).
+        Find(&dbLogs).Error
+
+    if err != nil {
+        return nil, err
+    }
+
+    result := make([]*domain.UnlockAuditLog, 0, len(dbLogs))
+    for _, dbLog := range dbLogs {
+        result = append(result, &domain.UnlockAuditLog{
+            ID:               dbLog.ID,
+            TraderID:         dbLog.TraderID,
+            AdminID:          dbLog.AdminID,
+            Reason:           dbLog.Reason,
+            GracePeriodHours: dbLog.GracePeriodHours,
+            UnlockedAt:       dbLog.UnlockedAt,
+            CreatedAt:        dbLog.CreatedAt,
+        })
+    }
+
+    return result, nil
+}

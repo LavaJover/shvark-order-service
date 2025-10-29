@@ -1,12 +1,13 @@
 package usecase
 
 import (
-    "context"
-    "fmt"
+	"context"
+	"fmt"
+	"time"
 
-    "github.com/LavaJover/shvark-order-service/internal/domain"
-    "github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/engine"
-    "github.com/google/uuid"
+	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/engine"
+	"github.com/google/uuid"
 )
 
 type AntiFraudUseCase interface {
@@ -28,6 +29,8 @@ type AntiFraudUseCase interface {
 	// Добавляем новые методы
 	ManualUnlock(ctx context.Context, req *domain.ManualUnlockRequest) error
 	ResetGracePeriod(ctx context.Context, traderID string) error
+
+	GetUnlockHistory(ctx context.Context, traderID string, limit int) ([]*domain.UnlockAuditLogResponse, error) // НОВОЕ
 }
 
 type antiFraudUseCase struct {
@@ -291,10 +294,60 @@ func (uc *antiFraudUseCase) ManualUnlock(ctx context.Context, req *domain.Manual
         return fmt.Errorf("failed to create unlock snapshot: %w", err)
     }
 
+    // НОВОЕ: Сохраняем в аудит-лог разблокировку
+    unlockLog := &domain.UnlockAuditLog{
+        ID:               uuid.New().String(),
+        TraderID:         req.TraderID,
+        AdminID:          req.AdminID,
+        Reason:           req.Reason,
+        GracePeriodHours: req.GracePeriodHours,
+        UnlockedAt:       time.Now(),
+    }
+
+    if err := uc.repo.CreateUnlockAuditLog(ctx, unlockLog); err != nil {
+        // Не критично если не удалось сохранить в аудит
+        // Основная разблокировка уже произошла
+        return fmt.Errorf("trader unlocked but failed to save audit log: %w", err)
+    }
+
     return nil
 }
 
 // ResetGracePeriod сбрасывает грейс-период
 func (uc *antiFraudUseCase) ResetGracePeriod(ctx context.Context, traderID string) error {
+    if uc.snapshotManager == nil {
+        return fmt.Errorf("CRITICAL: snapshotManager is nil in usecase")
+    }
     return uc.snapshotManager.ResetGracePeriod(ctx, traderID)
+}
+
+// GetUnlockHistory получает историю ручных разблокировок
+func (uc *antiFraudUseCase) GetUnlockHistory(ctx context.Context, traderID string, limit int) ([]*domain.UnlockAuditLogResponse, error) {
+    if traderID == "" {
+        return nil, fmt.Errorf("trader_id is required")
+    }
+
+    if limit <= 0 {
+        limit = 20
+    }
+
+    logs, err := uc.repo.GetUnlockHistory(ctx, traderID, limit)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get unlock history: %w", err)
+    }
+
+    result := make([]*domain.UnlockAuditLogResponse, 0, len(logs))
+    for _, log := range logs {
+        result = append(result, &domain.UnlockAuditLogResponse{
+            ID:               log.ID,
+            TraderID:         log.TraderID,
+            AdminID:          log.AdminID,
+            Reason:           log.Reason,
+            GracePeriodHours: log.GracePeriodHours,
+            UnlockedAt:       log.UnlockedAt,
+            CreatedAt:        log.CreatedAt,
+        })
+    }
+
+    return result, nil
 }

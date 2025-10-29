@@ -17,7 +17,7 @@ type AntiFraudEngine struct {
     db              *gorm.DB
     strategies      map[string]strategies.AntiFraudStrategy
     logger          *slog.Logger
-    snapshotManager *SnapshotManager // Добавили поле
+    snapshotManager *SnapshotManager // <-- УБЕДИТЕСЬ ЧТО ЭТО ПОЛЕ ЕСТЬ
 }
 
 func NewAntiFraudEngine(db *gorm.DB, logger *slog.Logger) *AntiFraudEngine {
@@ -25,10 +25,15 @@ func NewAntiFraudEngine(db *gorm.DB, logger *slog.Logger) *AntiFraudEngine {
         db:              db,
         strategies:      make(map[string]strategies.AntiFraudStrategy),
         logger:          logger,
-        snapshotManager: NewSnapshotManager(db), // Инициализируем
+        snapshotManager: NewSnapshotManager(db), // <-- УБЕДИТЕСЬ ЧТО ЭТА СТРОКА ЕСТЬ
     }
 
     return engine
+}
+
+// GetSnapshotManager возвращает snapshotManager из engine
+func (e *AntiFraudEngine) GetSnapshotManager() *SnapshotManager {
+    return e.snapshotManager // <-- УБЕДИТЕСЬ ЧТО ЭТОТ МЕТОД ЕСТЬ
 }
 
 // RegisterStrategy регистрирует новую стратегию
@@ -53,7 +58,7 @@ func (e *AntiFraudEngine) CheckTrader(ctx context.Context, traderID string) (*An
             AllPassed:     true,
             Results:       []*strategies.CheckResult{},
             FailedRules:   []string{},
-            InGracePeriod: true, // Добавили поле
+            InGracePeriod: true,
         }, nil
     }
 
@@ -73,7 +78,7 @@ func (e *AntiFraudEngine) CheckTrader(ctx context.Context, traderID string) (*An
         CheckedAt:     time.Now(),
         Results:       make([]*strategies.CheckResult, 0, len(rulesList)),
         AllPassed:     true,
-        InGracePeriod: false, // Добавили поле
+        InGracePeriod: false,
     }
 
     // Проверяем каждое правило
@@ -108,7 +113,7 @@ type AntiFraudReport struct {
     AllPassed     bool                      `json:"all_passed"`
     Results       []*strategies.CheckResult `json:"results"`
     FailedRules   []string                  `json:"failed_rules,omitempty"`
-    InGracePeriod bool                      `json:"in_grace_period"` // Добавили поле
+    InGracePeriod bool                      `json:"in_grace_period"`
 }
 
 // ProcessTraderCheck проверяет трейдера и обновляет статус трафика

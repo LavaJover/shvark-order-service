@@ -177,6 +177,10 @@ type AntiFraudRepository interface {
     CreateAuditLog(ctx context.Context, log *AuditLog) error
     GetAuditLogs(ctx context.Context, filter *AuditLogFilter) ([]*AuditLog, error)
     GetTraderAuditHistory(ctx context.Context, traderID string, limit int) ([]*AuditLog, error)
+
+    // Аудит разблокировок - НОВОЕ
+    CreateUnlockAuditLog(ctx context.Context, log *UnlockAuditLog) error
+    GetUnlockHistory(ctx context.Context, traderID string, limit int) ([]*UnlockAuditLog, error) // НОВОЕ
 }
 
 type AuditLog struct {
@@ -211,4 +215,26 @@ type AntiFraudReport struct {
     Results       []*CheckResult `json:"results"`
     FailedRules   []string       `json:"failed_rules,omitempty"`
     InGracePeriod bool           `json:"in_grace_period"`
+}
+
+// UnlockAuditLog для аудита ручных разблокировок
+type UnlockAuditLog struct {
+    ID               string
+    TraderID         string
+    AdminID          string
+    Reason           string
+    GracePeriodHours int
+    UnlockedAt       time.Time
+    CreatedAt        time.Time
+}
+
+// UnlockAuditLogResponse для API
+type UnlockAuditLogResponse struct {
+    ID               string    `json:"id"`
+    TraderID         string    `json:"trader_id"`
+    AdminID          string    `json:"admin_id"`
+    Reason           string    `json:"reason"`
+    GracePeriodHours int       `json:"grace_period_hours"`
+    UnlockedAt       time.Time `json:"unlocked_at"`
+    CreatedAt        time.Time `json:"created_at"`
 }

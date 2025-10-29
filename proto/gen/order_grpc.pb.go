@@ -2028,6 +2028,7 @@ const (
 	AntiFraudService_GetTraderAuditHistory_FullMethodName = "/order.AntiFraudService/GetTraderAuditHistory"
 	AntiFraudService_ManualUnlock_FullMethodName          = "/order.AntiFraudService/ManualUnlock"
 	AntiFraudService_ResetGracePeriod_FullMethodName      = "/order.AntiFraudService/ResetGracePeriod"
+	AntiFraudService_GetUnlockHistory_FullMethodName      = "/order.AntiFraudService/GetUnlockHistory"
 )
 
 // AntiFraudServiceClient is the client API for AntiFraudService service.
@@ -2048,6 +2049,7 @@ type AntiFraudServiceClient interface {
 	GetTraderAuditHistory(ctx context.Context, in *GetTraderAuditHistoryRequest, opts ...grpc.CallOption) (*GetTraderAuditHistoryResponse, error)
 	ManualUnlock(ctx context.Context, in *ManualUnlockRequest, opts ...grpc.CallOption) (*ManualUnlockResponse, error)
 	ResetGracePeriod(ctx context.Context, in *ResetGracePeriodRequest, opts ...grpc.CallOption) (*ResetGracePeriodResponse, error)
+	GetUnlockHistory(ctx context.Context, in *GetUnlockHistoryRequest, opts ...grpc.CallOption) (*GetUnlockHistoryResponse, error)
 }
 
 type antiFraudServiceClient struct {
@@ -2168,6 +2170,16 @@ func (c *antiFraudServiceClient) ResetGracePeriod(ctx context.Context, in *Reset
 	return out, nil
 }
 
+func (c *antiFraudServiceClient) GetUnlockHistory(ctx context.Context, in *GetUnlockHistoryRequest, opts ...grpc.CallOption) (*GetUnlockHistoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUnlockHistoryResponse)
+	err := c.cc.Invoke(ctx, AntiFraudService_GetUnlockHistory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AntiFraudServiceServer is the server API for AntiFraudService service.
 // All implementations must embed UnimplementedAntiFraudServiceServer
 // for forward compatibility.
@@ -2186,6 +2198,7 @@ type AntiFraudServiceServer interface {
 	GetTraderAuditHistory(context.Context, *GetTraderAuditHistoryRequest) (*GetTraderAuditHistoryResponse, error)
 	ManualUnlock(context.Context, *ManualUnlockRequest) (*ManualUnlockResponse, error)
 	ResetGracePeriod(context.Context, *ResetGracePeriodRequest) (*ResetGracePeriodResponse, error)
+	GetUnlockHistory(context.Context, *GetUnlockHistoryRequest) (*GetUnlockHistoryResponse, error)
 	mustEmbedUnimplementedAntiFraudServiceServer()
 }
 
@@ -2228,6 +2241,9 @@ func (UnimplementedAntiFraudServiceServer) ManualUnlock(context.Context, *Manual
 }
 func (UnimplementedAntiFraudServiceServer) ResetGracePeriod(context.Context, *ResetGracePeriodRequest) (*ResetGracePeriodResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetGracePeriod not implemented")
+}
+func (UnimplementedAntiFraudServiceServer) GetUnlockHistory(context.Context, *GetUnlockHistoryRequest) (*GetUnlockHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUnlockHistory not implemented")
 }
 func (UnimplementedAntiFraudServiceServer) mustEmbedUnimplementedAntiFraudServiceServer() {}
 func (UnimplementedAntiFraudServiceServer) testEmbeddedByValue()                          {}
@@ -2448,6 +2464,24 @@ func _AntiFraudService_ResetGracePeriod_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AntiFraudService_GetUnlockHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUnlockHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AntiFraudServiceServer).GetUnlockHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AntiFraudService_GetUnlockHistory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AntiFraudServiceServer).GetUnlockHistory(ctx, req.(*GetUnlockHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AntiFraudService_ServiceDesc is the grpc.ServiceDesc for AntiFraudService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2498,6 +2532,10 @@ var AntiFraudService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResetGracePeriod",
 			Handler:    _AntiFraudService_ResetGracePeriod_Handler,
+		},
+		{
+			MethodName: "GetUnlockHistory",
+			Handler:    _AntiFraudService_GetUnlockHistory_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
