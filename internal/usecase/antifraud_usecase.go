@@ -47,6 +47,7 @@ func NewAntiFraudUseCase(
     return &antiFraudUseCase{
         engine: engine,
         repo:   repo,
+		snapshotManager: snapshotManager,
     }
 }
 

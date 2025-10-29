@@ -819,6 +819,15 @@ service AntiFraudService {
     rpc ResetGracePeriod(ResetGracePeriodRequest) returns (ResetGracePeriodResponse);
 
     rpc GetUnlockHistory(GetUnlockHistoryRequest) returns (GetUnlockHistoryResponse);
+    rpc GetTraderTraffic(GetTraderTrafficRequest) returns (GetTraderTrafficResponse);
+}
+
+message GetTraderTrafficRequest {
+    string trader_id = 1;
+}
+
+message GetTraderTrafficResponse {
+    repeated Traffic records = 1;
 }
 
 message GetUnlockHistoryRequest {

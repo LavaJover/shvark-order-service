@@ -105,3 +105,12 @@ func (uc *DefaultTrafficUsecase) IsTrafficUnlocked(trafficID string) (*trafficdt
 		Unlocked:  unlocked,
 	}, nil
 }
+
+// GetTrafficByTraderID получает все записи трафика для трейдера
+func (uc *DefaultTrafficUsecase) GetTrafficByTraderID(traderID string) ([]*domain.Traffic, error) {
+    if traderID == "" {
+        return nil, fmt.Errorf("trader_id is required")
+    }
+
+    return uc.TrafficRepo.GetTrafficByTraderID(traderID)
+}

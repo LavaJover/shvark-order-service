@@ -6,21 +6,6 @@ import (
 	trafficdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/traffic"
 )
 
-// message ActivityParameters {
-// 	bool merchant_unlocked = 1;
-// 	bool trader_unlocked = 2;
-// 	bool manually_unlocked = 3;
-// 	bool antifraud_unlocked = 4;
-
-// 	message AntifraudParameters {
-// 		bool antifraud_enabled = 1;
-// 	}
-// }
-
-// message BusinessParameters {
-// 	google.protobuf.Duration merchant_deals_duration = 1;
-// }
-
 type Traffic struct {
 	ID 					string
 	MerchantID 			string
@@ -78,6 +63,7 @@ type TrafficUsecase interface {
 	SetAntifraudLockTrafficStatus(traderID string, unlocked bool) error
 	IsTrafficUnlocked(trafficID string) (*trafficdto.TrafficUnlockedResponse, error)
 	GetLockStatuses(trafficID string) (*trafficdto.LockStatusesResponse, error)
+	GetTrafficByTraderID(traderID string) ([]*Traffic, error) // НОВОЕ
 }
 
 type TrafficRepository interface {
@@ -101,4 +87,5 @@ type TrafficRepository interface {
 		AntifraudUnlocked bool
 		ManuallyUnlocked  bool
 	}, error)
+	GetTrafficByTraderID(traderID string) ([]*Traffic, error) // НОВОЕ
 }

@@ -7,6 +7,8 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	trafficdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/traffic"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -245,4 +247,46 @@ func (h *TrafficHandler) CheckTrafficUnlocked(ctx context.Context, req *orderpb.
 		TrafficId: result.TrafficID,
 		Unlocked:  result.Unlocked,
 	}, nil
+}
+
+// GetTraderTraffic получает все записи трафика для трейдера
+func (h *TrafficHandler) GetTraderTraffic(ctx context.Context, req *orderpb.GetTraderTrafficRequest) (*orderpb.GetTraderTrafficResponse, error) {
+    if req.TraderId == "" {
+        return nil, status.Error(codes.InvalidArgument, "trader_id is required")
+    }
+
+    traffics, err := h.trafficUsecase.GetTrafficByTraderID(req.TraderId)
+    if err != nil {
+        return nil, status.Errorf(codes.Internal, "failed to get trader traffic: %v", err)
+    }
+
+    records := make([]*orderpb.Traffic, 0, len(traffics))
+    for _, traffic := range traffics {
+        records = append(records, &orderpb.Traffic{
+            Id:                  traffic.ID,
+            MerchantId:          traffic.MerchantID,
+            TraderId:            traffic.TraderID,
+            TraderRewardPercent: traffic.TraderRewardPercent,
+            PlatformFee:         traffic.PlatformFee,
+            TraderPriority:      traffic.TraderPriority,
+            Enabled:             traffic.Enabled,
+            Name:                traffic.Name,
+            ActivityParams: &orderpb.TrafficActivityParameters{
+                MerchantUnlocked:  traffic.ActivityParams.MerchantUnlocked,
+                TraderUnlocked:    traffic.ActivityParams.TraderUnlocked,
+                AntifraudUnlocked: traffic.ActivityParams.AntifraudUnlocked,
+                ManuallyUnlocked:  traffic.ActivityParams.ManuallyUnlocked,
+            },
+            AntifraudParams: &orderpb.TrafficAntifraudParameters{
+                AntifraudRequired: traffic.AntifraudParams.AntifraudRequired,
+            },
+            BusinessParams: &orderpb.TrafficBusinessParameters{
+                MerchantDealsDuration: durationpb.New(traffic.BusinessParams.MerchantDealsDuration),
+            },
+        })
+    }
+
+    return &orderpb.GetTraderTrafficResponse{
+        Records: records,
+    }, nil
 }

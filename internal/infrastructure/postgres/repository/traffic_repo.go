@@ -388,3 +388,41 @@ func (r *DefaultTrafficRepository) IsTrafficUnlocked(trafficID string) (bool, er
 	return traffic.MerchantUnlocked || traffic.TraderUnlocked || 
 	       traffic.AntifraudUnlocked || traffic.ManuallyUnlocked, nil
 }
+
+// GetTrafficByTraderID получает все записи трафика для трейдера
+func (r *DefaultTrafficRepository) GetTrafficByTraderID(traderID string) ([]*domain.Traffic, error) {
+    var trafficModels []models.TrafficModel
+    
+    err := r.DB.Where("trader_id = ?", traderID).Find(&trafficModels).Error
+    if err != nil {
+        return nil, err
+    }
+
+    traffics := make([]*domain.Traffic, 0, len(trafficModels))
+    for _, tm := range trafficModels {
+        traffics = append(traffics, &domain.Traffic{
+			ID: tm.ID,
+			MerchantID: tm.MerchantID,
+			TraderID: tm.TraderID,
+			TraderRewardPercent: tm.TraderRewardPercent,
+			TraderPriority: tm.TraderPriority,
+			Enabled: tm.Enabled,
+			PlatformFee: tm.PlatformFee,
+			Name: tm.Name,
+			ActivityParams: domain.TrafficActivityParams{
+				MerchantUnlocked: tm.MerchantUnlocked,
+				TraderUnlocked: tm.TraderUnlocked,
+				AntifraudUnlocked: tm.AntifraudUnlocked,
+				ManuallyUnlocked: tm.ManuallyUnlocked,
+			},
+			AntifraudParams: domain.TrafficAntifraudParams{
+				AntifraudRequired: tm.AntifraudRequired,
+			},
+			BusinessParams: domain.TrafficBusinessParams{
+				MerchantDealsDuration: tm.MerchantDealsDuration,
+			},
+		})
+    }
+
+    return traffics, nil
+}
