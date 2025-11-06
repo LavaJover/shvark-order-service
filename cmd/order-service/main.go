@@ -218,7 +218,7 @@ func main() {
 
 	// Проверка оффлайн устройств каждые 30 секунд
 	go func() {
-	    ticker := time.NewTicker(30 * time.Second)
+	    ticker := time.NewTicker(10 * time.Second)
 	    for {
 	        <-ticker.C
 	        if err := deviceUsecase.CheckOfflineDevices(); err != nil {
