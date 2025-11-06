@@ -758,36 +758,128 @@ type AutomaticPaymentRequest struct {
 }
 
 func (uc *DefaultOrderUsecase) ProcessAutomaticPayment(ctx context.Context, req *AutomaticPaymentRequest) (*domain.AutomaticPaymentResult, error) {
-	// 1. Поиск подходящих сделок
-	orders, err := uc.findMatchingOrders(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find matching orders: %w", err)
-	}
-
-	if len(orders) == 0 {
-		return &domain.AutomaticPaymentResult{
-			Action:  "not_found",
-			Message: "no matching orders found",
-		}, nil
-	}
-
-	// 2. Обработка найденных сделок
-	results := make([]domain.OrderProcessingResult, 0, len(orders))
-	
-	for _, order := range orders {
-		result, err := uc.processSingleOrder(ctx, order, req)
-		if err != nil {
-			log.Printf("Failed to process order %s: %v", order.ID, err)
-			continue
-		}
-		results = append(results, result)
-	}
-
-	return &domain.AutomaticPaymentResult{
-		Action:  "processed",
-		Results: results,
-	}, nil
+    startTime := time.Now()
+    
+    log.Printf("🤖 [AUTOMATIC] Starting payment processing: device=%s, amount=%.2f, payment_system=%s", 
+        req.Group, req.Amount, req.PaymentSystem)
+    
+    // Создаем доменный объект лога
+    automaticLog := &domain.AutomaticLog{
+        ID:            uuid.New().String(),
+        DeviceID:      req.Group,
+        Amount:        req.Amount,
+        PaymentSystem: req.PaymentSystem,
+        Direction:     req.Direction,
+        Methods:       req.Methods,
+        ReceivedAt:    time.Unix(req.ReceivedAt, 0),
+        Text:          req.Text,
+        CreatedAt:     time.Now(),
+    }
+    
+    // 1. Поиск подходящих сделок
+    log.Printf("🔍 [AUTOMATIC] Searching for matching orders: device=%s, amount=%.2f", req.Group, req.Amount)
+    
+    orders, err := uc.findMatchingOrders(ctx, req)
+    if err != nil {
+        log.Printf("❌ [AUTOMATIC] Error searching orders: %v", err)
+        
+        automaticLog.Action = "search_error"
+        automaticLog.Success = false
+        automaticLog.OrdersFound = 0
+        automaticLog.ErrorMessage = err.Error()
+        automaticLog.ProcessingTime = time.Since(startTime).Milliseconds()
+        
+        // Сохраняем лог (ошибки игнорируем, чтобы не блокировать основной процесс)
+        if saveErr := uc.OrderRepo.SaveAutomaticLog(ctx, automaticLog); saveErr != nil {
+            log.Printf("⚠️  [AUTOMATIC] Failed to save log: %v", saveErr)
+        }
+        
+        return nil, fmt.Errorf("failed to find matching orders: %w", err)
+    }
+    
+    automaticLog.OrdersFound = len(orders)
+    
+    if len(orders) == 0 {
+        log.Printf("⚠️  [AUTOMATIC] No matching orders found: device=%s, amount=%.2f", req.Group, req.Amount)
+        
+        automaticLog.Action = "not_found"
+        automaticLog.Success = false
+        automaticLog.ProcessingTime = time.Since(startTime).Milliseconds()
+        
+        if saveErr := uc.OrderRepo.SaveAutomaticLog(ctx, automaticLog); saveErr != nil {
+            log.Printf("⚠️  [AUTOMATIC] Failed to save log: %v", saveErr)
+        }
+        
+        return &domain.AutomaticPaymentResult{
+            Action:  "not_found",
+            Message: "no matching orders found",
+        }, nil
+    }
+    
+    log.Printf("✅ [AUTOMATIC] Found %d matching order(s)", len(orders))
+    
+    // Логируем каждый найденный заказ
+    for i, order := range orders {
+        log.Printf("   [%d] OrderID=%s, Amount=%.2f, Status=%s, TraderID=%s, BankName=%s", 
+            i+1, order.ID, order.AmountInfo.AmountFiat, order.Status, 
+            order.RequisiteDetails.TraderID, order.RequisiteDetails.BankName)
+    }
+    
+    // 2. Обработка найденных сделок
+    results := make([]domain.OrderProcessingResult, 0, len(orders))
+    successCount := 0
+    
+    for _, order := range orders {
+        log.Printf("🔄 [AUTOMATIC] Processing order %s", order.ID)
+        
+        result, err := uc.processSingleOrder(ctx, order, req)
+        if err != nil {
+            log.Printf("❌ [AUTOMATIC] Failed to process order %s: %v", order.ID, err)
+            automaticLog.ErrorMessage = err.Error()
+            continue
+        }
+        
+        if result.Success {
+            successCount++
+            log.Printf("✅ [AUTOMATIC] Order %s processed successfully", order.ID)
+            
+            // Обновляем лог первым успешным заказом
+            if automaticLog.OrderID == "" {
+                automaticLog.OrderID = order.ID
+                automaticLog.TraderID = order.RequisiteDetails.TraderID
+                automaticLog.BankName = order.RequisiteDetails.BankName
+                automaticLog.CardNumber = order.RequisiteDetails.CardNumber
+            }
+        } else {
+            log.Printf("⚠️  [AUTOMATIC] Order %s: %s", order.ID, result.Action)
+        }
+        
+        results = append(results, result)
+    }
+    
+    // Финализируем лог
+    automaticLog.ProcessingTime = time.Since(startTime).Milliseconds()
+    automaticLog.Success = successCount > 0
+    
+    if successCount > 0 {
+        automaticLog.Action = "approved"
+    } else {
+        automaticLog.Action = "failed"
+    }
+    
+    if saveErr := uc.OrderRepo.SaveAutomaticLog(ctx, automaticLog); saveErr != nil {
+        log.Printf("⚠️  [AUTOMATIC] Failed to save log: %v", saveErr)
+    }
+    
+    log.Printf("🏁 [AUTOMATIC] Processing completed: success=%d/%d, time=%dms", 
+        successCount, len(orders), automaticLog.ProcessingTime)
+    
+    return &domain.AutomaticPaymentResult{
+        Action:  "processed",
+        Results: results,
+    }, nil
 }
+
 
 func (uc *DefaultOrderUsecase) findMatchingOrders(ctx context.Context, req *AutomaticPaymentRequest) ([]*domain.Order, error) {
 	// Поиск по device_id (group) и статусу PENDING

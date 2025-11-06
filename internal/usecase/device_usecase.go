@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"time"
+
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	devicedto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/device"
 	"github.com/jaevor/go-nanoid"
@@ -11,6 +13,9 @@ type DeviceUsecase interface {
 	DeleteDevice(input *devicedto.DeleteDeviceInput) error
 	EditDevice(input *devicedto.EditDeviceInput) error
 	GetTraderDevices(input *devicedto.GetTraderDevicesInput) (*devicedto.GetTraderDevicesOutput, error)
+	UpdateDeviceLiveness(deviceID string) error
+	GetDeviceStatus(deviceID string) (*domain.Device, error)
+	CheckOfflineDevices() error
 }
 
 type DefaultDeviceUsecase struct {
@@ -67,4 +72,23 @@ func (uc *DefaultDeviceUsecase) GetTraderDevices(input *devicedto.GetTraderDevic
 	return &devicedto.GetTraderDevicesOutput{
 		Devices: devicesOutput,
 	}, nil
+}
+
+const DEVICE_OFFLINE_TIMEOUT = 2 * time.Minute
+
+func (uc *DefaultDeviceUsecase) UpdateDeviceLiveness(deviceID string) error {
+    now := time.Now()
+    
+    return uc.deviceRepo.UpdateDeviceLiveness(deviceID, now)
+}
+
+func (uc *DefaultDeviceUsecase) GetDeviceStatus(deviceID string) (*domain.Device, error) {
+    return uc.deviceRepo.GetDeviceByID(deviceID)
+}
+
+// Background job для проверки оффлайн устройств
+func (uc *DefaultDeviceUsecase) CheckOfflineDevices() error {
+    threshold := time.Now().Add(-DEVICE_OFFLINE_TIMEOUT)
+    
+    return uc.deviceRepo.MarkDevicesOffline(threshold)
 }

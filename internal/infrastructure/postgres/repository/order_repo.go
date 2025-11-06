@@ -528,3 +528,76 @@ func (r *DefaultOrderRepository) CheckDuplicatePayment(ctx context.Context, orde
 func (r *DefaultOrderRepository) LogPaymentProcessing(ctx context.Context, log *models.PaymentProcessingLog) error {
 	return r.DB.Create(log).Error
 }
+
+// SaveAutomaticLog сохраняет доменный объект логa автоматики
+func (r *DefaultOrderRepository) SaveAutomaticLog(ctx context.Context, log *domain.AutomaticLog) error {
+    if log == nil {
+        return fmt.Errorf("automatic log cannot be nil")
+    }
+    
+    // Конвертируем доменный объект в модель
+    modelLog := mappers.ToModelAutomaticLog(log)
+    
+    return r.DB.WithContext(ctx).Create(modelLog).Error
+}
+
+// GetAutomaticLogs получает логи автоматики с фильтрацией
+func (r *DefaultOrderRepository) GetAutomaticLogs(ctx context.Context, filter *domain.AutomaticLogFilter) ([]*domain.AutomaticLog, error) {
+    if filter == nil {
+        return nil, fmt.Errorf("filter cannot be nil")
+    }
+    
+    if filter.Limit == 0 {
+        filter.Limit = 50 // Дефолтное значение
+    }
+    
+    if filter.Offset < 0 {
+        filter.Offset = 0
+    }
+    
+    query := r.DB.WithContext(ctx).Model(&models.AutomaticLogModel{})
+    
+    // Применяем фильтры
+    if filter.DeviceID != "" {
+        query = query.Where("device_id = ?", filter.DeviceID)
+    }
+    
+    if filter.TraderID != "" {
+        query = query.Where("trader_id = ?", filter.TraderID)
+    }
+    
+    if filter.Success != nil {
+        query = query.Where("success = ?", *filter.Success)
+    }
+    
+    if filter.Action != "" {
+        query = query.Where("action = ?", filter.Action)
+    }
+    
+    if !filter.StartDate.IsZero() {
+        query = query.Where("created_at >= ?", filter.StartDate)
+    }
+    
+    if !filter.EndDate.IsZero() {
+        query = query.Where("created_at <= ?", filter.EndDate)
+    }
+    
+    var modelLogs []*models.AutomaticLogModel
+    err := query.
+        Order("created_at DESC").
+        Limit(filter.Limit).
+        Offset(filter.Offset).
+        Find(&modelLogs).Error
+    
+    if err != nil {
+        return nil, fmt.Errorf("failed to fetch automatic logs: %w", err)
+    }
+    
+    // Конвертируем модели в доменные объекты
+    domainLogs := make([]*domain.AutomaticLog, len(modelLogs))
+    for i, modelLog := range modelLogs {
+        domainLogs[i] = mappers.ToDomainAutomaticLog(modelLog)
+    }
+    
+    return domainLogs, nil
+}

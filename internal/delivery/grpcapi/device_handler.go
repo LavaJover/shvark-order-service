@@ -90,3 +90,41 @@ func (h *DeviceHandler) EditDevice(ctx context.Context, r *orderpb.EditDeviceReq
 
 	return &orderpb.EditDeviceResponse{}, nil
 }
+
+func (h *DeviceHandler) UpdateDeviceLiveness(ctx context.Context, r *orderpb.UpdateDeviceLivenessRequest) (*orderpb.UpdateDeviceLivenessResponse, error) {
+    if r.DeviceId == "" {
+        return nil, status.Error(codes.InvalidArgument, "device_id is required")
+    }
+    
+    err := h.deviceUc.UpdateDeviceLiveness(r.DeviceId)
+    if err != nil {
+        return nil, status.Errorf(codes.Internal, "failed to update liveness: %v", err)
+    }
+    
+    return &orderpb.UpdateDeviceLivenessResponse{
+        Success: true,
+    }, nil
+}
+
+func (h *DeviceHandler) GetDeviceStatus(ctx context.Context, r *orderpb.GetDeviceStatusRequest) (*orderpb.GetDeviceStatusResponse, error) {
+    if r.DeviceId == "" {
+        return nil, status.Error(codes.InvalidArgument, "device_id is required")
+    }
+    
+    device, err := h.deviceUc.GetDeviceStatus(r.DeviceId)
+    if err != nil {
+        return nil, status.Errorf(codes.NotFound, "device not found: %v", err)
+    }
+    
+    var lastPing int64
+    if device.LastPingAt != nil {
+        lastPing = device.LastPingAt.Unix()
+    }
+    
+    return &orderpb.GetDeviceStatusResponse{
+        DeviceId:  device.DeviceID,
+        Online:    device.DeviceOnline,
+        LastPing:  lastPing,
+        Enabled:   device.Enabled,
+    }, nil
+}

@@ -177,6 +177,9 @@ type OrderRepository interface {
 
 	CheckDuplicatePayment(ctx context.Context, orderID string, paymentHash string) (bool, error)
 	FindPendingOrdersByDeviceID(deviceID string) ([]*Order, error)
+
+	SaveAutomaticLog(ctx context.Context, log *AutomaticLog) error
+    GetAutomaticLogs(ctx context.Context, filter *AutomaticLogFilter) ([]*AutomaticLog, error)
 }
 
 type PaymentProcessingLog struct {

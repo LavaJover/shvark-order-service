@@ -35,6 +35,7 @@ const (
 	OrderService_GetOrders_FullMethodName                 = "/order.OrderService/GetOrders"
 	OrderService_GetAllOrders_FullMethodName              = "/order.OrderService/GetAllOrders"
 	OrderService_ProcessAutomaticPayment_FullMethodName   = "/order.OrderService/ProcessAutomaticPayment"
+	OrderService_GetAutomaticLogs_FullMethodName          = "/order.OrderService/GetAutomaticLogs"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -57,6 +58,7 @@ type OrderServiceClient interface {
 	GetOrders(ctx context.Context, in *GetOrdersRequest, opts ...grpc.CallOption) (*GetOrdersResponse, error)
 	GetAllOrders(ctx context.Context, in *GetAllOrdersRequest, opts ...grpc.CallOption) (*GetAllOrdersResponse, error)
 	ProcessAutomaticPayment(ctx context.Context, in *ProcessAutomaticPaymentRequest, opts ...grpc.CallOption) (*ProcessAutomaticPaymentResponse, error)
+	GetAutomaticLogs(ctx context.Context, in *GetAutomaticLogsRequest, opts ...grpc.CallOption) (*GetAutomaticLogsResponse, error)
 }
 
 type orderServiceClient struct {
@@ -227,6 +229,16 @@ func (c *orderServiceClient) ProcessAutomaticPayment(ctx context.Context, in *Pr
 	return out, nil
 }
 
+func (c *orderServiceClient) GetAutomaticLogs(ctx context.Context, in *GetAutomaticLogsRequest, opts ...grpc.CallOption) (*GetAutomaticLogsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAutomaticLogsResponse)
+	err := c.cc.Invoke(ctx, OrderService_GetAutomaticLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
@@ -247,6 +259,7 @@ type OrderServiceServer interface {
 	GetOrders(context.Context, *GetOrdersRequest) (*GetOrdersResponse, error)
 	GetAllOrders(context.Context, *GetAllOrdersRequest) (*GetAllOrdersResponse, error)
 	ProcessAutomaticPayment(context.Context, *ProcessAutomaticPaymentRequest) (*ProcessAutomaticPaymentResponse, error)
+	GetAutomaticLogs(context.Context, *GetAutomaticLogsRequest) (*GetAutomaticLogsResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -304,6 +317,9 @@ func (UnimplementedOrderServiceServer) GetAllOrders(context.Context, *GetAllOrde
 }
 func (UnimplementedOrderServiceServer) ProcessAutomaticPayment(context.Context, *ProcessAutomaticPaymentRequest) (*ProcessAutomaticPaymentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessAutomaticPayment not implemented")
+}
+func (UnimplementedOrderServiceServer) GetAutomaticLogs(context.Context, *GetAutomaticLogsRequest) (*GetAutomaticLogsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAutomaticLogs not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
@@ -614,6 +630,24 @@ func _OrderService_ProcessAutomaticPayment_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_GetAutomaticLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAutomaticLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).GetAutomaticLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_GetAutomaticLogs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).GetAutomaticLogs(ctx, req.(*GetAutomaticLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -684,6 +718,10 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ProcessAutomaticPayment",
 			Handler:    _OrderService_ProcessAutomaticPayment_Handler,
+		},
+		{
+			MethodName: "GetAutomaticLogs",
+			Handler:    _OrderService_GetAutomaticLogs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1839,10 +1877,13 @@ var TeamRelationsService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	DeviceService_CreateDevice_FullMethodName     = "/order.DeviceService/CreateDevice"
-	DeviceService_GetTraderDevices_FullMethodName = "/order.DeviceService/GetTraderDevices"
-	DeviceService_DeleteDevice_FullMethodName     = "/order.DeviceService/DeleteDevice"
-	DeviceService_EditDevice_FullMethodName       = "/order.DeviceService/EditDevice"
+	DeviceService_CreateDevice_FullMethodName           = "/order.DeviceService/CreateDevice"
+	DeviceService_GetTraderDevices_FullMethodName       = "/order.DeviceService/GetTraderDevices"
+	DeviceService_DeleteDevice_FullMethodName           = "/order.DeviceService/DeleteDevice"
+	DeviceService_EditDevice_FullMethodName             = "/order.DeviceService/EditDevice"
+	DeviceService_UpdateDeviceLiveness_FullMethodName   = "/order.DeviceService/UpdateDeviceLiveness"
+	DeviceService_GetDeviceStatus_FullMethodName        = "/order.DeviceService/GetDeviceStatus"
+	DeviceService_GetTraderDevicesStatus_FullMethodName = "/order.DeviceService/GetTraderDevicesStatus"
 )
 
 // DeviceServiceClient is the client API for DeviceService service.
@@ -1853,6 +1894,10 @@ type DeviceServiceClient interface {
 	GetTraderDevices(ctx context.Context, in *GetTraderDevicesRequest, opts ...grpc.CallOption) (*GetTraderDevicesResponse, error)
 	DeleteDevice(ctx context.Context, in *DeleteDeviceRequest, opts ...grpc.CallOption) (*DeleteDeviceResponse, error)
 	EditDevice(ctx context.Context, in *EditDeviceRequest, opts ...grpc.CallOption) (*EditDeviceResponse, error)
+	// Статус устройств
+	UpdateDeviceLiveness(ctx context.Context, in *UpdateDeviceLivenessRequest, opts ...grpc.CallOption) (*UpdateDeviceLivenessResponse, error)
+	GetDeviceStatus(ctx context.Context, in *GetDeviceStatusRequest, opts ...grpc.CallOption) (*GetDeviceStatusResponse, error)
+	GetTraderDevicesStatus(ctx context.Context, in *GetTraderDevicesStatusRequest, opts ...grpc.CallOption) (*GetTraderDevicesStatusResponse, error)
 }
 
 type deviceServiceClient struct {
@@ -1903,6 +1948,36 @@ func (c *deviceServiceClient) EditDevice(ctx context.Context, in *EditDeviceRequ
 	return out, nil
 }
 
+func (c *deviceServiceClient) UpdateDeviceLiveness(ctx context.Context, in *UpdateDeviceLivenessRequest, opts ...grpc.CallOption) (*UpdateDeviceLivenessResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateDeviceLivenessResponse)
+	err := c.cc.Invoke(ctx, DeviceService_UpdateDeviceLiveness_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deviceServiceClient) GetDeviceStatus(ctx context.Context, in *GetDeviceStatusRequest, opts ...grpc.CallOption) (*GetDeviceStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDeviceStatusResponse)
+	err := c.cc.Invoke(ctx, DeviceService_GetDeviceStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deviceServiceClient) GetTraderDevicesStatus(ctx context.Context, in *GetTraderDevicesStatusRequest, opts ...grpc.CallOption) (*GetTraderDevicesStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTraderDevicesStatusResponse)
+	err := c.cc.Invoke(ctx, DeviceService_GetTraderDevicesStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DeviceServiceServer is the server API for DeviceService service.
 // All implementations must embed UnimplementedDeviceServiceServer
 // for forward compatibility.
@@ -1911,6 +1986,10 @@ type DeviceServiceServer interface {
 	GetTraderDevices(context.Context, *GetTraderDevicesRequest) (*GetTraderDevicesResponse, error)
 	DeleteDevice(context.Context, *DeleteDeviceRequest) (*DeleteDeviceResponse, error)
 	EditDevice(context.Context, *EditDeviceRequest) (*EditDeviceResponse, error)
+	// Статус устройств
+	UpdateDeviceLiveness(context.Context, *UpdateDeviceLivenessRequest) (*UpdateDeviceLivenessResponse, error)
+	GetDeviceStatus(context.Context, *GetDeviceStatusRequest) (*GetDeviceStatusResponse, error)
+	GetTraderDevicesStatus(context.Context, *GetTraderDevicesStatusRequest) (*GetTraderDevicesStatusResponse, error)
 	mustEmbedUnimplementedDeviceServiceServer()
 }
 
@@ -1932,6 +2011,15 @@ func (UnimplementedDeviceServiceServer) DeleteDevice(context.Context, *DeleteDev
 }
 func (UnimplementedDeviceServiceServer) EditDevice(context.Context, *EditDeviceRequest) (*EditDeviceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EditDevice not implemented")
+}
+func (UnimplementedDeviceServiceServer) UpdateDeviceLiveness(context.Context, *UpdateDeviceLivenessRequest) (*UpdateDeviceLivenessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDeviceLiveness not implemented")
+}
+func (UnimplementedDeviceServiceServer) GetDeviceStatus(context.Context, *GetDeviceStatusRequest) (*GetDeviceStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDeviceStatus not implemented")
+}
+func (UnimplementedDeviceServiceServer) GetTraderDevicesStatus(context.Context, *GetTraderDevicesStatusRequest) (*GetTraderDevicesStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTraderDevicesStatus not implemented")
 }
 func (UnimplementedDeviceServiceServer) mustEmbedUnimplementedDeviceServiceServer() {}
 func (UnimplementedDeviceServiceServer) testEmbeddedByValue()                       {}
@@ -2026,6 +2114,60 @@ func _DeviceService_EditDevice_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DeviceService_UpdateDeviceLiveness_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateDeviceLivenessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeviceServiceServer).UpdateDeviceLiveness(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeviceService_UpdateDeviceLiveness_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeviceServiceServer).UpdateDeviceLiveness(ctx, req.(*UpdateDeviceLivenessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeviceService_GetDeviceStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDeviceStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeviceServiceServer).GetDeviceStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeviceService_GetDeviceStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeviceServiceServer).GetDeviceStatus(ctx, req.(*GetDeviceStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeviceService_GetTraderDevicesStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTraderDevicesStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeviceServiceServer).GetTraderDevicesStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeviceService_GetTraderDevicesStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeviceServiceServer).GetTraderDevicesStatus(ctx, req.(*GetTraderDevicesStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DeviceService_ServiceDesc is the grpc.ServiceDesc for DeviceService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2048,6 +2190,18 @@ var DeviceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EditDevice",
 			Handler:    _DeviceService_EditDevice_Handler,
+		},
+		{
+			MethodName: "UpdateDeviceLiveness",
+			Handler:    _DeviceService_UpdateDeviceLiveness_Handler,
+		},
+		{
+			MethodName: "GetDeviceStatus",
+			Handler:    _DeviceService_GetDeviceStatus_Handler,
+		},
+		{
+			MethodName: "GetTraderDevicesStatus",
+			Handler:    _DeviceService_GetTraderDevicesStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

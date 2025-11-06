@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/mappers"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
@@ -45,4 +47,32 @@ func (r *DefaultDeviceRepository) UpdateDevice(deviceID string, params domain.Up
 		"enabled": params.Enabled,
 		"name": params.Name,
 	}).Error
+}
+
+func (r *DefaultDeviceRepository) UpdateDeviceLiveness(deviceID string, pingTime time.Time) error {
+    return r.DB.Model(&models.DeviceModel{}).
+        Where("id = ?", deviceID).
+        Updates(map[string]interface{}{
+            "device_online":  true,
+            "last_ping_at":   pingTime,
+            "last_online_at": pingTime,
+        }).Error
+}
+
+func (r *DefaultDeviceRepository) MarkDevicesOffline(threshold time.Time) error {
+    return r.DB.Model(&models.DeviceModel{}).
+        Where("device_online = ?", true).
+        Where("last_ping_at < ?", threshold).
+        Update("device_online", false).Error
+}
+
+func (r *DefaultDeviceRepository) GetDeviceByID(deviceID string) (*domain.Device, error) {
+    var device models.DeviceModel
+    
+    err := r.DB.Where("id = ?", deviceID).First(&device).Error
+    if err != nil {
+        return nil, err
+    }
+    
+    return mappers.ToDomainDevice(&device), nil
 }

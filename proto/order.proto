@@ -28,6 +28,77 @@ service OrderService {
     rpc GetAllOrders (GetAllOrdersRequest) returns (GetAllOrdersResponse);
 
     rpc ProcessAutomaticPayment(ProcessAutomaticPaymentRequest) returns (ProcessAutomaticPaymentResponse);
+    rpc GetAutomaticLogs(GetAutomaticLogsRequest) returns (GetAutomaticLogsResponse);
+}
+
+
+// ==================== AUTOMATIC PAYMENT ====================
+
+message ProcessAutomaticPaymentRequest {
+    string group = 1;
+    double amount = 2;
+    string payment_system = 3;
+    string direction = 4;
+    repeated string methods = 5;
+    int64 received_at = 6;
+    string text = 7;
+    map<string, string> metadata = 8;
+}
+
+message ProcessAutomaticPaymentResponse {
+    string action = 1;          // approved, not_found, failed
+    string message = 2;
+    string order_id = 3;
+    bool success = 4;
+    repeated OrderProcessingResult results = 5;
+}
+
+message OrderProcessingResult {
+    string order_id = 1;
+    string action = 2;          // approved, failed, already_processed
+    bool success = 3;
+    string error = 4;
+}
+
+message AutomaticLog {
+    string id = 1;
+    string device_id = 2;
+    string trader_id = 3;
+    string order_id = 4;
+    double amount = 5;
+    string payment_system = 6;
+    string direction = 7;
+    repeated string methods = 8;
+    google.protobuf.Timestamp received_at = 9;
+    string text = 10;
+    string action = 11;         // found, not_found, approved, failed, search_error
+    bool success = 12;
+    int32 orders_found = 13;
+    string error_message = 14;
+    int64 processing_time = 15; // миллисекунды
+    string bank_name = 16;
+    string card_number = 17;
+    google.protobuf.Timestamp created_at = 18;
+}
+
+message AutomaticLogFilter {
+    string device_id = 1;
+    string trader_id = 2;
+    optional bool success = 3;
+    string action = 4;
+    google.protobuf.Timestamp start_date = 5;
+    google.protobuf.Timestamp end_date = 6;
+    int32 limit = 7;
+    int32 offset = 8;
+}
+
+message GetAutomaticLogsRequest {
+    AutomaticLogFilter filter = 1;
+}
+
+message GetAutomaticLogsResponse {
+    repeated AutomaticLog logs = 1;
+    int32 total = 2;
 }
 
 message GetAllOrdersRequest {
@@ -333,24 +404,6 @@ message GetOrdersByTraderIDRequest {
 message GetOrdersByTraderIDResponse {
     repeated Order orders = 1;
     Pagination pagination = 2;
-}
-
-message ProcessAutomaticPaymentRequest {
-    string group = 1;
-    double amount = 2;
-    string payment_system = 3;
-    repeated string methods = 4;
-    string direction = 5;
-    int64 received_at = 6;
-    string text = 7;
-    map<string, string> metadata = 8;
-}
-
-message ProcessAutomaticPaymentResponse {
-    string order_id = 1;
-    bool success = 2;
-    string action = 3; // "approved", "not_found", "already_processed"
-    string message = 4;
 }
 
 service TrafficService {
@@ -748,6 +801,48 @@ service DeviceService {
     rpc GetTraderDevices (GetTraderDevicesRequest) returns (GetTraderDevicesResponse);
     rpc DeleteDevice (DeleteDeviceRequest) returns (DeleteDeviceResponse);
     rpc EditDevice (EditDeviceRequest) returns (EditDeviceResponse);
+
+    // Статус устройств
+    rpc UpdateDeviceLiveness(UpdateDeviceLivenessRequest) returns (UpdateDeviceLivenessResponse);
+    rpc GetDeviceStatus(GetDeviceStatusRequest) returns (GetDeviceStatusResponse);
+    rpc GetTraderDevicesStatus(GetTraderDevicesStatusRequest) returns (GetTraderDevicesStatusResponse);
+}
+
+// ==================== DEVICE STATUS ====================
+
+message UpdateDeviceLivenessRequest {
+    string device_id = 1;
+}
+
+message UpdateDeviceLivenessResponse {
+    bool success = 1;
+}
+
+message GetDeviceStatusRequest {
+    string device_id = 1;
+}
+
+message GetDeviceStatusResponse {
+    string device_id = 1;
+    bool online = 2;
+    int64 last_ping = 3;        // Unix timestamp
+    bool enabled = 4;
+}
+
+message GetTraderDevicesStatusRequest {
+    string trader_id = 1;
+}
+
+message GetTraderDevicesStatusResponse {
+    repeated DeviceStatus devices = 1;
+}
+
+message DeviceStatus {
+    string device_id = 1;
+    string device_name = 2;
+    bool online = 3;
+    int64 last_ping = 4;        // Unix timestamp
+    bool enabled = 5;
 }
 
 message Device {

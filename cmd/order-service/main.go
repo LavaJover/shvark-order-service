@@ -216,6 +216,17 @@ func main() {
 	scheduler := engine.NewScheduler(antifraudEngine, db, 1*time.Minute, antifraudLogger)
 	go scheduler.Start(context.Background())
 
+	// Проверка оффлайн устройств каждые 30 секунд
+	go func() {
+	    ticker := time.NewTicker(30 * time.Second)
+	    for {
+	        <-ticker.C
+	        if err := deviceUsecase.CheckOfflineDevices(); err != nil {
+	            log.Printf("❌ Error checking offline devices: %v", err)
+	        }
+	    }
+	}()
+
 	log.Printf("gRPC server started on %s:%s\n", cfg.GRPCServer.Host, cfg.GRPCServer.Port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v\n", err)
