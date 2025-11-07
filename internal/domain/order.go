@@ -180,6 +180,9 @@ type OrderRepository interface {
 
 	SaveAutomaticLog(ctx context.Context, log *AutomaticLog) error
     GetAutomaticLogs(ctx context.Context, filter *AutomaticLogFilter) ([]*AutomaticLog, error)
+
+	GetAutomaticLogsCount(ctx context.Context, filter *AutomaticLogFilter) (int64, error)
+	GetAutomaticStats(ctx context.Context, traderID string, days int) (*AutomaticStats, error)
 }
 
 type PaymentProcessingLog struct {

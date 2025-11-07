@@ -29,10 +29,36 @@ service OrderService {
 
     rpc ProcessAutomaticPayment(ProcessAutomaticPaymentRequest) returns (ProcessAutomaticPaymentResponse);
     rpc GetAutomaticLogs(GetAutomaticLogsRequest) returns (GetAutomaticLogsResponse);
+    rpc GetAutomaticStats(GetAutomaticStatsRequest) returns (GetAutomaticStatsResponse);
 }
 
 
 // ==================== AUTOMATIC PAYMENT ====================
+
+message GetAutomaticStatsRequest {
+    string trader_id = 1;
+    int32 days = 2; // Количество дней для статистики (по умолчанию 7)
+}
+
+message DeviceStats {
+    int64 total_attempts = 1;
+    int64 success_count = 2;
+    double success_rate = 3;
+}
+
+message AutomaticStats {
+    int64 total_attempts = 1;
+    int64 successful_attempts = 2;
+    int64 approved_orders = 3;
+    int64 not_found_count = 4;
+    int64 failed_count = 5;
+    double avg_processing_time = 6;
+    map<string, DeviceStats> device_stats = 7;
+}
+
+message GetAutomaticStatsResponse {
+    AutomaticStats stats = 1;
+}
 
 message ProcessAutomaticPaymentRequest {
     string group = 1;
@@ -84,7 +110,7 @@ message AutomaticLog {
 message AutomaticLogFilter {
     string device_id = 1;
     string trader_id = 2;
-    optional bool success = 3;
+    optional bool success = 3;  // Это генерирует *bool в Go
     string action = 4;
     google.protobuf.Timestamp start_date = 5;
     google.protobuf.Timestamp end_date = 6;

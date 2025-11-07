@@ -601,3 +601,98 @@ func (r *DefaultOrderRepository) GetAutomaticLogs(ctx context.Context, filter *d
     
     return domainLogs, nil
 }
+
+// internal/infrastructure/postgres/repository/order_repository.go
+
+// GetAutomaticLogsCount получает общее количество логов для пагинации
+func (r *DefaultOrderRepository) GetAutomaticLogsCount(ctx context.Context, filter *domain.AutomaticLogFilter) (int64, error) {
+    if filter == nil {
+        return 0, fmt.Errorf("filter cannot be nil")
+    }
+    
+    query := r.DB.WithContext(ctx).Model(&models.AutomaticLogModel{})
+    
+    // Применяем те же фильтры что и в GetAutomaticLogs
+    if filter.DeviceID != "" {
+        query = query.Where("device_id = ?", filter.DeviceID)
+    }
+    
+    if filter.TraderID != "" {
+        query = query.Where("trader_id = ?", filter.TraderID)
+    }
+    
+    if filter.Success != nil {
+        query = query.Where("success = ?", *filter.Success)
+    }
+    
+    if filter.Action != "" {
+        query = query.Where("action = ?", filter.Action)
+    }
+    
+    if !filter.StartDate.IsZero() {
+        query = query.Where("created_at >= ?", filter.StartDate)
+    }
+    
+    if !filter.EndDate.IsZero() {
+        query = query.Where("created_at <= ?", filter.EndDate)
+    }
+    
+    var count int64
+    err := query.Count(&count).Error
+    if err != nil {
+        return 0, fmt.Errorf("failed to count automatic logs: %w", err)
+    }
+    
+    return count, nil
+}
+
+// GetAutomaticStats получает статистику по автоматике
+func (r *DefaultOrderRepository) GetAutomaticStats(ctx context.Context, traderID string, days int) (*domain.AutomaticStats, error) {
+    startDate := time.Now().AddDate(0, 0, -days)
+    
+    var stats domain.AutomaticStats
+    
+    // Общая статистика
+    err := r.DB.WithContext(ctx).Model(&models.AutomaticLogModel{}).
+        Where("trader_id = ? AND created_at >= ?", traderID, startDate).
+        Select(
+            "COUNT(*) as total_attempts",
+            "COUNT(CASE WHEN success = true THEN 1 END) as successful_attempts",
+            "COUNT(CASE WHEN action = 'approved' THEN 1 END) as approved_orders",
+            "COUNT(CASE WHEN action = 'not_found' THEN 1 END) as not_found_count",
+            "COUNT(CASE WHEN action = 'failed' THEN 1 END) as failed_count",
+            "COALESCE(AVG(processing_time), 0) as avg_processing_time",
+        ).
+        Scan(&stats).Error
+    
+    if err != nil {
+        return nil, fmt.Errorf("failed to get automatic stats: %w", err)
+    }
+    
+    // Статистика по устройствам
+    var deviceStats []struct {
+        DeviceID string
+        Count    int64
+        Success  int64
+    }
+    
+    err = r.DB.WithContext(ctx).Model(&models.AutomaticLogModel{}).
+        Where("trader_id = ? AND created_at >= ?", traderID, startDate).
+        Select("device_id, COUNT(*) as count, COUNT(CASE WHEN success = true THEN 1 END) as success").
+        Group("device_id").
+        Find(&deviceStats).Error
+    
+    if err != nil {
+        return nil, fmt.Errorf("failed to get device stats: %w", err)
+    }
+    
+    stats.DeviceStats = make(map[string]domain.DeviceStats)
+    for _, ds := range deviceStats {
+        stats.DeviceStats[ds.DeviceID] = domain.DeviceStats{
+            TotalAttempts: ds.Count,
+            SuccessCount:  ds.Success,
+        }
+    }
+    
+    return &stats, nil
+}

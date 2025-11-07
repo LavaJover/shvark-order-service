@@ -33,3 +33,26 @@ type AutomaticLog struct {
     CardNumber     string
     CreatedAt      time.Time
 }
+
+type AutomaticStats struct {
+    TotalAttempts      int64              `json:"total_attempts"`
+    SuccessfulAttempts int64              `json:"successful_attempts"`
+    ApprovedOrders     int64              `json:"approved_orders"`
+    NotFoundCount      int64              `json:"not_found_count"`
+    FailedCount        int64              `json:"failed_count"`
+    AvgProcessingTime  float64            `json:"avg_processing_time"`
+    DeviceStats        map[string]DeviceStats `json:"device_stats"`
+}
+
+type DeviceStats struct {
+    TotalAttempts int64   `json:"total_attempts"`
+    SuccessCount  int64   `json:"success_count"`
+    SuccessRate   float64 `json:"success_rate"`
+}
+
+// CalculateSuccessRate вычисляет процент успешных операций
+func (ds *DeviceStats) CalculateSuccessRate() {
+    if ds.TotalAttempts > 0 {
+        ds.SuccessRate = float64(ds.SuccessCount) / float64(ds.TotalAttempts) * 100
+    }
+}
