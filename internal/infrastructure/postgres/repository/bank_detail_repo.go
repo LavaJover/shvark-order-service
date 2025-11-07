@@ -170,7 +170,7 @@ func (r *DefaultBankDetailRepo) FindSuitableBankDetails(searchQuery *domain.Suit
 // Этап 1 остается без изменений
 // Этап 1: Находим базовые кандидаты по статическим параметрам
 func (r *DefaultBankDetailRepo) findBaseCandidates(searchQuery *domain.SuitablleBankDetailsQuery) ([]models.BankDetailModel, error) {
-    log.Printf("\n--- Stage 1: findBaseCandidates ---")
+    // log.Printf("\n--- Stage 1: findBaseCandidates ---")
     
     var baseCandidates []models.BankDetailModel
     
@@ -181,12 +181,12 @@ func (r *DefaultBankDetailRepo) findBaseCandidates(searchQuery *domain.Suitablle
         Where("currency = ?", searchQuery.Currency).
         Where("deleted_at IS NULL")
     
-    log.Printf("Base filters: enabled=true, amount range includes %.2f, payment_system=%s, currency=%s",
-        searchQuery.AmountFiat, searchQuery.PaymentSystem, searchQuery.Currency)
+    // log.Printf("Base filters: enabled=true, amount range includes %.2f, payment_system=%s, currency=%s",
+    //     searchQuery.AmountFiat, searchQuery.PaymentSystem, searchQuery.Currency)
     
     if searchQuery.BankCode != "" {
         query = query.Where("bank_code = ?", searchQuery.BankCode)
-        log.Printf("Additional filter: bank_code=%s", searchQuery.BankCode)
+        // log.Printf("Additional filter: bank_code=%s", searchQuery.BankCode)
     }
     
     if searchQuery.NspkCode != "" {
@@ -201,21 +201,21 @@ func (r *DefaultBankDetailRepo) findBaseCandidates(searchQuery *domain.Suitablle
         return nil, err
     }
     
-    log.Printf("\nFound %d base candidates:", len(baseCandidates))
-    for i, candidate := range baseCandidates {
-        log.Printf("  [%d] TraderID=%s, Card=%s, Amount=[%.2f-%.2f], PaymentSystem=%s, Currency=%s, BankCode=%s, Enabled=%v, MaxSimultaneous=%d",
-            i+1,
-            candidate.TraderID,
-            maskCardNumber(candidate.CardNumber),
-            candidate.MinAmount,
-            candidate.MaxAmount,
-            candidate.PaymentSystem,
-            candidate.Currency,
-            candidate.BankCode,
-            candidate.Enabled,
-            candidate.MaxOrdersSimultaneosly,
-        )
-    }
+    // log.Printf("\nFound %d base candidates:", len(baseCandidates))
+    // for i, candidate := range baseCandidates {
+    //     log.Printf("  [%d] TraderID=%s, Card=%s, Amount=[%.2f-%.2f], PaymentSystem=%s, Currency=%s, BankCode=%s, Enabled=%v, MaxSimultaneous=%d",
+    //         i+1,
+    //         candidate.TraderID,
+    //         maskCardNumber(candidate.CardNumber),
+    //         candidate.MinAmount,
+    //         candidate.MaxAmount,
+    //         candidate.PaymentSystem,
+    //         candidate.Currency,
+    //         candidate.BankCode,
+    //         candidate.Enabled,
+    //         candidate.MaxOrdersSimultaneosly,
+    //     )
+    // }
     
     return baseCandidates, err
 }
@@ -223,7 +223,7 @@ func (r *DefaultBankDetailRepo) findBaseCandidates(searchQuery *domain.Suitablle
 // КАРДИНАЛЬНО ОПТИМИЗИРОВАННЫЙ этап 2 с использованием денормализации
 // Этап 2: Применяем динамические ограничения
 func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates []models.BankDetailModel, searchQuery *domain.SuitablleBankDetailsQuery) ([]*domain.BankDetail, error) {
-    log.Printf("\n--- Stage 2: applyDynamicConstraintsOptimized ---")
+    // log.Printf("\n--- Stage 2: applyDynamicConstraintsOptimized ---")
     
     if len(baseCandidates) == 0 {
         return []*domain.BankDetail{}, nil
@@ -235,16 +235,16 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
         bankDetailIDs[i] = candidate.ID
     }
     
-    log.Printf("Checking dynamic constraints for %d bank details", len(bankDetailIDs))
+    // log.Printf("Checking dynamic constraints for %d bank details", len(bankDetailIDs))
     
     now := time.Now()
     startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
     startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
     
-    log.Printf("Time ranges: Now=%s, StartOfDay=%s, StartOfMonth=%s",
-        now.Format("2006-01-02 15:04:05"),
-        startOfDay.Format("2006-01-02 15:04:05"),
-        startOfMonth.Format("2006-01-02 15:04:05"))
+    // log.Printf("Time ranges: Now=%s, StartOfDay=%s, StartOfMonth=%s",
+    //     now.Format("2006-01-02 15:04:05"),
+    //     startOfDay.Format("2006-01-02 15:04:05"),
+    //     startOfMonth.Format("2006-01-02 15:04:05"))
     
     // ИСПРАВЛЕННЫЙ SQL - группируем по bank_details_id
     sqlQuery := `
@@ -356,40 +356,40 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
     }
     
     // Логируем детальную статистику
-    log.Printf("\nDetailed stats for %d candidates:", len(debugStats))
-    for i, stat := range debugStats {
-        reasons := []string{}
-        if stat.Reason1 != nil { reasons = append(reasons, *stat.Reason1) }
-        if stat.Reason2 != nil { reasons = append(reasons, *stat.Reason2) }
-        if stat.Reason3 != nil { reasons = append(reasons, *stat.Reason3) }
-        if stat.Reason4 != nil { reasons = append(reasons, *stat.Reason4) }
-        if stat.Reason5 != nil { reasons = append(reasons, *stat.Reason5) }
-        if stat.Reason6 != nil { reasons = append(reasons, *stat.Reason6) }
-        if stat.Reason7 != nil { reasons = append(reasons, *stat.Reason7) }
+    // log.Printf("\nDetailed stats for %d candidates:", len(debugStats))
+    // for i, stat := range debugStats {
+    //     reasons := []string{}
+    //     if stat.Reason1 != nil { reasons = append(reasons, *stat.Reason1) }
+    //     if stat.Reason2 != nil { reasons = append(reasons, *stat.Reason2) }
+    //     if stat.Reason3 != nil { reasons = append(reasons, *stat.Reason3) }
+    //     if stat.Reason4 != nil { reasons = append(reasons, *stat.Reason4) }
+    //     if stat.Reason5 != nil { reasons = append(reasons, *stat.Reason5) }
+    //     if stat.Reason6 != nil { reasons = append(reasons, *stat.Reason6) }
+    //     if stat.Reason7 != nil { reasons = append(reasons, *stat.Reason7) }
         
-        status := "✓ PASSED"
-        if len(reasons) > 0 {
-            status = fmt.Sprintf("✗ REJECTED: %v", reasons)
-        }
+    //     status := "✓ PASSED"
+    //     if len(reasons) > 0 {
+    //         status = fmt.Sprintf("✗ REJECTED: %v", reasons)
+    //     }
         
-        lastCompleted := "NEVER"
-        if stat.LastCompletedTime != nil {
-            lastCompleted = stat.LastCompletedTime.Format("15:04:05")
-        }
+    //     lastCompleted := "NEVER"
+    //     if stat.LastCompletedTime != nil {
+    //         lastCompleted = stat.LastCompletedTime.Format("15:04:05")
+    //     }
         
-        log.Printf("  [%d] %s", i+1, status)
-        log.Printf("      BankDetailID=%s, TraderID=%s, Card=%s", 
-            stat.BankDetailID, stat.TraderID, maskCardNumber(stat.CardNumber))
-        log.Printf("      Pending: %d/%d, DayCount: %d+1/%d, DayAmount: %.2f+%.2f/%.2f",
-            stat.PendingCount, stat.MaxOrdersSimultaneous,
-            stat.DayCount, stat.MaxQuantityDay,
-            stat.DayAmount, searchQuery.AmountFiat, stat.MaxAmountDay)
-        log.Printf("      MonthCount: %d+1/%d, MonthAmount: %.2f+%.2f/%.2f",
-            stat.MonthCount, stat.MaxQuantityMonth,
-            stat.MonthAmount, searchQuery.AmountFiat, stat.MaxAmountMonth)
-        log.Printf("      LastCompleted: %s, Delay: %v, Duplicates: %d",
-            lastCompleted, stat.Delay, stat.DuplicateCount)
-    }
+    //     log.Printf("  [%d] %s", i+1, status)
+    //     log.Printf("      BankDetailID=%s, TraderID=%s, Card=%s", 
+    //         stat.BankDetailID, stat.TraderID, maskCardNumber(stat.CardNumber))
+    //     log.Printf("      Pending: %d/%d, DayCount: %d+1/%d, DayAmount: %.2f+%.2f/%.2f",
+    //         stat.PendingCount, stat.MaxOrdersSimultaneous,
+    //         stat.DayCount, stat.MaxQuantityDay,
+    //         stat.DayAmount, searchQuery.AmountFiat, stat.MaxAmountDay)
+    //     log.Printf("      MonthCount: %d+1/%d, MonthAmount: %.2f+%.2f/%.2f",
+    //         stat.MonthCount, stat.MaxQuantityMonth,
+    //         stat.MonthAmount, searchQuery.AmountFiat, stat.MaxAmountMonth)
+    //     log.Printf("      LastCompleted: %s, Delay: %v, Duplicates: %d",
+    //         lastCompleted, stat.Delay, stat.DuplicateCount)
+    // }
     
     // Финальный запрос с правильной группировкой
     finalQuery := `
@@ -453,8 +453,8 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
     bankDetails := make([]*domain.BankDetail, len(finalCandidates))
     for i, bankDetail := range finalCandidates {
         bankDetails[i] = mappers.ToDomainBankDetail(&bankDetail)
-        log.Printf("  Final [%d] BankDetailID=%s, TraderID=%s, Card=%s", 
-            i+1, bankDetail.ID, bankDetail.TraderID, maskCardNumber(bankDetail.CardNumber))
+        // log.Printf("  Final [%d] BankDetailID=%s, TraderID=%s, Card=%s", 
+        //     i+1, bankDetail.ID, bankDetail.TraderID, maskCardNumber(bankDetail.CardNumber))
     }
     
     return bankDetails, nil
