@@ -21,8 +21,8 @@ func ToDomainAutomaticLog(model *models.AutomaticLogModel) *domain.AutomaticLog 
     return &domain.AutomaticLog{
         ID:             model.ID,
         DeviceID:       model.DeviceID,
-        TraderID:       model.TraderID,
-        OrderID:        model.OrderID,
+        TraderID:       *model.TraderID,
+        OrderID:        *model.OrderID,
         Amount:         model.Amount,
         PaymentSystem:  model.PaymentSystem,
         Direction:      model.Direction,
@@ -42,24 +42,13 @@ func ToDomainAutomaticLog(model *models.AutomaticLogModel) *domain.AutomaticLog 
 
 // ToModelAutomaticLog конвертирует доменный объект в модель
 func ToModelAutomaticLog(log *domain.AutomaticLog) *models.AutomaticLogModel {
-    if log == nil {
-        return nil
-    }
-    
-    methods := ""
-    if len(log.Methods) > 0 {
-        methods = strings.Join(log.Methods, ",")
-    }
-    
-    return &models.AutomaticLogModel{
+    model := &models.AutomaticLogModel{
         ID:             log.ID,
         DeviceID:       log.DeviceID,
-        TraderID:       log.TraderID,
-        OrderID:        log.OrderID,
         Amount:         log.Amount,
         PaymentSystem:  log.PaymentSystem,
         Direction:      log.Direction,
-        Methods:        methods,
+        Methods:        strings.Join(log.Methods, ","),
         ReceivedAt:     log.ReceivedAt,
         Text:           log.Text,
         Action:         log.Action,
@@ -71,4 +60,15 @@ func ToModelAutomaticLog(log *domain.AutomaticLog) *models.AutomaticLogModel {
         CardNumber:     log.CardNumber,
         CreatedAt:      log.CreatedAt,
     }
+    
+    // Обрабатываем nullable поля
+    if log.TraderID != "" && log.TraderID != "00000000-0000-0000-0000-000000000000" {
+        model.TraderID = &log.TraderID
+    }
+    
+    if log.OrderID != "" && log.OrderID != "00000000-0000-0000-0000-000000000000" {
+        model.OrderID = &log.OrderID
+    }
+    
+    return model
 }

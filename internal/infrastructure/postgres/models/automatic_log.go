@@ -7,8 +7,8 @@ import (
 type AutomaticLogModel struct {
     ID              string    `gorm:"primaryKey;type:uuid"`
     DeviceID        string    `gorm:"index:idx_automatic_logs_device"`
-    TraderID        string    `gorm:"index:idx_automatic_logs_trader"`
-    OrderID         string    `gorm:"type:uuid;index:idx_automatic_logs_order"`
+    TraderID        *string    `gorm:"index:idx_automatic_logs_trader"`
+    OrderID         *string    `gorm:"type:uuid;index:idx_automatic_logs_order"`
     
     // Данные из уведомления
     Amount          float64
