@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"fmt"
+	"log"
 	"time"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
@@ -50,13 +52,29 @@ func (r *DefaultDeviceRepository) UpdateDevice(deviceID string, params domain.Up
 }
 
 func (r *DefaultDeviceRepository) UpdateDeviceLiveness(deviceID string, pingTime time.Time) error {
-    return r.DB.Model(&models.DeviceModel{}).
+    log.Printf("🔄 [REPO] Updating device liveness: deviceID=%s, time=%v", deviceID, pingTime)
+    
+    result := r.DB.Model(&models.DeviceModel{}).
         Where("id = ?", deviceID).
         Updates(map[string]interface{}{
             "device_online":  true,
             "last_ping_at":   pingTime,
             "last_online_at": pingTime,
-        }).Error
+        })
+    
+    if result.Error != nil {
+        log.Printf("❌ [REPO] Error updating device liveness: %v", result.Error)
+        return result.Error
+    }
+    
+    if result.RowsAffected == 0 {
+        log.Printf("⚠️ [REPO] No device found with ID: %s", deviceID)
+        return fmt.Errorf("device not found: %s", deviceID)
+    }
+    
+    log.Printf("✅ [REPO] Successfully updated device liveness: deviceID=%s, rows=%d", 
+        deviceID, result.RowsAffected)
+    return nil
 }
 
 func (r *DefaultDeviceRepository) MarkDevicesOffline(threshold time.Time) error {
@@ -68,11 +86,23 @@ func (r *DefaultDeviceRepository) MarkDevicesOffline(threshold time.Time) error 
 
 func (r *DefaultDeviceRepository) GetDeviceByID(deviceID string) (*domain.Device, error) {
     var device models.DeviceModel
-    
     err := r.DB.Where("id = ?", deviceID).First(&device).Error
     if err != nil {
         return nil, err
     }
     
-    return mappers.ToDomainDevice(&device), nil
+    // Добавьте логику проверки, действительно ли устройство онлайн
+    isOnline := device.DeviceOnline
+    if device.LastPingAt != nil {
+        // Проверяем, не устарел ли последний пинг
+        timeSinceLastPing := time.Since(*device.LastPingAt)
+        if timeSinceLastPing > 2*time.Minute {
+            isOnline = false
+        }
+    }
+    
+    domainDevice := mappers.ToDomainDevice(&device)
+    domainDevice.DeviceOnline = isOnline // переопределяем статус
+    
+    return domainDevice, nil
 }

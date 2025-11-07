@@ -12,6 +12,8 @@ func ToGORMDevice(device *domain.Device) *models.DeviceModel {
 		TraderID: device.TraderID,
 		Enabled: device.Enabled,
 		DeviceOnline: device.DeviceOnline,
+		LastPingAt: device.LastPingAt,
+		LastOnlineAt: device.LastOnlineAt,
 		CreatedAt: device.CreatedAt,
 		UpdatedAt: device.UpdatedAt,
 	}
@@ -24,6 +26,8 @@ func ToDomainDevice(model *models.DeviceModel) *domain.Device {
 		TraderID: model.TraderID,
 		Enabled: model.Enabled,
 		DeviceOnline: model.DeviceOnline,
+		LastPingAt: model.LastPingAt,
+		LastOnlineAt: model.LastOnlineAt,
 		CreatedAt: model.CreatedAt,
 		UpdatedAt: model.UpdatedAt,
 	}
