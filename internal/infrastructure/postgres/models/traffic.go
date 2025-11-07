@@ -19,7 +19,7 @@ type TrafficModel struct {
 	AntifraudLockReason   string
 
 	// Новые поля для грейс-периода
-	ManualUnlockBy        string                 `gorm:"type:uuid"` // ID админа, который разблокировал
+	ManualUnlockBy        string                 // ID админа, который разблокировал
 	ManualUnlockAt        *time.Time             
 	ManualUnlockReason    string                 // Причина разблокировки от админа
 	GracePeriodUntil      *time.Time             // До какого времени действует грейс-период
