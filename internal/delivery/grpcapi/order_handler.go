@@ -3,6 +3,7 @@ package grpcapi
 import (
 	"context"
 	"fmt"
+	"log"
 	"log/slog"
 	"math"
 	"time"
@@ -24,6 +25,7 @@ type OrderHandler struct {
 	uc usecase.OrderUsecase
 	disputeUc usecase.DisputeUsecase
 	bankDetailUc usecase.BankDetailUsecase
+	automaticUc usecase.AutomaticUsecase
 	orderpb.UnimplementedOrderServiceServer
 }
 
@@ -31,11 +33,13 @@ func NewOrderHandler(
 	uc usecase.OrderUsecase,
 	disputeUc usecase.DisputeUsecase,
 	bankDetailUc usecase.BankDetailUsecase,
+	automaticUc usecase.AutomaticUsecase,
 	) *OrderHandler {
 	return &OrderHandler{
 		uc: uc,
 		disputeUc: disputeUc,
 		bankDetailUc: bankDetailUc,
+		automaticUc: automaticUc,
 	}
 }
 
@@ -805,4 +809,114 @@ func (h *OrderHandler) buildResponse(result *domain.AutomaticPaymentResult) *ord
 	}
 
 	return response
+}
+
+// GetAutomaticLogs получает логи автоматики
+func (h *OrderHandler) GetAutomaticLogs(ctx context.Context, req *orderpb.GetAutomaticLogsRequest) (*orderpb.GetAutomaticLogsResponse, error) {
+    if req.Filter == nil {
+        return nil, status.Error(codes.InvalidArgument, "filter is required")
+    }
+    
+    // Преобразуем gRPC фильтр в доменный
+    filter := &domain.AutomaticLogFilter{
+        DeviceID:  req.Filter.DeviceId,
+        TraderID:  req.Filter.TraderId,
+        Action:    req.Filter.Action,
+        Limit:     int(req.Filter.Limit),
+        Offset:    int(req.Filter.Offset),
+    }
+    
+    if req.Filter.Success != nil {
+        filter.Success = req.Filter.Success
+    }
+    
+    if req.Filter.StartDate != nil {
+        filter.StartDate = req.Filter.StartDate.AsTime()
+    }
+    
+    if req.Filter.EndDate != nil {
+        filter.EndDate = req.Filter.EndDate.AsTime()
+    }
+    
+    logs, total, err := h.automaticUc.GetAutomaticLogs(ctx, filter)
+    if err != nil {
+        log.Printf("❌ [GRPC] Failed to get automatic logs: %v", err)
+        return nil, status.Errorf(codes.Internal, "failed to get automatic logs: %v", err)
+    }
+    
+    // Преобразуем доменные логи в gRPC
+    grpcLogs := make([]*orderpb.AutomaticLog, len(logs))
+    for i, log := range logs {
+        grpcLogs[i] = &orderpb.AutomaticLog{
+            Id:             log.ID,
+            DeviceId:       log.DeviceID,
+            TraderId:       log.TraderID,
+            OrderId:        log.OrderID,
+            Amount:         log.Amount,
+            PaymentSystem:  log.PaymentSystem,
+            Direction:      log.Direction,
+            Methods:        log.Methods,
+            ReceivedAt:     timestamppb.New(log.ReceivedAt),
+            Text:           log.Text,
+            Action:         log.Action,
+            Success:        log.Success,
+            OrdersFound:    int32(log.OrdersFound),
+            ErrorMessage:   log.ErrorMessage,
+            ProcessingTime: log.ProcessingTime,
+            BankName:       log.BankName,
+            CardNumber:     log.CardNumber,
+            CreatedAt:      timestamppb.New(log.CreatedAt),
+        }
+    }
+    
+    log.Printf("✅ [GRPC] Retrieved %d automatic logs (total: %d)", len(logs), total)
+    
+    return &orderpb.GetAutomaticLogsResponse{
+        Logs:  grpcLogs,
+        Total: int32(total),
+    }, nil
+}
+
+// GetAutomaticStats получает статистику автоматики
+func (h *OrderHandler) GetAutomaticStats(ctx context.Context, req *orderpb.GetAutomaticStatsRequest) (*orderpb.GetAutomaticStatsResponse, error) {
+    if req.TraderId == "" {
+        return nil, status.Error(codes.InvalidArgument, "trader_id is required")
+    }
+    
+    days := 7
+    if req.Days > 0 {
+        days = int(req.Days)
+    }
+    
+    log.Printf("📊 [GRPC-STATS] Request for trader: %s, days: %d", req.TraderId, days)
+    
+    stats, err := h.automaticUc.GetAutomaticStats(ctx, req.TraderId, days)
+    if err != nil {
+        log.Printf("❌ [GRPC-STATS] Failed to get automatic stats: %v", err)
+        return nil, status.Errorf(codes.Internal, "failed to get automatic stats: %v", err)
+    }
+    
+    // Преобразуем статистику устройств
+    deviceStats := make(map[string]*orderpb.DeviceStats)
+    for deviceID, ds := range stats.DeviceStats {
+        deviceStats[deviceID] = &orderpb.DeviceStats{
+            TotalAttempts: ds.TotalAttempts,
+            SuccessCount:  ds.SuccessCount,
+            SuccessRate:   ds.SuccessRate,
+        }
+    }
+    
+    log.Printf("✅ [GRPC-STATS] Retrieved automatic stats for trader %s", req.TraderId)
+    
+    return &orderpb.GetAutomaticStatsResponse{
+        Stats: &orderpb.AutomaticStats{
+            TotalAttempts:      stats.TotalAttempts,
+            SuccessfulAttempts: stats.SuccessfulAttempts,
+            ApprovedOrders:     stats.ApprovedOrders,
+            NotFoundCount:      stats.NotFoundCount,
+            FailedCount:        stats.FailedCount,
+            AvgProcessingTime:  stats.AvgProcessingTime,
+            DeviceStats:        deviceStats,
+        },
+    }, nil
 }

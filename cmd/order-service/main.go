@@ -99,9 +99,12 @@ func main() {
 		bankDetailRepo,
 	)
 
+	// automatic
+	automaticUc := usecase.NewDefaultAutomaticUsecase(orderRepo)
+
 	// Creating gRPC server
 	grpcServer := grpc.NewServer()
-	orderHandler := grpcapi.NewOrderHandler(uc, disputeUc, bankDetailUsecase)
+	orderHandler := grpcapi.NewOrderHandler(uc, disputeUc, bankDetailUsecase, automaticUc)
 	trafficHandler := grpcapi.NewTrafficHandler(trafficUsecase)
 	bankDetailHandler := grpcapi.NewBankDetailHandler(bankDetailUsecase)
 	teamRelationsHandler := grpcapi.NewTeamRelationsHandler(teamRelationsUsecase)
