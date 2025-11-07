@@ -647,52 +647,87 @@ func (r *DefaultOrderRepository) GetAutomaticLogsCount(ctx context.Context, filt
 }
 
 // GetAutomaticStats получает статистику по автоматике
+// GetAutomaticStats получает статистику по автоматике с использованием Raw SQL
 func (r *DefaultOrderRepository) GetAutomaticStats(ctx context.Context, traderID string, days int) (*domain.AutomaticStats, error) {
     startDate := time.Now().AddDate(0, 0, -days)
     
-    var stats domain.AutomaticStats
+    // Запрос для основной статистики
+    var totalAttempts, successfulAttempts, approvedOrders, notFoundCount, failedCount int64
+    var avgProcessingTime float64
     
-    // Общая статистика
-    err := r.DB.WithContext(ctx).Model(&models.AutomaticLogModel{}).
-        Where("trader_id = ? AND created_at >= ?", traderID, startDate).
-        Select(
-            "COUNT(*) as total_attempts",
-            "COUNT(CASE WHEN success = true THEN 1 END) as successful_attempts",
-            "COUNT(CASE WHEN action = 'approved' THEN 1 END) as approved_orders",
-            "COUNT(CASE WHEN action = 'not_found' THEN 1 END) as not_found_count",
-            "COUNT(CASE WHEN action = 'failed' THEN 1 END) as failed_count",
-            "COALESCE(AVG(processing_time), 0) as avg_processing_time",
-        ).
-        Scan(&stats).Error
+    mainQuery := `
+        SELECT 
+            COUNT(*) as total_attempts,
+            COUNT(CASE WHEN success = true THEN 1 END) as successful_attempts,
+            COUNT(CASE WHEN action = 'approved' THEN 1 END) as approved_orders,
+            COUNT(CASE WHEN action = 'not_found' THEN 1 END) as not_found_count,
+            COUNT(CASE WHEN action = 'failed' THEN 1 END) as failed_count,
+            COALESCE(AVG(processing_time), 0) as avg_processing_time
+        FROM automatic_logs 
+        WHERE trader_id = ? AND created_at >= ?
+    `
+    
+    err := r.DB.WithContext(ctx).Raw(mainQuery, traderID, startDate).
+        Scan(&struct {
+            TotalAttempts      *int64
+            SuccessfulAttempts *int64
+            ApprovedOrders     *int64
+            NotFoundCount      *int64
+            FailedCount        *int64
+            AvgProcessingTime  *float64
+        }{
+            &totalAttempts, &successfulAttempts, &approvedOrders, &notFoundCount, &failedCount, &avgProcessingTime,
+        }).Error
     
     if err != nil {
         return nil, fmt.Errorf("failed to get automatic stats: %w", err)
     }
     
-    // Статистика по устройствам
+    // Запрос для статистики по устройствам
+    deviceQuery := `
+        SELECT 
+            device_id,
+            COUNT(*) as count,
+            COUNT(CASE WHEN success = true THEN 1 END) as success
+        FROM automatic_logs 
+        WHERE trader_id = ? AND created_at >= ?
+        GROUP BY device_id
+    `
+    
     var deviceStats []struct {
-        DeviceID string
-        Count    int64
-        Success  int64
+        DeviceID string `gorm:"column:device_id"`
+        Count    int64  `gorm:"column:count"`
+        Success  int64  `gorm:"column:success"`
     }
     
-    err = r.DB.WithContext(ctx).Model(&models.AutomaticLogModel{}).
-        Where("trader_id = ? AND created_at >= ?", traderID, startDate).
-        Select("device_id, COUNT(*) as count, COUNT(CASE WHEN success = true THEN 1 END) as success").
-        Group("device_id").
-        Find(&deviceStats).Error
-    
+    err = r.DB.WithContext(ctx).Raw(deviceQuery, traderID, startDate).Find(&deviceStats).Error
     if err != nil {
         return nil, fmt.Errorf("failed to get device stats: %w", err)
     }
     
-    stats.DeviceStats = make(map[string]domain.DeviceStats)
+    // Собираем финальную структуру
+    stats := &domain.AutomaticStats{
+        TotalAttempts:      totalAttempts,
+        SuccessfulAttempts: successfulAttempts,
+        ApprovedOrders:     approvedOrders,
+        NotFoundCount:      notFoundCount,
+        FailedCount:        failedCount,
+        AvgProcessingTime:  avgProcessingTime,
+        DeviceStats:        make(map[string]domain.DeviceStats),
+    }
+    
     for _, ds := range deviceStats {
+        successRate := 0.0
+        if ds.Count > 0 {
+            successRate = float64(ds.Success) / float64(ds.Count) * 100
+        }
+        
         stats.DeviceStats[ds.DeviceID] = domain.DeviceStats{
             TotalAttempts: ds.Count,
             SuccessCount:  ds.Success,
+            SuccessRate:   successRate,
         }
     }
     
-    return &stats, nil
+    return stats, nil
 }

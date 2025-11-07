@@ -35,12 +35,12 @@ type AutomaticLog struct {
 }
 
 type AutomaticStats struct {
-    TotalAttempts      int64              `json:"total_attempts"`
-    SuccessfulAttempts int64              `json:"successful_attempts"`
-    ApprovedOrders     int64              `json:"approved_orders"`
-    NotFoundCount      int64              `json:"not_found_count"`
-    FailedCount        int64              `json:"failed_count"`
-    AvgProcessingTime  float64            `json:"avg_processing_time"`
+    TotalAttempts      int64                  `json:"total_attempts"`
+    SuccessfulAttempts int64                  `json:"successful_attempts"`
+    ApprovedOrders     int64                  `json:"approved_orders"`
+    NotFoundCount      int64                  `json:"not_found_count"`
+    FailedCount        int64                  `json:"failed_count"`
+    AvgProcessingTime  float64                `json:"avg_processing_time"`
     DeviceStats        map[string]DeviceStats `json:"device_stats"`
 }
 
