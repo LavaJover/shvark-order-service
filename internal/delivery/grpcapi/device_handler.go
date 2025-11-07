@@ -2,6 +2,7 @@ package grpcapi
 
 import (
 	"context"
+	"log"
 
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	devicedto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/device"
@@ -126,5 +127,44 @@ func (h *DeviceHandler) GetDeviceStatus(ctx context.Context, r *orderpb.GetDevic
         Online:    device.DeviceOnline,
         LastPing:  lastPing,
         Enabled:   device.Enabled,
+    }, nil
+}
+
+// GetTraderDevicesStatus получает статусы всех устройств трейдера
+func (h *DeviceHandler) GetTraderDevicesStatus(ctx context.Context, req *orderpb.GetTraderDevicesStatusRequest) (*orderpb.GetTraderDevicesStatusResponse, error) {
+    if req.TraderId == "" {
+        return nil, status.Error(codes.InvalidArgument, "trader_id is required")
+    }
+    
+    log.Printf("📱 [GRPC-DEVICE] Getting devices status for trader: %s", req.TraderId)
+    
+    // Получаем устройства трейдера
+    devices, err := h.deviceUc.GetTraderDevicesStatus(req.TraderId)
+    if err != nil {
+        log.Printf("❌ [GRPC-DEVICE] Failed to get trader devices: %v", err)
+        return nil, status.Errorf(codes.Internal, "failed to get trader devices: %v", err)
+    }
+    
+    // Преобразуем в gRPC response
+    deviceStatuses := make([]*orderpb.DeviceStatus, len(devices))
+    for i, device := range devices {
+        var lastPing int64
+        if device.LastPingAt != nil {
+            lastPing = device.LastPingAt.Unix()
+        }
+        
+        deviceStatuses[i] = &orderpb.DeviceStatus{
+            DeviceId:   device.DeviceID,
+            DeviceName: device.DeviceName,
+            Online:     device.DeviceOnline,
+            LastPing:   lastPing,
+            Enabled:    device.Enabled,
+        }
+    }
+    
+    log.Printf("✅ [GRPC-DEVICE] Retrieved %d devices for trader %s", len(devices), req.TraderId)
+    
+    return &orderpb.GetTraderDevicesStatusResponse{
+        Devices: deviceStatuses,
     }, nil
 }

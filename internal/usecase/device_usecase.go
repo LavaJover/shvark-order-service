@@ -16,6 +16,8 @@ type DeviceUsecase interface {
 	UpdateDeviceLiveness(deviceID string) error
 	GetDeviceStatus(deviceID string) (*domain.Device, error)
 	CheckOfflineDevices() error
+
+	GetTraderDevicesStatus(traderID string) ([]*domain.Device, error)
 }
 
 type DefaultDeviceUsecase struct {
@@ -91,4 +93,9 @@ func (uc *DefaultDeviceUsecase) CheckOfflineDevices() error {
     threshold := time.Now().Add(-DEVICE_OFFLINE_TIMEOUT)
     
     return uc.deviceRepo.MarkDevicesOffline(threshold)
+}
+
+// GetTraderDevicesStatus получает статусы всех устройств трейдера
+func (uc *DefaultDeviceUsecase) GetTraderDevicesStatus(traderID string) ([]*domain.Device, error) {
+    return uc.deviceRepo.GetTraderDevices(traderID)
 }
