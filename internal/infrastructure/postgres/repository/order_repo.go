@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -651,10 +652,19 @@ func (r *DefaultOrderRepository) GetAutomaticLogsCount(ctx context.Context, filt
 func (r *DefaultOrderRepository) GetAutomaticStats(ctx context.Context, traderID string, days int) (*domain.AutomaticStats, error) {
     startDate := time.Now().AddDate(0, 0, -days)
     
-    // Запрос для основной статистики
-    var totalAttempts, successfulAttempts, approvedOrders, notFoundCount, failedCount int64
-    var avgProcessingTime float64
+    log.Printf("🔍 [REPO-STATS] Getting stats for trader: %s, days: %d, startDate: %v", traderID, days, startDate)
     
+    // Временная структура для сканирования
+    var rawStats struct {
+        TotalAttempts      int64   `gorm:"column:total_attempts"`
+        SuccessfulAttempts int64   `gorm:"column:successful_attempts"`
+        ApprovedOrders     int64   `gorm:"column:approved_orders"`
+        NotFoundCount      int64   `gorm:"column:not_found_count"`
+        FailedCount        int64   `gorm:"column:failed_count"`
+        AvgProcessingTime  float64 `gorm:"column:avg_processing_time"`
+    }
+    
+    // Общая статистика - ИСПРАВЛЕНИЕ: используем Raw SQL для надежности
     mainQuery := `
         SELECT 
             COUNT(*) as total_attempts,
@@ -667,23 +677,21 @@ func (r *DefaultOrderRepository) GetAutomaticStats(ctx context.Context, traderID
         WHERE trader_id = ? AND created_at >= ?
     `
     
-    err := r.DB.WithContext(ctx).Raw(mainQuery, traderID, startDate).
-        Scan(&struct {
-            TotalAttempts      *int64
-            SuccessfulAttempts *int64
-            ApprovedOrders     *int64
-            NotFoundCount      *int64
-            FailedCount        *int64
-            AvgProcessingTime  *float64
-        }{
-            &totalAttempts, &successfulAttempts, &approvedOrders, &notFoundCount, &failedCount, &avgProcessingTime,
-        }).Error
-    
+    err := r.DB.WithContext(ctx).Raw(mainQuery, traderID, startDate).Scan(&rawStats).Error
     if err != nil {
+        log.Printf("❌ [REPO-STATS] Error in main query: %v", err)
         return nil, fmt.Errorf("failed to get automatic stats: %w", err)
     }
     
-    // Запрос для статистики по устройствам
+    log.Printf("🔍 [REPO-STATS] Raw stats: %+v", rawStats)
+    
+    // Статистика по устройствам
+    var deviceStats []struct {
+        DeviceID string `gorm:"column:device_id"`
+        Count    int64  `gorm:"column:count"`
+        Success  int64  `gorm:"column:success"`
+    }
+    
     deviceQuery := `
         SELECT 
             device_id,
@@ -694,25 +702,22 @@ func (r *DefaultOrderRepository) GetAutomaticStats(ctx context.Context, traderID
         GROUP BY device_id
     `
     
-    var deviceStats []struct {
-        DeviceID string `gorm:"column:device_id"`
-        Count    int64  `gorm:"column:count"`
-        Success  int64  `gorm:"column:success"`
-    }
-    
     err = r.DB.WithContext(ctx).Raw(deviceQuery, traderID, startDate).Find(&deviceStats).Error
     if err != nil {
+        log.Printf("❌ [REPO-STATS] Error in device query: %v", err)
         return nil, fmt.Errorf("failed to get device stats: %w", err)
     }
     
-    // Собираем финальную структуру
+    log.Printf("🔍 [REPO-STATS] Device stats: %+v", deviceStats)
+    
+    // Создаем финальную структуру
     stats := &domain.AutomaticStats{
-        TotalAttempts:      totalAttempts,
-        SuccessfulAttempts: successfulAttempts,
-        ApprovedOrders:     approvedOrders,
-        NotFoundCount:      notFoundCount,
-        FailedCount:        failedCount,
-        AvgProcessingTime:  avgProcessingTime,
+        TotalAttempts:      rawStats.TotalAttempts,
+        SuccessfulAttempts: rawStats.SuccessfulAttempts,
+        ApprovedOrders:     rawStats.ApprovedOrders,
+        NotFoundCount:      rawStats.NotFoundCount,
+        FailedCount:        rawStats.FailedCount,
+        AvgProcessingTime:  rawStats.AvgProcessingTime,
         DeviceStats:        make(map[string]domain.DeviceStats),
     }
     
@@ -728,6 +733,8 @@ func (r *DefaultOrderRepository) GetAutomaticStats(ctx context.Context, traderID
             SuccessRate:   successRate,
         }
     }
+    
+    log.Printf("✅ [REPO-STATS] Final stats: %+v", stats)
     
     return stats, nil
 }

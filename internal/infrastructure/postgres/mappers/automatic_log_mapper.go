@@ -18,11 +18,10 @@ func ToDomainAutomaticLog(model *models.AutomaticLogModel) *domain.AutomaticLog 
         methods = strings.Split(model.Methods, ",")
     }
     
-    return &domain.AutomaticLog{
+    // Создаем доменный объект с безопасным разыменованием указателей
+    domainLog := &domain.AutomaticLog{
         ID:             model.ID,
         DeviceID:       model.DeviceID,
-        TraderID:       *model.TraderID,
-        OrderID:        *model.OrderID,
         Amount:         model.Amount,
         PaymentSystem:  model.PaymentSystem,
         Direction:      model.Direction,
@@ -38,6 +37,22 @@ func ToDomainAutomaticLog(model *models.AutomaticLogModel) *domain.AutomaticLog 
         CardNumber:     model.CardNumber,
         CreatedAt:      model.CreatedAt,
     }
+    
+    // Безопасное разыменование TraderID
+    if model.TraderID != nil {
+        domainLog.TraderID = *model.TraderID
+    } else {
+        domainLog.TraderID = "" // или какое-то значение по умолчанию
+    }
+    
+    // Безопасное разыменование OrderID
+    if model.OrderID != nil {
+        domainLog.OrderID = *model.OrderID
+    } else {
+        domainLog.OrderID = "" // или какое-то значение по умолчанию
+    }
+    
+    return domainLog
 }
 
 // ToModelAutomaticLog конвертирует доменный объект в модель
