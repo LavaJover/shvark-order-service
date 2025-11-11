@@ -7,6 +7,25 @@ import (
 	trafficdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/traffic"
 )
 
+type TrafficUsecase interface {
+	AddTraffic(traffic *domain.Traffic) error
+	EditTraffic(input *trafficdto.EditTrafficInput) error
+	GetTrafficRecords(page, limit int32) ([]*domain.Traffic, error)
+	GetTrafficByID(trafficID string) (*domain.Traffic, error)
+	DeleteTraffic(trafficID string) error
+	GetTrafficByTraderMerchant(traderID, merchantID string) (*domain.Traffic, error)
+	DisableTraderTraffic(traderID string) error
+	EnableTraderTraffic(traderID string) error
+	GetTraderTrafficStatus(traderID string) (bool, error)
+	SetTraderLockTrafficStatus(traderID string, unlocked bool) error
+	SetMerchantLockTrafficStatus(traderID string, unlocked bool) error
+	SetManuallyLockTrafficStatus(trafficID string, unlocked bool) error
+	SetAntifraudLockTrafficStatus(traderID string, unlocked bool) error
+	IsTrafficUnlocked(trafficID string) (*trafficdto.TrafficUnlockedResponse, error)
+	GetLockStatuses(trafficID string) (*trafficdto.LockStatusesResponse, error)
+	GetTrafficByTraderID(traderID string) ([]*domain.Traffic, error) // НОВОЕ
+}
+
 type DefaultTrafficUsecase struct {
 	TrafficRepo domain.TrafficRepository
 }

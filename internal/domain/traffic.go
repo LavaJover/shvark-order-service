@@ -47,25 +47,6 @@ type TrafficBusinessParams struct {
 	MerchantDealsDuration time.Duration
 }
 
-type TrafficUsecase interface {
-	AddTraffic(traffic *Traffic) error
-	EditTraffic(input *trafficdto.EditTrafficInput) error
-	GetTrafficRecords(page, limit int32) ([]*Traffic, error)
-	GetTrafficByID(trafficID string) (*Traffic, error)
-	DeleteTraffic(trafficID string) error
-	GetTrafficByTraderMerchant(traderID, merchantID string) (*Traffic, error)
-	DisableTraderTraffic(traderID string) error
-	EnableTraderTraffic(traderID string) error
-	GetTraderTrafficStatus(traderID string) (bool, error)
-	SetTraderLockTrafficStatus(traderID string, unlocked bool) error
-	SetMerchantLockTrafficStatus(traderID string, unlocked bool) error
-	SetManuallyLockTrafficStatus(trafficID string, unlocked bool) error
-	SetAntifraudLockTrafficStatus(traderID string, unlocked bool) error
-	IsTrafficUnlocked(trafficID string) (*trafficdto.TrafficUnlockedResponse, error)
-	GetLockStatuses(trafficID string) (*trafficdto.LockStatusesResponse, error)
-	GetTrafficByTraderID(traderID string) ([]*Traffic, error) // НОВОЕ
-}
-
 type TrafficRepository interface {
 	CreateTraffic(traffic *Traffic) error
 	UpdateTraffic(input *trafficdto.EditTrafficInput) error

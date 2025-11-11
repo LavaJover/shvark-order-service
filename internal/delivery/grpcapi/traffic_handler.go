@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
+	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	trafficdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/traffic"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
 	"google.golang.org/grpc/codes"
@@ -14,10 +15,10 @@ import (
 
 type TrafficHandler struct {
 	orderpb.UnimplementedTrafficServiceServer
-	trafficUsecase domain.TrafficUsecase
+	trafficUsecase usecase.TrafficUsecase
 }
 
-func NewTrafficHandler(trafficUsecase domain.TrafficUsecase) *TrafficHandler {
+func NewTrafficHandler(trafficUsecase usecase.TrafficUsecase) *TrafficHandler {
 	return &TrafficHandler{trafficUsecase: trafficUsecase}
 }
 

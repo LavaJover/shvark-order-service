@@ -1,237 +1,115 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"log"
-	"log/slog"
-	"net"
-	"time"
+    "context"
+    "fmt"
+    "log"
+    "net"
+    "os"
+    "os/signal"
+    "syscall"
 
-	"github.com/LavaJover/shvark-order-service/internal/config"
-	"github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi"
-	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres"
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository"
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/engine"
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/rules"
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/repository/antifraud/strategies"
-	"github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
-	"github.com/LavaJover/shvark-order-service/internal/usecase"
-	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
-	"github.com/joho/godotenv"
-	"google.golang.org/grpc"
+    "github.com/LavaJover/shvark-order-service/internal/app/background"
+    "github.com/LavaJover/shvark-order-service/internal/app/setup"
+    "github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi"
+    orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
+    "github.com/joho/godotenv"
+    "google.golang.org/grpc"
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("failed to load .env")
-	}
-	// Reading config
-	cfg := config.MustLoad()
-	// Init database
-	db := postgres.MustInitDB(cfg)
-
-	// Setup kafka
-	orderPublisherConfig := publisher.KafkaConfig{
-		Brokers:   []string{fmt.Sprintf("%s:%s", cfg.KafkaService.Host, cfg.KafkaService.Port)},
-        Topic:     "order-events",
-        Username:  cfg.KafkaService.Username,
-        Password:  cfg.KafkaService.Password,
-        Mechanism: cfg.KafkaService.Mechanism,
-    	TLSEnabled: cfg.KafkaService.TLSEnabled,
-	}
-	orderKafkaPublisher, err := publisher.NewKafkaPublisher(orderPublisherConfig)
-	if err != nil {
-		log.Fatalf("failed to init kafka order publisher: %v", err)
-	}
-
-	disputePublisherConfig := publisher.KafkaConfig{
-		Brokers:   []string{fmt.Sprintf("%s:%s", cfg.KafkaService.Host, cfg.KafkaService.Port)},
-        Topic:     "dispute-events",
-        Username:  cfg.KafkaService.Username,
-        Password:  cfg.KafkaService.Password,
-        Mechanism: cfg.KafkaService.Mechanism,
-    	TLSEnabled: cfg.KafkaService.TLSEnabled,
-	}
-	disputeKafkaPublisher, err := publisher.NewKafkaPublisher(disputePublisherConfig)
-	if err != nil {
-		log.Fatalf("failed to init kafka dispute publisher: %v", err)
-	}
-	// Init order repo
-	orderRepo := repository.NewDefaultOrderRepository(db)
-	// Init bank detail repo
-	bankDetailRepo := repository.NewDefaultBankDetailRepo(db)
-	// Init traffic repo
-	trafficRepo := repository.NewDefaultTrafficRepository(db)
-	// Init team relations repo
-	teamRelationsRepo := repository.NewDefaultTeamRelationsRepository(db)
-	// Init device repo
-	deviceRepo := repository.NewDefaultDeviceRepository(db)
-
-	// Init wallet handler
-	httpWalletHandler, err := handlers.NewHTTPWalletHandler(fmt.Sprintf("%s:%s", cfg.WalletService.Host, cfg.WalletService.Port))
-	if err != nil {
-		log.Fatalf("failed to init wallet usecase")
-	}
-
-	// Init traffic usecase
-	trafficUsecase := usecase.NewDefaultTrafficUsecase(trafficRepo)
-	// Init bank detail usecase
-	bankDetailUsecase := usecase.NewDefaultBankDetailUsecase(bankDetailRepo)
-	// Init team relations usecase
-	teamRelationsUsecase := usecase.NewDefaultTeamRelationsUsecase(teamRelationsRepo)
-	// Init order usecase
-	uc := usecase.NewDefaultOrderUsecase(orderRepo, httpWalletHandler, trafficUsecase, bankDetailUsecase, orderKafkaPublisher, teamRelationsUsecase)
-	// Init device usecase
-	deviceUsecase := usecase.NewDefaultDeviceUsecase(deviceRepo)
-
-	// dispute
-	disputeRepo := repository.NewDefaultDisputeRepository(db)
-	disputeUc := usecase.NewDefaultDisputeUsecase(
-		disputeRepo,
-		httpWalletHandler,
-		orderRepo,
-		trafficRepo,
-		disputeKafkaPublisher,
-		teamRelationsUsecase,
-		bankDetailRepo,
-	)
-
-	// automatic
-	automaticUc := usecase.NewDefaultAutomaticUsecase(orderRepo)
-
-	// Creating gRPC server
-	grpcServer := grpc.NewServer()
-	orderHandler := grpcapi.NewOrderHandler(uc, disputeUc, bankDetailUsecase, automaticUc)
-	trafficHandler := grpcapi.NewTrafficHandler(trafficUsecase)
-	bankDetailHandler := grpcapi.NewBankDetailHandler(bankDetailUsecase)
-	teamRelationsHandler := grpcapi.NewTeamRelationsHandler(teamRelationsUsecase)
-	deviceHandler := grpcapi.NewDeviceHandler(deviceUsecase)
-
-	orderpb.RegisterOrderServiceServer(grpcServer, orderHandler)
-	orderpb.RegisterTrafficServiceServer(grpcServer, trafficHandler)
-	orderpb.RegisterBankDetailServiceServer(grpcServer, bankDetailHandler)
-	orderpb.RegisterTeamRelationsServiceServer(grpcServer, teamRelationsHandler)
-	orderpb.RegisterDeviceServiceServer(grpcServer, deviceHandler)
-
-	// Start
-	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", cfg.GRPCServer.Host, cfg.GRPCServer.Port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
-	// order auto-cancel
-	go func() {
-		ticker := time.NewTicker(5 * time.Second)
-		for {
-			<-ticker.C
-			err := uc.CancelExpiredOrders(context.Background())
-			if err != nil {
-				log.Printf("Auto-cancel error: %v\n", err)
-			}
-		}
-	}()
-
-	// updating crypto-rates
-	go func() {
-		ticker := time.NewTicker(5 * time.Minute)
-		for {
-			usdtRate, err := usdt.GET_USDT_RUB_RATES(5)
-			if err != nil {
-				slog.Error("USD/RUB rates update failed", "error", err.Error())
-				continue
-			}
-			slog.Info("USD/RUB rates updated", "usdt/rub", usdtRate)
-			<-ticker.C
-		}
-	}()
-
-	// auto accept expired disputes
-	go func() {
-		ticker := time.NewTicker(30 * time.Second)
-		for {
-			<-ticker.C
-			err := disputeUc.AcceptExpiredDisputes()
-			if err != nil {
-				log.Printf("Auto-accept dispute error: %v\n", err)
-			}
-		}
-	}()
-
-	// Init antifraud
-	antifraudLogger := slog.Default()
-	antifraudEngine := engine.NewAntiFraudEngine(db, antifraudLogger)
-	// Получаем snapshotManager из engine (вместо создания нового)
-	snapshotManager := antifraudEngine.GetSnapshotManager()
-	// DEBUG
-	if snapshotManager == nil {
-	    log.Fatal("CRITICAL: snapshotManager is nil after GetSnapshotManager()")
-	}
-	log.Printf("✓ SnapshotManager initialized successfully: %p", snapshotManager)
-
-	antifraudEngine.RegisterStrategy(strategies.NewConsecutiveOrdersStrategy(db))
-	antifraudEngine.RegisterStrategy(strategies.NewCanceledOrdersStrategy(db))
-
-	// Создаем repository
-	antiFraudRepo := repository.NewAntiFraudRepository(db)
-	// Создаем use case
-	antiFraudUseCase := usecase.NewAntiFraudUseCase(antifraudEngine, antiFraudRepo, snapshotManager)
-
-	// DEBUG: проверяем через рефлексию
-	log.Printf("✓ AntiFraudUseCase initialized: %+v", antiFraudUseCase)
-
-	// Создаем gRPC handler
-	antiFraudHandler := grpcapi.NewAntiFraudHandler(antiFraudUseCase)
-
-	// Регистрируем в gRPC сервере
-	orderpb.RegisterAntiFraudServiceServer(grpcServer, antiFraudHandler)
-
-	ruleManager := engine.NewRuleManager(db)
-
-	  // Создаем правила
-	  consecutiveConfig := &rules.ConsecutiveOrdersConfig{
-        MaxConsecutiveOrders: 10,
-        TimeWindow:          30 * time.Minute,
-        StatesToCount:       []string{"CANCELED"},
+    if err := godotenv.Load(); err != nil {
+        log.Println("Note: .env file not found, using environment variables")
     }
 
-    ruleManager.CreateRule(context.Background(), 
-        "Max Consecutive Orders", 
-        "consecutive_orders", 
-        consecutiveConfig, 
-        100)
-
-    canceledConfig := &rules.CanceledOrdersConfig{
-        MaxCanceledOrders: 5,
-        TimeWindow:        30 * time.Minute,
-        CanceledStatuses:  []string{"CANCELED"},
+    deps, err := setup.InitializeDependencies()
+    if err != nil {
+        log.Fatalf("Failed to initialize dependencies: %v", err)
     }
 
-    ruleManager.CreateRule(context.Background(), 
-        "Max Canceled Orders", 
-        "canceled_orders", 
-        canceledConfig, 
-		90)
+    useCases, err := setup.InitializeUseCases(deps)
+    if err != nil {
+        log.Fatalf("Failed to initialize use cases: %v", err)
+    }
 
-	// Запускаем планировщик для автоматических проверок
-	scheduler := engine.NewScheduler(antifraudEngine, db, 1*time.Minute, antifraudLogger)
-	go scheduler.Start(context.Background())
+    // Инициализация антифрода (теперь отдельно)
+    antiFraudSystem, err := setup.InitializeAntiFraud(deps)
+    if err != nil {
+        log.Fatalf("Failed to initialize anti-fraud system: %v", err)
+    }
 
-	// Проверка оффлайн устройств каждые 30 секунд
-	go func() {
-	    ticker := time.NewTicker(10 * time.Second)
-	    for {
-	        <-ticker.C
-	        if err := deviceUsecase.CheckOfflineDevices(); err != nil {
-	            log.Printf("❌ Error checking offline devices: %v", err)
-	        }
-	    }
-	}()
+    // Создание и запуск gRPC сервера
+    grpcServer := setupGRPCServer(useCases, antiFraudSystem)
+    
+    // Запуск фоновых задач
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+    
+    bgTasks := background.NewBackgroundTasks(
+        useCases.OrderUsecase,
+        useCases.DisputeUsecase, 
+        useCases.DeviceUsecase,
+    )
+    bgTasks.StartAll(ctx)
+    
+    // Запуск планировщика антифрода
+    go antiFraudSystem.Scheduler.Start(ctx)
 
-	log.Printf("gRPC server started on %s:%s\n", cfg.GRPCServer.Host, cfg.GRPCServer.Port)
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v\n", err)
-	}
+    // Запуск gRPC сервера
+    lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", deps.Config.GRPCServer.Host, deps.Config.GRPCServer.Port))
+    if err != nil {
+        log.Fatalf("Failed to listen: %v", err)
+    }
+
+    log.Printf("gRPC server starting on %s:%s", deps.Config.GRPCServer.Host, deps.Config.GRPCServer.Port)
+    
+    // Обработка graceful shutdown
+    go gracefulShutdown(grpcServer, cancel)
+
+    if err := grpcServer.Serve(lis); err != nil {
+        log.Fatalf("Failed to serve: %v", err)
+    }
+}
+
+func setupGRPCServer(useCases *setup.UseCases, antiFraudSystem *setup.AntiFraudSystem) *grpc.Server {
+    server := grpc.NewServer()
+    
+    // Регистрация всех обработчиков
+    orderpb.RegisterOrderServiceServer(server, 
+        grpcapi.NewOrderHandler(
+            useCases.OrderUsecase, 
+            useCases.DisputeUsecase, 
+            useCases.BankDetailUsecase, 
+            useCases.AutomaticUsecase,
+        ))
+    
+    orderpb.RegisterTrafficServiceServer(server, 
+        grpcapi.NewTrafficHandler(useCases.TrafficUsecase))
+    
+    orderpb.RegisterBankDetailServiceServer(server, 
+        grpcapi.NewBankDetailHandler(useCases.BankDetailUsecase))
+    
+    orderpb.RegisterTeamRelationsServiceServer(server, 
+        grpcapi.NewTeamRelationsHandler(useCases.TeamRelationsUsecase))
+    
+    orderpb.RegisterDeviceServiceServer(server, 
+        grpcapi.NewDeviceHandler(useCases.DeviceUsecase))
+    
+    // Используем antiFraudSystem.UseCase вместо useCases.AntiFraudUseCase
+    orderpb.RegisterAntiFraudServiceServer(server, 
+        grpcapi.NewAntiFraudHandler(antiFraudSystem.UseCase))
+    
+    return server
+}
+
+func gracefulShutdown(server *grpc.Server, cancel context.CancelFunc) {
+    sigChan := make(chan os.Signal, 1)
+    signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+    
+    <-sigChan
+    log.Println("Shutdown signal received, stopping server...")
+    
+    cancel()
+    server.GracefulStop()
+    log.Println("Server stopped gracefully")
 }

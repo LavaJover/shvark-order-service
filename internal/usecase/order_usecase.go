@@ -48,7 +48,7 @@ type OrderUsecase interface {
 type DefaultOrderUsecase struct {
 	OrderRepo 			domain.OrderRepository
 	WalletHandler   	*handlers.HTTPWalletHandler
-	TrafficUsecase  	domain.TrafficUsecase
+	TrafficUsecase  	TrafficUsecase
 	BankDetailUsecase 	BankDetailUsecase
 	TeamRelationsUsecase TeamRelationsUsecase
 	Publisher 			*publisher.KafkaPublisher
@@ -57,7 +57,7 @@ type DefaultOrderUsecase struct {
 func NewDefaultOrderUsecase(
 	orderRepo domain.OrderRepository, 
 	walletHandler *handlers.HTTPWalletHandler,
-	trafficUsecase domain.TrafficUsecase,
+	trafficUsecase TrafficUsecase,
 	bankDetailUsecase BankDetailUsecase,
 	kafkaPublisher *publisher.KafkaPublisher,
 	teamRelationsUsecase TeamRelationsUsecase) *DefaultOrderUsecase {
