@@ -16,33 +16,6 @@ const (
 	StatusDisputeCreated  OrderStatus = "DISPUTE"
 )
 
-// type Order struct {
-// 	ID 			  		string +
-// 	MerchantID 	  		string +
-// 	AmountFiat 	  		float64 +
-// 	AmountCrypto  		float64 +
-// 	Currency 	  		string +
-// 	Country 	  		string - 
-// 	ClientID   			string +
-// 	Status 		  		OrderStatus +
-// 	PaymentSystem 		string +
-// 	BankDetailsID 		string +
-// 	BankDetail    		*BankDetail
-// 	ExpiresAt	  		time.Time +
-// 	CreatedAt 	  		time.Time +
-// 	UpdatedAt 	  		time.Time +
-// 	MerchantOrderID 	string +
-// 	Shuffle 			int32 +
-// 	CallbackURL 		string +
-// 	TraderRewardPercent float64 +
-// 	PlatformFee 		float64 +
-// 	Recalculated 		bool +
-// 	CryptoRubRate		float64 +
-// 	BankCode 			string +
-// 	NspkCode 			string +
-// 	Type 				string +
-// }
-
 type Order struct {
 	ID 				string
 	Status 			OrderStatus
@@ -183,6 +156,15 @@ type OrderRepository interface {
 
 	GetAutomaticLogsCount(ctx context.Context, filter *AutomaticLogFilter) (int64, error)
 	GetAutomaticStats(ctx context.Context, traderID string, days int) (*AutomaticStats, error)
+
+	// Методы для транзакций
+	BeginTx() (OrderRepository, error)
+	Commit() error
+	Rollback() error
+	
+	// Методы для работы в транзакции
+	CreateOrderInTx(order *Order) error
+	GetCreatedOrdersByClientIDInTx(clientID string) ([]*Order, error)
 }
 
 type PaymentProcessingLog struct {

@@ -43,83 +43,86 @@ func NewOrderHandler(
 	}
 }
 
+// internal/delivery/grpc/handlers/order_handler.go
+
 func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRequest) (*orderpb.CreateOrderResponse, error) {
-	amountCrypto := r.AmountFiat / usdt.UsdtRubRates
+    amountCrypto := r.AmountFiat / usdt.UsdtRubRates
 
-	createOrderInput := orderdto.CreateOrderInput{
-		MerchantParams: orderdto.MerchantParams{
-			MerchantID: r.MerchantId,
-			MerchantOrderID: r.MerchantOrderId,
-			ClientID: r.ClientId,
-		},
-		PaymentSearchParams: orderdto.PaymentSearchParams{
-			AmountFiat: r.AmountFiat,
-			AmountCrypto: amountCrypto,
-			Currency: r.Currency,
-			CryptoRate: usdt.UsdtRubRates,
-			PaymentSystem: r.PaymentSystem,
-			BankInfo: orderdto.BankInfo{
-				BankCode: r.BankCode,
-				NspkCode: r.NspkCode,
-			},
-		},
-		AdvancedParams: orderdto.AdvancedParams{
-			Shuffle: r.Shuffle,
-			CallbackUrl: r.CallbackUrl,
-		},
-		Type: "DEPOSIT",
-		ExpiresAt: r.ExpiresAt.AsTime(),
-	}
-	
-	createOrderOutput, err := h.uc.CreateOrder(&createOrderInput)
-	if err != nil {
-		if createOrderInput.AdvancedParams.CallbackUrl != ""{
-			notifier.SendCallback(
-				createOrderInput.AdvancedParams.CallbackUrl,
-				createOrderInput.MerchantParams.MerchantOrderID,
-				string(domain.StatusFailed),
-				0, 0, 0,
-			)
-		}
-		return nil, err
-	}
+    createOrderInput := orderdto.CreateOrderInput{
+        MerchantParams: orderdto.MerchantParams{
+            MerchantID: r.MerchantId,
+            MerchantOrderID: r.MerchantOrderId,
+            ClientID: r.ClientId,
+        },
+        PaymentSearchParams: orderdto.PaymentSearchParams{
+            AmountFiat: r.AmountFiat,
+            AmountCrypto: amountCrypto,
+            Currency: r.Currency,
+            CryptoRate: usdt.UsdtRubRates,
+            PaymentSystem: r.PaymentSystem,
+            BankInfo: orderdto.BankInfo{
+                BankCode: r.BankCode,
+                NspkCode: r.NspkCode,
+            },
+        },
+        AdvancedParams: orderdto.AdvancedParams{
+            Shuffle: r.Shuffle,
+            CallbackUrl: r.CallbackUrl,
+        },
+        Type: "DEPOSIT",
+        ExpiresAt: r.ExpiresAt.AsTime(),
+    }
+    
+    // ИСПОЛЬЗУЕМ АТОМАРНЫЙ МЕТОД вместо обычного
+    createOrderOutput, err := h.uc.CreateOrderAtomic(&createOrderInput)
+    if err != nil {
+        if createOrderInput.AdvancedParams.CallbackUrl != "" {
+            notifier.SendCallback(
+                createOrderInput.AdvancedParams.CallbackUrl,
+                createOrderInput.MerchantParams.MerchantOrderID,
+                string(domain.StatusFailed),
+                0, 0, 0,
+            )
+        }
+        return nil, err
+    }
 
-	return &orderpb.CreateOrderResponse{
-		Order: &orderpb.Order{
-			OrderId: createOrderOutput.Order.ID,
-			Status: string(createOrderOutput.Order.Status),
-			Type: createOrderOutput.Order.Type,
-			BankDetail: &orderpb.BankDetail{
-				BankDetailId: createOrderOutput.BankDetail.ID,
-				TraderId: createOrderOutput.BankDetail.TraderInfo.TraderID,
-				Currency: createOrderOutput.Order.AmountInfo.Currency,
-				Country: createOrderOutput.BankDetail.Country, 
-				MinAmount: float64(createOrderOutput.BankDetail.MinOrderAmount),
-				MaxAmount: float64(createOrderOutput.BankDetail.MaxOrderAmount),
-				BankName: createOrderOutput.BankDetail.BankName,
-				PaymentSystem: createOrderOutput.BankDetail.PaymentSystem,
-				Owner: createOrderOutput.BankDetail.PaymentDetails.Owner,
-				CardNumber: createOrderOutput.BankDetail.PaymentDetails.CardNumber,
-				Phone: createOrderOutput.BankDetail.PaymentDetails.Phone,
-				DeviceId: createOrderOutput.BankDetail.DeviceInfo.DeviceID,
-				InflowCurrency: createOrderOutput.BankDetail.InflowCurrency,
-				BankCode: createOrderOutput.BankDetail.PaymentDetails.BankCode,
-				NspkCode: createOrderOutput.BankDetail.PaymentDetails.NspkCode,
-			},
-			AmountFiat: float64(createOrderOutput.Order.AmountInfo.AmountFiat),
-			AmountCrypto: createOrderOutput.Order.AmountInfo.AmountCrypto,
-			ExpiresAt: timestamppb.New(createOrderOutput.Order.ExpiresAt),
-			Shuffle: createOrderOutput.Order.Shuffle,
-			MerchantOrderId: createOrderOutput.Order.MerchantInfo.MerchantOrderID,
-			ClientId: createOrderOutput.Order.MerchantInfo.ClientID,
-			CallbackUrl: createOrderOutput.Order.CallbackUrl,
-			TraderRewardPercent: createOrderOutput.Order.TraderReward,
-			CreatedAt: timestamppb.New(createOrderOutput.Order.CreatedAt),
-			UpdatedAt: timestamppb.New(createOrderOutput.Order.UpdatedAt),
-			Recalculated: createOrderOutput.Order.Recalculated,
-			CryptoRubRate: createOrderOutput.Order.AmountInfo.CryptoRate,
-		},
-	}, nil
+    return &orderpb.CreateOrderResponse{
+        Order: &orderpb.Order{
+            OrderId: createOrderOutput.Order.ID,
+            Status: string(createOrderOutput.Order.Status),
+            Type: createOrderOutput.Order.Type,
+            BankDetail: &orderpb.BankDetail{
+                BankDetailId: createOrderOutput.BankDetail.ID,
+                TraderId: createOrderOutput.BankDetail.TraderInfo.TraderID,
+                Currency: createOrderOutput.Order.AmountInfo.Currency,
+                Country: createOrderOutput.BankDetail.Country, 
+                MinAmount: float64(createOrderOutput.BankDetail.MinOrderAmount),
+                MaxAmount: float64(createOrderOutput.BankDetail.MaxOrderAmount),
+                BankName: createOrderOutput.BankDetail.BankName,
+                PaymentSystem: createOrderOutput.BankDetail.PaymentSystem,
+                Owner: createOrderOutput.BankDetail.PaymentDetails.Owner,
+                CardNumber: createOrderOutput.BankDetail.PaymentDetails.CardNumber,
+                Phone: createOrderOutput.BankDetail.PaymentDetails.Phone,
+                DeviceId: createOrderOutput.BankDetail.DeviceInfo.DeviceID,
+                InflowCurrency: createOrderOutput.BankDetail.InflowCurrency,
+                BankCode: createOrderOutput.BankDetail.PaymentDetails.BankCode,
+                NspkCode: createOrderOutput.BankDetail.PaymentDetails.NspkCode,
+            },
+            AmountFiat: float64(createOrderOutput.Order.AmountInfo.AmountFiat),
+            AmountCrypto: createOrderOutput.Order.AmountInfo.AmountCrypto,
+            ExpiresAt: timestamppb.New(createOrderOutput.Order.ExpiresAt),
+            Shuffle: createOrderOutput.Order.Shuffle,
+            MerchantOrderId: createOrderOutput.Order.MerchantInfo.MerchantOrderID,
+            ClientId: createOrderOutput.Order.MerchantInfo.ClientID,
+            CallbackUrl: createOrderOutput.Order.CallbackUrl,
+            TraderRewardPercent: createOrderOutput.Order.TraderReward,
+            CreatedAt: timestamppb.New(createOrderOutput.Order.CreatedAt),
+            UpdatedAt: timestamppb.New(createOrderOutput.Order.UpdatedAt),
+            Recalculated: createOrderOutput.Order.Recalculated,
+            CryptoRubRate: createOrderOutput.Order.AmountInfo.CryptoRate,
+        },
+    }, nil
 }
 
 func (h *OrderHandler) ApproveOrder(ctx context.Context, r *orderpb.ApproveOrderRequest) (*orderpb.ApproveOrderResponse, error) {

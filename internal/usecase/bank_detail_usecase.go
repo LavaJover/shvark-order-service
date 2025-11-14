@@ -19,6 +19,8 @@ type BankDetailUsecase interface {
 	FindSuitableBankDetails(input *bankdetaildto.FindSuitableBankDetailsInput) ([]*domain.BankDetail, error)
 	GetBankDetailsStatsByTraderID(traderID string) ([]*domain.BankDetailStat, error)
 	GetBankDetails(input *bankdetaildto.GetBankDetailsInput) (*bankdetaildto.GetBankDetailsOutput, error)
+	FindSuitableBankDetailsWithLock(input *bankdetaildto.FindSuitableBankDetailsInput) ([]*domain.BankDetail, error)
+	GetBankDetailRepo() domain.BankDetailRepository
 }
 
 type DefaultBankDetailUsecase struct {
@@ -27,6 +29,11 @@ type DefaultBankDetailUsecase struct {
 
 func NewDefaultBankDetailUsecase(bankDetailRepo domain.BankDetailRepository) *DefaultBankDetailUsecase {
 	return &DefaultBankDetailUsecase{bankDetailRepo: bankDetailRepo}
+}
+
+// GetBankDetailRepo возвращает BankDetailRepository (для использования в транзакциях)
+func (uc *DefaultBankDetailUsecase) GetBankDetailRepo() domain.BankDetailRepository {
+    return uc.bankDetailRepo
 }
 
 func (uc *DefaultBankDetailUsecase) CreateBankDetail(input *bankdetaildto.CreateBankDetailInput) error {
@@ -177,4 +184,16 @@ func (uc *DefaultBankDetailUsecase) GetBankDetails(input *bankdetaildto.GetBankD
 			ItemsPerPage: int32(input.Limit),
 		},
 	}, nil
+}
+
+func (uc *DefaultBankDetailUsecase) FindSuitableBankDetailsWithLock(input *bankdetaildto.FindSuitableBankDetailsInput) ([]*domain.BankDetail, error) {
+    return uc.bankDetailRepo.FindSuitableBankDetailsWithLock(
+        &domain.SuitablleBankDetailsQuery{
+            AmountFiat:    input.AmountFiat,
+            BankCode:      input.BankCode,
+            NspkCode:      input.NspkCode,
+            PaymentSystem: input.PaymentSystem,
+            Currency:      input.Currency,
+        },
+    )
 }

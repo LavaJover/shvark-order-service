@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type DefaultBankDetailRepo struct {
@@ -126,16 +127,6 @@ func (r *DefaultBankDetailRepo) GetBankDetailsByTraderID(
 	return bankDetails, total, nil
 }
 
-// Вспомогательная функция для безопасного маскирования карты
-func maskCardNumber(cardNumber string) string {
-    if len(cardNumber) >= 4 {
-        return "***" + cardNumber[len(cardNumber)-4:]
-    } else if cardNumber != "" {
-        return cardNumber
-    }
-    return "N/A"
-}
-
 func (r *DefaultBankDetailRepo) FindSuitableBankDetails(searchQuery *domain.SuitablleBankDetailsQuery) ([]*domain.BankDetail, error) {
     log.Printf("=== START FindSuitableBankDetails ===")
     log.Printf("SearchQuery: AmountFiat=%.2f, PaymentSystem=%s, Currency=%s, BankCode=%s, NspkCode=%s",
@@ -169,9 +160,7 @@ func (r *DefaultBankDetailRepo) FindSuitableBankDetails(searchQuery *domain.Suit
 
 // Этап 1 остается без изменений
 // Этап 1: Находим базовые кандидаты по статическим параметрам
-func (r *DefaultBankDetailRepo) findBaseCandidates(searchQuery *domain.SuitablleBankDetailsQuery) ([]models.BankDetailModel, error) {
-    // log.Printf("\n--- Stage 1: findBaseCandidates ---")
-    
+func (r *DefaultBankDetailRepo) findBaseCandidates(searchQuery *domain.SuitablleBankDetailsQuery) ([]models.BankDetailModel, error) { 
     var baseCandidates []models.BankDetailModel
     
     query := r.DB.Model(&models.BankDetailModel{}).
@@ -181,12 +170,8 @@ func (r *DefaultBankDetailRepo) findBaseCandidates(searchQuery *domain.Suitablle
         Where("currency = ?", searchQuery.Currency).
         Where("deleted_at IS NULL")
     
-    // log.Printf("Base filters: enabled=true, amount range includes %.2f, payment_system=%s, currency=%s",
-    //     searchQuery.AmountFiat, searchQuery.PaymentSystem, searchQuery.Currency)
-    
     if searchQuery.BankCode != "" {
         query = query.Where("bank_code = ?", searchQuery.BankCode)
-        // log.Printf("Additional filter: bank_code=%s", searchQuery.BankCode)
     }
     
     if searchQuery.NspkCode != "" {
@@ -200,23 +185,7 @@ func (r *DefaultBankDetailRepo) findBaseCandidates(searchQuery *domain.Suitablle
         log.Printf("ERROR: Database query failed: %v", err)
         return nil, err
     }
-    
-    // log.Printf("\nFound %d base candidates:", len(baseCandidates))
-    // for i, candidate := range baseCandidates {
-    //     log.Printf("  [%d] TraderID=%s, Card=%s, Amount=[%.2f-%.2f], PaymentSystem=%s, Currency=%s, BankCode=%s, Enabled=%v, MaxSimultaneous=%d",
-    //         i+1,
-    //         candidate.TraderID,
-    //         maskCardNumber(candidate.CardNumber),
-    //         candidate.MinAmount,
-    //         candidate.MaxAmount,
-    //         candidate.PaymentSystem,
-    //         candidate.Currency,
-    //         candidate.BankCode,
-    //         candidate.Enabled,
-    //         candidate.MaxOrdersSimultaneosly,
-    //     )
-    // }
-    
+
     return baseCandidates, err
 }
 
@@ -355,43 +324,6 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
         return nil, fmt.Errorf("failed to get debug stats: %w", err)
     }
     
-    // Логируем детальную статистику
-    // log.Printf("\nDetailed stats for %d candidates:", len(debugStats))
-    // for i, stat := range debugStats {
-    //     reasons := []string{}
-    //     if stat.Reason1 != nil { reasons = append(reasons, *stat.Reason1) }
-    //     if stat.Reason2 != nil { reasons = append(reasons, *stat.Reason2) }
-    //     if stat.Reason3 != nil { reasons = append(reasons, *stat.Reason3) }
-    //     if stat.Reason4 != nil { reasons = append(reasons, *stat.Reason4) }
-    //     if stat.Reason5 != nil { reasons = append(reasons, *stat.Reason5) }
-    //     if stat.Reason6 != nil { reasons = append(reasons, *stat.Reason6) }
-    //     if stat.Reason7 != nil { reasons = append(reasons, *stat.Reason7) }
-        
-    //     status := "✓ PASSED"
-    //     if len(reasons) > 0 {
-    //         status = fmt.Sprintf("✗ REJECTED: %v", reasons)
-    //     }
-        
-    //     lastCompleted := "NEVER"
-    //     if stat.LastCompletedTime != nil {
-    //         lastCompleted = stat.LastCompletedTime.Format("15:04:05")
-    //     }
-        
-    //     log.Printf("  [%d] %s", i+1, status)
-    //     log.Printf("      BankDetailID=%s, TraderID=%s, Card=%s", 
-    //         stat.BankDetailID, stat.TraderID, maskCardNumber(stat.CardNumber))
-    //     log.Printf("      Pending: %d/%d, DayCount: %d+1/%d, DayAmount: %.2f+%.2f/%.2f",
-    //         stat.PendingCount, stat.MaxOrdersSimultaneous,
-    //         stat.DayCount, stat.MaxQuantityDay,
-    //         stat.DayAmount, searchQuery.AmountFiat, stat.MaxAmountDay)
-    //     log.Printf("      MonthCount: %d+1/%d, MonthAmount: %.2f+%.2f/%.2f",
-    //         stat.MonthCount, stat.MaxQuantityMonth,
-    //         stat.MonthAmount, searchQuery.AmountFiat, stat.MaxAmountMonth)
-    //     log.Printf("      LastCompleted: %s, Delay: %v, Duplicates: %d",
-    //         lastCompleted, stat.Delay, stat.DuplicateCount)
-    // }
-    
-    // Финальный запрос с правильной группировкой
     finalQuery := `
         WITH bank_detail_stats AS (
             SELECT 
@@ -453,8 +385,6 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsOptimized(baseCandidates 
     bankDetails := make([]*domain.BankDetail, len(finalCandidates))
     for i, bankDetail := range finalCandidates {
         bankDetails[i] = mappers.ToDomainBankDetail(&bankDetail)
-        // log.Printf("  Final [%d] BankDetailID=%s, TraderID=%s, Card=%s", 
-        //     i+1, bankDetail.ID, bankDetail.TraderID, maskCardNumber(bankDetail.CardNumber))
     }
     
     return bankDetails, nil
@@ -547,4 +477,290 @@ func (r *DefaultBankDetailRepo) GetBankDetails(filter domain.GetBankDetailsFilte
 	}
 
 	return bankDetails, total, nil
+}
+
+func (r *DefaultBankDetailRepo) FindSuitableBankDetailsWithLock(searchQuery *domain.SuitablleBankDetailsQuery) ([]*domain.BankDetail, error) {
+    log.Printf("=== START FindSuitableBankDetailsWithLock ===")
+    
+    // Начинаем транзакцию ТОЛЬКО для блокировки
+    tx := r.DB.Begin()
+    if tx.Error != nil {
+        return nil, tx.Error
+    }
+    
+    defer func() {
+        // Всегда откатываем - мы только для блокировки использовали
+        tx.Rollback() 
+    }()
+
+    // 1. Находим базовых кандидатов
+    baseCandidates, err := r.findBaseCandidatesWithLock(tx, searchQuery)
+    if err != nil {
+        log.Printf("ERROR: findBaseCandidatesWithLock failed: %v", err)
+        return nil, err
+    }
+    
+    log.Printf("Stage 1 (findBaseCandidatesWithLock): Found %d candidates", len(baseCandidates))
+    
+    if len(baseCandidates) == 0 {
+        log.Printf("WARNING: No base candidates found. Returning empty result.")
+        return []*domain.BankDetail{}, nil
+    }
+
+    // 2. Проверяем лимиты на заблокированных реквизитах
+    finalCandidates, err := r.applyDynamicConstraintsWithLock(tx, baseCandidates, searchQuery)
+    if err != nil {
+        log.Printf("ERROR: applyDynamicConstraintsWithLock failed: %v", err)
+        return nil, err
+    }
+
+    log.Printf("Stage 2 (applyDynamicConstraintsWithLock): Final %d candidates", len(finalCandidates))
+    log.Printf("=== END FindSuitableBankDetailsWithLock ===\n")
+
+    return finalCandidates, nil
+}
+
+func (r *DefaultBankDetailRepo) findBaseCandidatesWithLock(tx *gorm.DB, searchQuery *domain.SuitablleBankDetailsQuery) ([]models.BankDetailModel, error) { 
+    var baseCandidates []models.BankDetailModel
+    
+    query := tx.Model(&models.BankDetailModel{}).
+        Where("enabled = ?", true).
+        Where("min_amount <= ? AND max_amount >= ?", searchQuery.AmountFiat, searchQuery.AmountFiat).
+        Where("payment_system = ?", searchQuery.PaymentSystem).
+        Where("currency = ?", searchQuery.Currency).
+        Where("deleted_at IS NULL")
+    
+    if searchQuery.BankCode != "" {
+        query = query.Where("bank_code = ?", searchQuery.BankCode)
+    }
+    
+    if searchQuery.NspkCode != "" {
+        query = query.Where("nspk_code = ?", searchQuery.NspkCode)
+    }
+    
+    // БЛОКИРУЕМ найденные реквизиты
+    err := query.Clauses(clause.Locking{Strength: "UPDATE"}).Find(&baseCandidates).Error
+    
+    if err != nil {
+        log.Printf("ERROR: Database query with lock failed: %v", err)
+        return nil, err
+    }
+
+    return baseCandidates, err
+}
+
+func (r *DefaultBankDetailRepo) applyDynamicConstraintsWithLock(tx *gorm.DB, bankDetails []models.BankDetailModel, searchQuery *domain.SuitablleBankDetailsQuery) ([]*domain.BankDetail, error) {
+    if len(bankDetails) == 0 {
+        return []*domain.BankDetail{}, nil
+    }
+    
+    bankDetailIDs := make([]string, len(bankDetails))
+    for i, candidate := range bankDetails {
+        bankDetailIDs[i] = candidate.ID
+    }
+    
+    now := time.Now()
+    startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+    startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+    
+    // SQL запрос для проверки лимитов
+    sqlQuery := `
+        WITH bank_detail_stats AS (
+            SELECT 
+                bank_details_id::text as bank_details_id_text,
+                COUNT(CASE WHEN status = $1 THEN 1 END) as pending_count,
+                COUNT(CASE WHEN status = ANY($2::text[]) AND created_at >= $3 THEN 1 END) as day_count,
+                COALESCE(SUM(CASE WHEN status = ANY($4::text[]) AND created_at >= $5 THEN amount_fiat END), 0) as day_amount,
+                COUNT(CASE WHEN status = ANY($6::text[]) AND created_at >= $7 THEN 1 END) as month_count,
+                COALESCE(SUM(CASE WHEN status = ANY($8::text[]) AND created_at >= $9 THEN amount_fiat END), 0) as month_amount,
+                MAX(CASE WHEN status = $10 THEN created_at END) as last_completed_time
+            FROM order_models 
+            WHERE bank_details_id::text = ANY($11::text[])
+            GROUP BY bank_details_id
+        )
+        SELECT bd.* 
+        FROM bank_detail_models bd
+        LEFT JOIN bank_detail_stats bds ON bd.id::text = bds.bank_details_id_text
+        WHERE bd.id::text = ANY($12::text[])
+          AND COALESCE(bds.pending_count, 0) < bd.max_orders_simultaneosly
+          AND COALESCE(bds.day_count, 0) + 1 <= bd.max_quantity_day
+          AND COALESCE(bds.day_amount, 0) + $13 <= bd.max_amount_day
+          AND COALESCE(bds.month_count, 0) + 1 <= bd.max_quantity_month
+          AND COALESCE(bds.month_amount, 0) + $14 <= bd.max_amount_month
+          AND (bds.last_completed_time IS NULL OR bds.last_completed_time <= NOW() - (bd.delay / 1000000000.0) * INTERVAL '1 SECOND')
+    `
+    
+    var finalCandidates []models.BankDetailModel
+    
+    pendingCompletedStatuses := []string{string(domain.StatusPending), string(domain.StatusCompleted)}
+    
+    err := tx.Raw(sqlQuery,
+        string(domain.StatusPending),
+        pq.Array(pendingCompletedStatuses),
+        startOfDay,
+        pq.Array(pendingCompletedStatuses),
+        startOfDay,
+        pq.Array(pendingCompletedStatuses),
+        startOfMonth,
+        pq.Array(pendingCompletedStatuses),
+        startOfMonth,
+        string(domain.StatusCompleted),
+        pq.Array(bankDetailIDs),
+        pq.Array(bankDetailIDs),
+        searchQuery.AmountFiat,
+        searchQuery.AmountFiat,
+    ).Scan(&finalCandidates).Error
+    
+    if err != nil {
+        log.Printf("ERROR: Final query with lock failed: %v", err)
+        return nil, fmt.Errorf("failed to apply dynamic constraints with lock: %w", err)
+    }
+    
+    log.Printf("Final result with lock: %d candidates passed all checks", len(finalCandidates))
+    
+    bankDetailsResult := make([]*domain.BankDetail, len(finalCandidates))
+    for i, bankDetail := range finalCandidates {
+        bankDetailsResult[i] = mappers.ToDomainBankDetail(&bankDetail)
+    }
+    
+    return bankDetailsResult, nil
+}
+
+// internal/infrastructure/postgres/repository/bank_detail_repository.go
+
+// WithTx создает BankDetailRepository с транзакцией
+func (r *DefaultBankDetailRepo) WithTx(txRepo domain.OrderRepository) domain.BankDetailRepository {
+    // Получаем *gorm.DB из txRepo через утверждение типа
+    txOrderRepo, ok := txRepo.(*DefaultOrderRepository)
+    if !ok {
+        // Если не удалось привести к типу, возвращаем оригинальный репозиторий
+        return r
+    }
+    return &DefaultBankDetailRepo{DB: txOrderRepo.DB}
+}
+
+// FindSuitableBankDetailsInTx ищет подходящие реквизиты в транзакции с блокировкой
+func (r *DefaultBankDetailRepo) FindSuitableBankDetailsInTx(searchQuery *domain.SuitablleBankDetailsQuery) ([]*domain.BankDetail, error) {
+    log.Printf("=== START FindSuitableBankDetailsInTx ===")
+    
+    // 1. Находим базовых кандидатов с БЛОКИРОВКОЙ
+    var baseCandidates []models.BankDetailModel
+    
+    query := r.DB.Model(&models.BankDetailModel{}).
+        Where("enabled = ?", true).
+        Where("min_amount <= ? AND max_amount >= ?", searchQuery.AmountFiat, searchQuery.AmountFiat).
+        Where("payment_system = ?", searchQuery.PaymentSystem).
+        Where("currency = ?", searchQuery.Currency).
+        Where("deleted_at IS NULL")
+    
+    if searchQuery.BankCode != "" {
+        query = query.Where("bank_code = ?", searchQuery.BankCode)
+    }
+    
+    if searchQuery.NspkCode != "" {
+        query = query.Where("nspk_code = ?", searchQuery.NspkCode)
+    }
+    
+    // БЛОКИРУЕМ найденные реквизиты на время транзакции
+    err := query.Clauses(clause.Locking{Strength: "UPDATE"}).Find(&baseCandidates).Error
+    if err != nil {
+        log.Printf("ERROR: Database query with lock failed: %v", err)
+        return nil, err
+    }
+    
+    log.Printf("Stage 1 (findBaseCandidates with lock): Found %d candidates", len(baseCandidates))
+    
+    if len(baseCandidates) == 0 {
+        log.Printf("WARNING: No base candidates found. Returning empty result.")
+        return []*domain.BankDetail{}, nil
+    }
+
+    // 2. Применяем динамические ограничения на заблокированных реквизитах
+    finalCandidates, err := r.applyDynamicConstraintsInTx(baseCandidates, searchQuery)
+    if err != nil {
+        log.Printf("ERROR: applyDynamicConstraintsInTx failed: %v", err)
+        return nil, err
+    }
+
+    log.Printf("Stage 2 (applyDynamicConstraintsInTx): Final %d candidates", len(finalCandidates))
+    log.Printf("=== END FindSuitableBankDetailsInTx ===\n")
+
+    return finalCandidates, nil
+}
+
+// applyDynamicConstraintsInTx применяет динамические ограничения в транзакции
+func (r *DefaultBankDetailRepo) applyDynamicConstraintsInTx(baseCandidates []models.BankDetailModel, searchQuery *domain.SuitablleBankDetailsQuery) ([]*domain.BankDetail, error) {
+    if len(baseCandidates) == 0 {
+        return []*domain.BankDetail{}, nil
+    }
+    
+    bankDetailIDs := make([]string, len(baseCandidates))
+    for i, candidate := range baseCandidates {
+        bankDetailIDs[i] = candidate.ID
+    }
+    
+    now := time.Now()
+    startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+    startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+    
+    finalQuery := `
+        WITH bank_detail_stats AS (
+            SELECT 
+                bank_details_id::text as bank_details_id_text,
+                COUNT(CASE WHEN status = $1 THEN 1 END) as pending_count,
+                COUNT(CASE WHEN status = ANY($2::text[]) AND created_at >= $3 THEN 1 END) as day_count,
+                COALESCE(SUM(CASE WHEN status = ANY($4::text[]) AND created_at >= $5 THEN amount_fiat END), 0) as day_amount,
+                COUNT(CASE WHEN status = ANY($6::text[]) AND created_at >= $7 THEN 1 END) as month_count,
+                COALESCE(SUM(CASE WHEN status = ANY($8::text[]) AND created_at >= $9 THEN amount_fiat END), 0) as month_amount,
+                MAX(CASE WHEN status = $10 THEN created_at END) as last_completed_time
+            FROM order_models 
+            WHERE bank_details_id::text = ANY($11::text[])
+            GROUP BY bank_details_id
+        )
+        SELECT bd.* 
+        FROM bank_detail_models bd
+        LEFT JOIN bank_detail_stats bds ON bd.id::text = bds.bank_details_id_text
+        WHERE bd.id::text = ANY($12::text[])
+          AND COALESCE(bds.pending_count, 0) < bd.max_orders_simultaneosly
+          AND COALESCE(bds.day_count, 0) + 1 <= bd.max_quantity_day
+          AND COALESCE(bds.day_amount, 0) + $13 <= bd.max_amount_day
+          AND COALESCE(bds.month_count, 0) + 1 <= bd.max_quantity_month
+          AND COALESCE(bds.month_amount, 0) + $14 <= bd.max_amount_month
+          AND (bds.last_completed_time IS NULL OR bds.last_completed_time <= NOW() - (bd.delay / 1000000000.0) * INTERVAL '1 SECOND')
+    `
+    
+    var finalCandidates []models.BankDetailModel
+    
+    pendingCompletedStatuses := []string{string(domain.StatusPending), string(domain.StatusCompleted)}
+    
+    err := r.DB.Raw(finalQuery,
+        string(domain.StatusPending),
+        pq.Array(pendingCompletedStatuses),
+        startOfDay,
+        pq.Array(pendingCompletedStatuses),
+        startOfDay,
+        pq.Array(pendingCompletedStatuses),
+        startOfMonth,
+        pq.Array(pendingCompletedStatuses),
+        startOfMonth,
+        string(domain.StatusCompleted),
+        pq.Array(bankDetailIDs),
+        pq.Array(bankDetailIDs),
+        searchQuery.AmountFiat,
+        searchQuery.AmountFiat,
+    ).Scan(&finalCandidates).Error
+    
+    if err != nil {
+        log.Printf("ERROR: Final query in tx failed: %v", err)
+        return nil, fmt.Errorf("failed to apply dynamic constraints in tx: %w", err)
+    }
+    
+    log.Printf("Final result in tx: %d candidates passed all checks", len(finalCandidates))
+    
+    bankDetails := make([]*domain.BankDetail, len(finalCandidates))
+    for i, bankDetail := range finalCandidates {
+        bankDetails[i] = mappers.ToDomainBankDetail(&bankDetail)
+    }
+    
+    return bankDetails, nil
 }

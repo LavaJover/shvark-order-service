@@ -738,3 +738,50 @@ func (r *DefaultOrderRepository) GetAutomaticStats(ctx context.Context, traderID
     
     return stats, nil
 }
+
+// internal/infrastructure/postgres/repository/order_repository.go
+
+// BeginTx начинает транзакцию
+func (r *DefaultOrderRepository) BeginTx() (domain.OrderRepository, error) {
+    tx := r.DB.Begin()
+    if tx.Error != nil {
+        return nil, tx.Error
+    }
+    return &DefaultOrderRepository{DB: tx}, nil
+}
+
+// Commit подтверждает транзакцию
+func (r *DefaultOrderRepository) Commit() error {
+    return r.DB.Commit().Error
+}
+
+// Rollback откатывает транзакцию
+func (r *DefaultOrderRepository) Rollback() error {
+    return r.DB.Rollback().Error
+}
+
+// CreateOrderInTx создает заказ в транзакции
+func (r *DefaultOrderRepository) CreateOrderInTx(order *domain.Order) error {
+    orderModel := mappers.ToGORMOrder(order)
+    if err := r.DB.Create(orderModel).Error; err != nil {
+        return err
+    }
+    return nil
+}
+
+// GetCreatedOrdersByClientIDInTx проверяет идемпотентность в транзакции
+func (r *DefaultOrderRepository) GetCreatedOrdersByClientIDInTx(clientID string) ([]*domain.Order, error) {
+    var orderModels []models.OrderModel
+    if err := r.DB.Model(&models.OrderModel{}).
+        Where("client_id = ? AND status = ?", clientID, domain.StatusPending).
+        Find(&orderModels).Error; err != nil {
+        return nil, err
+    }
+
+    orders := make([]*domain.Order, len(orderModels))
+    for i, orderModel := range orderModels {
+        orders[i] = mappers.ToDomainOrder(&orderModel)
+    }
+
+    return orders, nil
+}

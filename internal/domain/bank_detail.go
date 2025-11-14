@@ -91,6 +91,14 @@ type BankDetailRepository interface {
 	FindSuitableBankDetails(query *SuitablleBankDetailsQuery) ([]*BankDetail, error)
 	GetBankDetailsStatsByTraderID(traderID string) ([]*BankDetailStat, error)
 	GetBankDetails(filter GetBankDetailsFilter) ([]*BankDetail, int64, error)
+	
+	// Методы для транзакций
+	WithTx(txRepo OrderRepository) BankDetailRepository
+
+	// Метод с блокировкой для транзакций
+	FindSuitableBankDetailsInTx(searchQuery *SuitablleBankDetailsQuery) ([]*BankDetail, error)
+
+	FindSuitableBankDetailsWithLock(searchQuery *SuitablleBankDetailsQuery) ([]*BankDetail, error)
 }
 
 type GetBankDetailsFilter struct {
