@@ -453,6 +453,51 @@ service TrafficService {
     rpc CheckTrafficUnlocked(CheckTrafficUnlockedRequest) returns (CheckTrafficUnlockedResponse);
 
     rpc GetTraderTraffic(GetTraderTrafficRequest) returns (GetTraderTrafficResponse);
+
+    // НОВЫЕ МЕТОДЫ ДЛЯ УПРАВЛЕНИЯ КУРСАМИ
+    rpc UpdateExchangeConfig(UpdateExchangeConfigRequest) returns (UpdateExchangeConfigResponse);
+    rpc GetExchangeConfig(GetExchangeConfigRequest) returns (GetExchangeConfigResponse);
+    rpc GetAvailableExchangeProviders(GetAvailableExchangeProvidersRequest) returns (GetAvailableExchangeProvidersResponse);
+}
+
+// ==================== EXCHANGE RATE CONFIGURATION ====================
+
+// Новые сообщения для управления курсами
+message UpdateExchangeConfigRequest {
+    string traffic_id = 1;
+    ExchangeConfig exchange_config = 2;
+}
+
+message UpdateExchangeConfigResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message GetExchangeConfigRequest {
+    string traffic_id = 1;
+}
+
+message GetExchangeConfigResponse {
+    ExchangeConfig exchange_config = 1;
+}
+
+message GetAvailableExchangeProvidersRequest {}
+
+message GetAvailableExchangeProvidersResponse {
+    repeated string providers = 1;
+}
+
+message ExchangeConfig {
+    string exchange_provider = 1;
+    OrderBookRange order_book_range = 2;
+    double markup_percent = 3;
+    repeated string fallback_providers = 4;
+    string currency_pair = 5;
+}
+
+message OrderBookRange {
+    int32 start = 1;
+    int32 end = 2;
 }
 
 // Request/Response for getting lock statuses
@@ -506,46 +551,7 @@ message SetAntifraudLockTrafficStatusRequest {
 
 message SetAntifraudLockTrafficStatusResponse{}
 
-
-// type Traffic struct {
-// 	ID 					string
-// 	MerchantID 			string
-// 	TraderID 			string
-// 	TraderRewardPercent float64
-// 	PlatformFee			float64
-// 	TraderPriority 		float64
-// 	Enabled 			bool // для админов
-
-// 	// Гибкие параметры
-// 	ActivityParams 		TrafficActivityParams
-
-// 	// Для антифрода
-// 	AntifraudParams		TrafficAntifraudParams
-
-// 	// Детали блокировки
-// 	LockDetails			*TrafficLockDetails
-
-// 	// Бизнес-параметры
-// 	BusinessParams		TrafficBusinessParams
-// }
-
-// type TrafficActivityParams struct {
-// 	MerchantUnlocked	bool
-// 	TraderUnlocked		bool
-// 	AntifraudUnlocked	bool
-// 	ManuallyUnlocked	bool
-// }
-
-// type TrafficAntifraudParams struct {
-// 	AntifraudRequired bool
-// }
-
-// type TrafficLockDetails struct {
-// 	LockedAt			time.Time
-// 	UnlockedAt			time.Time
-// 	Reason				string
-// }
-
+// Обновляем AddTrafficRequest, добавляем конфигурацию курсов
 message AddTrafficRequest {
     string merchant_id = 1;
     string trader_id = 2;
@@ -558,6 +564,9 @@ message AddTrafficRequest {
     TrafficActivityParameters activity_params = 7;
     TrafficAntifraudParameters antifraud_params = 8;
     TrafficBusinessParameters business_params = 9;
+    
+    // НОВОЕ: Конфигурация курсов
+    ExchangeConfig exchange_config = 11;
 }
 
 message TrafficActivityParameters {
@@ -588,12 +597,16 @@ message Traffic {
     TrafficActivityParameters activity_params = 8;
     TrafficAntifraudParameters antifraud_params = 9;
     TrafficBusinessParameters business_params = 10;
+    
+    // НОВОЕ: Конфигурация курсов
+    ExchangeConfig exchange_config = 12;
 }
 
 message AddTrafficResponse {
     string message = 1;
 }
 
+// Обновляем EditTrafficRequest, добавляем конфигурацию курсов
 message EditTrafficRequest {
     string id = 1;
     optional string merchant_id = 2;
@@ -606,6 +619,9 @@ message EditTrafficRequest {
     optional TrafficAntifraudParameters antifraud_params = 9;
     optional TrafficBusinessParameters business_params = 10;
     optional string name = 11;
+    
+    // НОВОЕ: Конфигурация курсов
+    optional ExchangeConfig exchange_config = 12;
 }
 
 message EditTrafficResponse {

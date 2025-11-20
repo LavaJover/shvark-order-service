@@ -49,6 +49,8 @@ func main() {
         useCases.OrderUsecase,
         useCases.DisputeUsecase, 
         useCases.DeviceUsecase,
+        useCases.TrafficUsecase,
+        useCases.ExchangeRateService,
     )
     bgTasks.StartAll(ctx)
     

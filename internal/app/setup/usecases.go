@@ -16,6 +16,7 @@ type UseCases struct {
     DeviceUsecase       usecase.DeviceUsecase
     DisputeUsecase      usecase.DisputeUsecase
     AutomaticUsecase    usecase.AutomaticUsecase
+    ExchangeRateService    usecase.ExchangeRateService
 }
 
 func InitializeUseCases(deps *Dependencies) (*UseCases, error) {
@@ -49,6 +50,8 @@ func InitializeUseCases(deps *Dependencies) (*UseCases, error) {
     )
     
     automaticUsecase := usecase.NewDefaultAutomaticUsecase(deps.Repositories.OrderRepo)
+
+    exchangeRateService := usecase.NewDefaultExchangeRateService()
     
     return &UseCases{
         OrderUsecase:        orderUsecase,
@@ -58,6 +61,7 @@ func InitializeUseCases(deps *Dependencies) (*UseCases, error) {
         DeviceUsecase:       deviceUsecase,
         DisputeUsecase:      disputeUsecase,
         AutomaticUsecase:    automaticUsecase,
+        ExchangeRateService: exchangeRateService,
     }, nil
 }
 

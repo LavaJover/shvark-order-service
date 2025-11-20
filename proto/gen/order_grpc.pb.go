@@ -781,6 +781,9 @@ const (
 	TrafficService_GetTrafficLockStatuses_FullMethodName        = "/order.TrafficService/GetTrafficLockStatuses"
 	TrafficService_CheckTrafficUnlocked_FullMethodName          = "/order.TrafficService/CheckTrafficUnlocked"
 	TrafficService_GetTraderTraffic_FullMethodName              = "/order.TrafficService/GetTraderTraffic"
+	TrafficService_UpdateExchangeConfig_FullMethodName          = "/order.TrafficService/UpdateExchangeConfig"
+	TrafficService_GetExchangeConfig_FullMethodName             = "/order.TrafficService/GetExchangeConfig"
+	TrafficService_GetAvailableExchangeProviders_FullMethodName = "/order.TrafficService/GetAvailableExchangeProviders"
 )
 
 // TrafficServiceClient is the client API for TrafficService service.
@@ -804,6 +807,10 @@ type TrafficServiceClient interface {
 	GetTrafficLockStatuses(ctx context.Context, in *GetTrafficLockStatusesRequest, opts ...grpc.CallOption) (*GetTrafficLockStatusesResponse, error)
 	CheckTrafficUnlocked(ctx context.Context, in *CheckTrafficUnlockedRequest, opts ...grpc.CallOption) (*CheckTrafficUnlockedResponse, error)
 	GetTraderTraffic(ctx context.Context, in *GetTraderTrafficRequest, opts ...grpc.CallOption) (*GetTraderTrafficResponse, error)
+	// НОВЫЕ МЕТОДЫ ДЛЯ УПРАВЛЕНИЯ КУРСАМИ
+	UpdateExchangeConfig(ctx context.Context, in *UpdateExchangeConfigRequest, opts ...grpc.CallOption) (*UpdateExchangeConfigResponse, error)
+	GetExchangeConfig(ctx context.Context, in *GetExchangeConfigRequest, opts ...grpc.CallOption) (*GetExchangeConfigResponse, error)
+	GetAvailableExchangeProviders(ctx context.Context, in *GetAvailableExchangeProvidersRequest, opts ...grpc.CallOption) (*GetAvailableExchangeProvidersResponse, error)
 }
 
 type trafficServiceClient struct {
@@ -954,6 +961,36 @@ func (c *trafficServiceClient) GetTraderTraffic(ctx context.Context, in *GetTrad
 	return out, nil
 }
 
+func (c *trafficServiceClient) UpdateExchangeConfig(ctx context.Context, in *UpdateExchangeConfigRequest, opts ...grpc.CallOption) (*UpdateExchangeConfigResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateExchangeConfigResponse)
+	err := c.cc.Invoke(ctx, TrafficService_UpdateExchangeConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trafficServiceClient) GetExchangeConfig(ctx context.Context, in *GetExchangeConfigRequest, opts ...grpc.CallOption) (*GetExchangeConfigResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetExchangeConfigResponse)
+	err := c.cc.Invoke(ctx, TrafficService_GetExchangeConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trafficServiceClient) GetAvailableExchangeProviders(ctx context.Context, in *GetAvailableExchangeProvidersRequest, opts ...grpc.CallOption) (*GetAvailableExchangeProvidersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAvailableExchangeProvidersResponse)
+	err := c.cc.Invoke(ctx, TrafficService_GetAvailableExchangeProviders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TrafficServiceServer is the server API for TrafficService service.
 // All implementations must embed UnimplementedTrafficServiceServer
 // for forward compatibility.
@@ -975,6 +1012,10 @@ type TrafficServiceServer interface {
 	GetTrafficLockStatuses(context.Context, *GetTrafficLockStatusesRequest) (*GetTrafficLockStatusesResponse, error)
 	CheckTrafficUnlocked(context.Context, *CheckTrafficUnlockedRequest) (*CheckTrafficUnlockedResponse, error)
 	GetTraderTraffic(context.Context, *GetTraderTrafficRequest) (*GetTraderTrafficResponse, error)
+	// НОВЫЕ МЕТОДЫ ДЛЯ УПРАВЛЕНИЯ КУРСАМИ
+	UpdateExchangeConfig(context.Context, *UpdateExchangeConfigRequest) (*UpdateExchangeConfigResponse, error)
+	GetExchangeConfig(context.Context, *GetExchangeConfigRequest) (*GetExchangeConfigResponse, error)
+	GetAvailableExchangeProviders(context.Context, *GetAvailableExchangeProvidersRequest) (*GetAvailableExchangeProvidersResponse, error)
 	mustEmbedUnimplementedTrafficServiceServer()
 }
 
@@ -1026,6 +1067,15 @@ func (UnimplementedTrafficServiceServer) CheckTrafficUnlocked(context.Context, *
 }
 func (UnimplementedTrafficServiceServer) GetTraderTraffic(context.Context, *GetTraderTrafficRequest) (*GetTraderTrafficResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTraderTraffic not implemented")
+}
+func (UnimplementedTrafficServiceServer) UpdateExchangeConfig(context.Context, *UpdateExchangeConfigRequest) (*UpdateExchangeConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateExchangeConfig not implemented")
+}
+func (UnimplementedTrafficServiceServer) GetExchangeConfig(context.Context, *GetExchangeConfigRequest) (*GetExchangeConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExchangeConfig not implemented")
+}
+func (UnimplementedTrafficServiceServer) GetAvailableExchangeProviders(context.Context, *GetAvailableExchangeProvidersRequest) (*GetAvailableExchangeProvidersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAvailableExchangeProviders not implemented")
 }
 func (UnimplementedTrafficServiceServer) mustEmbedUnimplementedTrafficServiceServer() {}
 func (UnimplementedTrafficServiceServer) testEmbeddedByValue()                        {}
@@ -1300,6 +1350,60 @@ func _TrafficService_GetTraderTraffic_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TrafficService_UpdateExchangeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateExchangeConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).UpdateExchangeConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_UpdateExchangeConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).UpdateExchangeConfig(ctx, req.(*UpdateExchangeConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrafficService_GetExchangeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetExchangeConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).GetExchangeConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_GetExchangeConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).GetExchangeConfig(ctx, req.(*GetExchangeConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrafficService_GetAvailableExchangeProviders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAvailableExchangeProvidersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).GetAvailableExchangeProviders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_GetAvailableExchangeProviders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).GetAvailableExchangeProviders(ctx, req.(*GetAvailableExchangeProvidersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TrafficService_ServiceDesc is the grpc.ServiceDesc for TrafficService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1362,6 +1466,18 @@ var TrafficService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTraderTraffic",
 			Handler:    _TrafficService_GetTraderTraffic_Handler,
+		},
+		{
+			MethodName: "UpdateExchangeConfig",
+			Handler:    _TrafficService_UpdateExchangeConfig_Handler,
+		},
+		{
+			MethodName: "GetExchangeConfig",
+			Handler:    _TrafficService_GetExchangeConfig_Handler,
+		},
+		{
+			MethodName: "GetAvailableExchangeProviders",
+			Handler:    _TrafficService_GetAvailableExchangeProviders_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

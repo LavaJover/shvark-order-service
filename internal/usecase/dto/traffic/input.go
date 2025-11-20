@@ -14,6 +14,8 @@ type EditTrafficInput struct {
 	ActivityParams 			*TrafficActivityParams 	
 	AntifraudParams 		*TrafficAntifraudParams 
 	BusinessParams 			*TrafficBusinessParams 	
+	// НОВОЕ: Конфигурация курсов
+    ExchangeConfig  *ExchangeConfigInput `json:"exchange_config,omitempty"`
 }
 
 type TrafficActivityParams struct {
@@ -29,4 +31,18 @@ type TrafficAntifraudParams struct {
 
 type TrafficBusinessParams struct {
 	MerchantDealsDuration time.Duration
+}
+
+// Добавляем структуры для конфигурации курсов
+type ExchangeConfigInput struct {
+    ExchangeProvider   string    `json:"exchange_provider"`
+    OrderBookRange     *OrderBookRangeInput `json:"order_book_range,omitempty"`
+    MarkupPercent      float64   `json:"markup_percent"`
+    FallbackProviders  []string  `json:"fallback_providers"`
+    CurrencyPair       string    `json:"currency_pair"`
+}
+
+type OrderBookRangeInput struct {
+    Start int `json:"start"`
+    End   int `json:"end"`
 }

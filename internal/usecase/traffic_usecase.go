@@ -24,6 +24,11 @@ type TrafficUsecase interface {
 	IsTrafficUnlocked(trafficID string) (*trafficdto.TrafficUnlockedResponse, error)
 	GetLockStatuses(trafficID string) (*trafficdto.LockStatusesResponse, error)
 	GetTrafficByTraderID(traderID string) ([]*domain.Traffic, error) // НОВОЕ
+
+	// НОВЫЕ МЕТОДЫ ДЛЯ УПРАВЛЕНИЯ КУРСАМИ
+	UpdateExchangeConfig(trafficID string, config *domain.ExchangeConfig) error
+	GetExchangeConfig(trafficID string) (*domain.ExchangeConfig, error)
+	GetAvailableExchangeProviders() []string
 }
 
 type DefaultTrafficUsecase struct {
@@ -132,4 +137,76 @@ func (uc *DefaultTrafficUsecase) GetTrafficByTraderID(traderID string) ([]*domai
     }
 
     return uc.TrafficRepo.GetTrafficByTraderID(traderID)
+}
+
+// НОВЫЕ МЕТОДЫ ДЛЯ УПРАВЛЕНИЯ КУРСАМИ
+
+// UpdateExchangeConfig обновляет конфигурацию курсов для трафика
+func (uc *DefaultTrafficUsecase) UpdateExchangeConfig(trafficID string, config *domain.ExchangeConfig) error {
+    if trafficID == "" {
+        return fmt.Errorf("trafficID cannot be empty")
+    }
+
+    // Валидация конфигурации
+    if err := uc.validateExchangeConfig(config); err != nil {
+        return fmt.Errorf("invalid exchange config: %w", err)
+    }
+
+    return uc.TrafficRepo.UpdateExchangeConfig(trafficID, config)
+}
+
+// GetExchangeConfig получает конфигурацию курсов для трафика
+func (uc *DefaultTrafficUsecase) GetExchangeConfig(trafficID string) (*domain.ExchangeConfig, error) {
+    if trafficID == "" {
+        return nil, fmt.Errorf("trafficID cannot be empty")
+    }
+
+    traffic, err := uc.TrafficRepo.GetTrafficByID(trafficID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get traffic: %w", err)
+    }
+
+    return traffic.GetExchangeConfig()
+}
+
+// GetAvailableExchangeProviders возвращает список доступных провайдеров курсов
+func (uc *DefaultTrafficUsecase) GetAvailableExchangeProviders() []string {
+    return []string{"rapira", "bybit", "binance", "manual"}
+}
+
+// validateExchangeConfig валидирует конфигурацию курсов
+func (uc *DefaultTrafficUsecase) validateExchangeConfig(config *domain.ExchangeConfig) error {
+    if config.ExchangeProvider == "" {
+        return fmt.Errorf("exchange provider is required")
+    }
+
+    // Проверяем, что провайдер доступен
+    availableProviders := uc.GetAvailableExchangeProviders()
+    validProvider := false
+    for _, provider := range availableProviders {
+        if provider == config.ExchangeProvider {
+            validProvider = true
+            break
+        }
+    }
+    if !validProvider {
+        return fmt.Errorf("invalid exchange provider: %s", config.ExchangeProvider)
+    }
+
+    // Валидация диапазона позиций стакана
+    if config.OrderBookPositions != nil {
+        if config.OrderBookPositions.Start < 0 {
+            return fmt.Errorf("order book start position cannot be negative")
+        }
+        if config.OrderBookPositions.End < config.OrderBookPositions.Start {
+            return fmt.Errorf("order book end position cannot be less than start")
+        }
+    }
+
+    // Валидация валютной пары
+    if config.CurrencyPair == "" {
+        return fmt.Errorf("currency pair is required")
+    }
+
+    return nil
 }

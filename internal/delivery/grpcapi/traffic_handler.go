@@ -22,78 +22,115 @@ func NewTrafficHandler(trafficUsecase usecase.TrafficUsecase) *TrafficHandler {
 	return &TrafficHandler{trafficUsecase: trafficUsecase}
 }
 
+// Обновляем AddTraffic для поддержки конфигурации курсов
+// Обновляем AddTraffic для поддержки конфигурации курсов
 func (h *TrafficHandler) AddTraffic(ctx context.Context, r *orderpb.AddTrafficRequest) (*orderpb.AddTrafficResponse, error) {
-	traffic := &domain.Traffic{
-		MerchantID: r.MerchantId,
-		TraderID: r.TraderId,
-		TraderRewardPercent: r.TraderRewardPercent,
-		TraderPriority: r.TraderPriority,
-		Enabled: r.Enabled,
-		PlatformFee: r.PlatformFee,
-		Name: r.Name,
-		ActivityParams: domain.TrafficActivityParams{
-			MerchantUnlocked: r.ActivityParams.MerchantUnlocked,
-			TraderUnlocked: r.ActivityParams.TraderUnlocked,
-			AntifraudUnlocked: r.ActivityParams.AntifraudUnlocked,
-			ManuallyUnlocked: r.ActivityParams.ManuallyUnlocked,
-		},
-		AntifraudParams: domain.TrafficAntifraudParams{
-			AntifraudRequired: r.AntifraudParams.AntifraudRequired,
-		},
-		BusinessParams: domain.TrafficBusinessParams{
-			MerchantDealsDuration: r.BusinessParams.MerchantDealsDuration.AsDuration(),
-		},
-	}
+    traffic := &domain.Traffic{
+        MerchantID:          r.MerchantId,
+        TraderID:            r.TraderId,
+        TraderRewardPercent: r.TraderRewardPercent,
+        TraderPriority:      r.TraderPriority,
+        Enabled:             r.Enabled,
+        PlatformFee:         r.PlatformFee,
+        Name:                r.Name,
+        ActivityParams: domain.TrafficActivityParams{
+            MerchantUnlocked:  r.ActivityParams.MerchantUnlocked,
+            TraderUnlocked:    r.ActivityParams.TraderUnlocked,
+            AntifraudUnlocked: r.ActivityParams.AntifraudUnlocked,
+            ManuallyUnlocked:  r.ActivityParams.ManuallyUnlocked,
+        },
+        AntifraudParams: domain.TrafficAntifraudParams{
+            AntifraudRequired: r.AntifraudParams.AntifraudRequired,
+        },
+        BusinessParams: domain.TrafficBusinessParams{
+            MerchantDealsDuration: r.BusinessParams.MerchantDealsDuration.AsDuration(),
+        },
+    }
 
-	if err := h.trafficUsecase.AddTraffic(traffic); err != nil {
-		return &orderpb.AddTrafficResponse{
-			Message: "failed to add new traffic",
-		}, err
-	}
+    // НОВОЕ: Добавляем конфигурацию курсов если передана
+    if r.ExchangeConfig != nil {
+        traffic.ExchangeConfig = &domain.ExchangeConfig{
+            ExchangeProvider:  r.ExchangeConfig.ExchangeProvider,
+            MarkupPercent:     r.ExchangeConfig.MarkupPercent,
+            CurrencyPair:      r.ExchangeConfig.CurrencyPair,
+            FallbackProviders: r.ExchangeConfig.FallbackProviders,
+        }
 
-	return &orderpb.AddTrafficResponse{
-		Message: "Successfully added new traffic",
-	}, nil
+        if r.ExchangeConfig.OrderBookRange != nil {
+            traffic.ExchangeConfig.OrderBookPositions = &domain.OrderBookRange{
+                Start: int(r.ExchangeConfig.OrderBookRange.Start),
+                End:   int(r.ExchangeConfig.OrderBookRange.End),
+            }
+        }
+    }
+
+    if err := h.trafficUsecase.AddTraffic(traffic); err != nil {
+        return &orderpb.AddTrafficResponse{
+            Message: "failed to add new traffic",
+        }, err
+    }
+
+    return &orderpb.AddTrafficResponse{
+        Message: "Successfully added new traffic",
+    }, nil
 }
 
+// Обновляем EditTraffic для поддержки конфигурации курсов
+// Обновляем EditTraffic для поддержки конфигурации курсов
 func (h *TrafficHandler) EditTraffic(ctx context.Context, r *orderpb.EditTrafficRequest) (*orderpb.EditTrafficResponse, error) {
+    input := &trafficdto.EditTrafficInput{
+        ID:             r.Id,
+        MerchantID:     r.MerchantId,
+        TraderID:       r.TraderId,
+        TraderReward:   r.TraderReward,
+        TraderPriority: r.TraderProirity,
+        PlatformFee:    r.PlatformFee,
+        Enabled:        r.Enabled,
+        Name:           r.Name,
+        ActivityParams: &trafficdto.TrafficActivityParams{},
+        AntifraudParams: &trafficdto.TrafficAntifraudParams{},
+        BusinessParams: &trafficdto.TrafficBusinessParams{},
+    }
 
-	input := &trafficdto.EditTrafficInput{
-		ID: r.Id,
-		MerchantID: r.MerchantId,
-		TraderID: r.TraderId,
-		TraderReward: r.TraderReward,
-		TraderPriority: r.TraderProirity,
-		PlatformFee: r.PlatformFee,
-		Enabled: r.Enabled,
-		Name: r.Name,
-		ActivityParams: &trafficdto.TrafficActivityParams{},
-		AntifraudParams: &trafficdto.TrafficAntifraudParams{},
-		BusinessParams: &trafficdto.TrafficBusinessParams{},
-	}
-	if r.ActivityParams != nil {
-		input.ActivityParams.MerchantUnlocked = r.ActivityParams.MerchantUnlocked
-		input.ActivityParams.TraderUnlocked = r.ActivityParams.TraderUnlocked
-		input.ActivityParams.AntifraudUnlocked = r.ActivityParams.AntifraudUnlocked
-		input.ActivityParams.ManuallyUnlocked = r.ActivityParams.ManuallyUnlocked
-	}
-	if r.AntifraudParams != nil {
-		input.AntifraudParams.AntifraudRequired = r.AntifraudParams.AntifraudRequired
-	}
+    if r.ActivityParams != nil {
+        input.ActivityParams.MerchantUnlocked = r.ActivityParams.MerchantUnlocked
+        input.ActivityParams.TraderUnlocked = r.ActivityParams.TraderUnlocked
+        input.ActivityParams.AntifraudUnlocked = r.ActivityParams.AntifraudUnlocked
+        input.ActivityParams.ManuallyUnlocked = r.ActivityParams.ManuallyUnlocked
+    }
+    if r.AntifraudParams != nil {
+        input.AntifraudParams.AntifraudRequired = r.AntifraudParams.AntifraudRequired
+    }
+    if r.BusinessParams != nil {
+        input.BusinessParams.MerchantDealsDuration = r.BusinessParams.MerchantDealsDuration.AsDuration()
+    }
 
-	if r.BusinessParams != nil {
-		input.BusinessParams.MerchantDealsDuration = r.BusinessParams.MerchantDealsDuration.AsDuration()
-	}
+    // НОВОЕ: Добавляем конфигурацию курсов если передана
+    if r.ExchangeConfig != nil {
+        input.ExchangeConfig = &trafficdto.ExchangeConfigInput{
+            ExchangeProvider:  r.ExchangeConfig.ExchangeProvider,
+            MarkupPercent:     r.ExchangeConfig.MarkupPercent,
+            CurrencyPair:      r.ExchangeConfig.CurrencyPair,
+            FallbackProviders: r.ExchangeConfig.FallbackProviders,
+        }
 
-	if err := h.trafficUsecase.EditTraffic(input); err != nil {
-		return &orderpb.EditTrafficResponse{
-			Message: "failed to update traffic",
-		}, nil
-	}
+        if r.ExchangeConfig.OrderBookRange != nil {
+            input.ExchangeConfig.OrderBookRange = &trafficdto.OrderBookRangeInput{
+                Start: int(r.ExchangeConfig.OrderBookRange.Start),
+                End:   int(r.ExchangeConfig.OrderBookRange.End),
+            }
+        }
+    }
 
-	return &orderpb.EditTrafficResponse{
-		Message: "traffic updated successfully",
-	}, nil
+    if err := h.trafficUsecase.EditTraffic(input); err != nil {
+        return &orderpb.EditTrafficResponse{
+            Message: "failed to update traffic",
+        }, nil
+    }
+
+    return &orderpb.EditTrafficResponse{
+        Message: "traffic updated successfully",
+    }, nil
 }
 
 func (h *TrafficHandler) DeleteTraffic(ctx context.Context, r *orderpb.DeleteTrafficRequest) (*orderpb.DeleteTrafficResponse, error) {
@@ -109,43 +146,43 @@ func (h *TrafficHandler) DeleteTraffic(ctx context.Context, r *orderpb.DeleteTra
 	}, nil
 }
 
-func (h *TrafficHandler) GetTrafficRecords(ctx context.Context, r *orderpb.GetTrafficRecordsRequest) (*orderpb.GetTrafficRecordsResponse, error) {
-	page, limit := r.Page, r.Limit
-	trafficRecords, err := h.trafficUsecase.GetTrafficRecords(page, limit)
-	if err != nil {
-		return nil, err
-	}
+// func (h *TrafficHandler) GetTrafficRecords(ctx context.Context, r *orderpb.GetTrafficRecordsRequest) (*orderpb.GetTrafficRecordsResponse, error) {
+// 	page, limit := r.Page, r.Limit
+// 	trafficRecords, err := h.trafficUsecase.GetTrafficRecords(page, limit)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	trafficResponse := make([]*orderpb.Traffic, len(trafficRecords))
-	for i, trafficRecord := range trafficRecords {
-		trafficResponse[i] = &orderpb.Traffic{
-			Id: trafficRecord.ID,
-			MerchantId: trafficRecord.MerchantID,
-			TraderId: trafficRecord.TraderID,
-			TraderRewardPercent: trafficRecord.TraderRewardPercent,
-			TraderPriority: trafficRecord.TraderPriority,
-			PlatformFee: trafficRecord.PlatformFee,
-			Enabled: trafficRecord.Enabled,
-			Name: trafficRecord.Name,
-			ActivityParams: &orderpb.TrafficActivityParameters{
-				MerchantUnlocked: trafficRecord.ActivityParams.MerchantUnlocked,
-				TraderUnlocked: trafficRecord.ActivityParams.TraderUnlocked,
-				ManuallyUnlocked: trafficRecord.ActivityParams.ManuallyUnlocked,
-				AntifraudUnlocked: trafficRecord.ActivityParams.AntifraudUnlocked,
-			},
-			AntifraudParams: &orderpb.TrafficAntifraudParameters{
-				AntifraudRequired: trafficRecord.AntifraudParams.AntifraudRequired,
-			},
-			BusinessParams: &orderpb.TrafficBusinessParameters{
-				MerchantDealsDuration: durationpb.New(trafficRecord.BusinessParams.MerchantDealsDuration),
-			},
-		}
-	}
+// 	trafficResponse := make([]*orderpb.Traffic, len(trafficRecords))
+// 	for i, trafficRecord := range trafficRecords {
+// 		trafficResponse[i] = &orderpb.Traffic{
+// 			Id: trafficRecord.ID,
+// 			MerchantId: trafficRecord.MerchantID,
+// 			TraderId: trafficRecord.TraderID,
+// 			TraderRewardPercent: trafficRecord.TraderRewardPercent,
+// 			TraderPriority: trafficRecord.TraderPriority,
+// 			PlatformFee: trafficRecord.PlatformFee,
+// 			Enabled: trafficRecord.Enabled,
+// 			Name: trafficRecord.Name,
+// 			ActivityParams: &orderpb.TrafficActivityParameters{
+// 				MerchantUnlocked: trafficRecord.ActivityParams.MerchantUnlocked,
+// 				TraderUnlocked: trafficRecord.ActivityParams.TraderUnlocked,
+// 				ManuallyUnlocked: trafficRecord.ActivityParams.ManuallyUnlocked,
+// 				AntifraudUnlocked: trafficRecord.ActivityParams.AntifraudUnlocked,
+// 			},
+// 			AntifraudParams: &orderpb.TrafficAntifraudParameters{
+// 				AntifraudRequired: trafficRecord.AntifraudParams.AntifraudRequired,
+// 			},
+// 			BusinessParams: &orderpb.TrafficBusinessParameters{
+// 				MerchantDealsDuration: durationpb.New(trafficRecord.BusinessParams.MerchantDealsDuration),
+// 			},
+// 		}
+// 	}
 
-	return &orderpb.GetTrafficRecordsResponse{
-		TrafficRecords: trafficResponse,
-	}, nil
-}
+// 	return &orderpb.GetTrafficRecordsResponse{
+// 		TrafficRecords: trafficResponse,
+// 	}, nil
+// }
 
 func (h *TrafficHandler) DisableTraderTraffic(ctx context.Context, r *orderpb.DisableTraderTrafficRequest) (*orderpb.DisableTraderTrafficResponse, error) {
 	traderID := r.TraderId
@@ -289,5 +326,144 @@ func (h *TrafficHandler) GetTraderTraffic(ctx context.Context, req *orderpb.GetT
 
     return &orderpb.GetTraderTrafficResponse{
         Records: records,
+    }, nil
+}
+
+// НОВЫЕ МЕТОДЫ ДЛЯ УПРАВЛЕНИЯ КУРСАМИ
+
+// UpdateExchangeConfig обновляет конфигурацию курсов для трафика
+// UpdateExchangeConfig обновляет конфигурацию курсов для трафика
+func (h *TrafficHandler) UpdateExchangeConfig(ctx context.Context, req *orderpb.UpdateExchangeConfigRequest) (*orderpb.UpdateExchangeConfigResponse, error) {
+    if req.TrafficId == "" {
+        return nil, status.Error(codes.InvalidArgument, "traffic_id is required")
+    }
+
+    if req.ExchangeConfig == nil {
+        return nil, status.Error(codes.InvalidArgument, "exchange_config is required")
+    }
+
+    config := &domain.ExchangeConfig{
+        ExchangeProvider:  req.ExchangeConfig.ExchangeProvider,
+        MarkupPercent:     req.ExchangeConfig.MarkupPercent,
+        CurrencyPair:      req.ExchangeConfig.CurrencyPair,
+        FallbackProviders: req.ExchangeConfig.FallbackProviders,
+    }
+
+    if req.ExchangeConfig.OrderBookRange != nil {
+        config.OrderBookPositions = &domain.OrderBookRange{
+            Start: int(req.ExchangeConfig.OrderBookRange.Start),
+            End:   int(req.ExchangeConfig.OrderBookRange.End),
+        }
+    }
+
+    if err := h.trafficUsecase.UpdateExchangeConfig(req.TrafficId, config); err != nil {
+        return nil, status.Errorf(codes.Internal, "failed to update exchange config: %v", err)
+    }
+
+    return &orderpb.UpdateExchangeConfigResponse{
+        Success: true,
+        Message: "Exchange configuration updated successfully",
+    }, nil
+}
+
+// GetExchangeConfig получает конфигурацию курсов для трафика
+// GetExchangeConfig получает конфигурацию курсов для трафика
+func (h *TrafficHandler) GetExchangeConfig(ctx context.Context, req *orderpb.GetExchangeConfigRequest) (*orderpb.GetExchangeConfigResponse, error) {
+    if req.TrafficId == "" {
+        return nil, status.Error(codes.InvalidArgument, "traffic_id is required")
+    }
+
+    config, err := h.trafficUsecase.GetExchangeConfig(req.TrafficId)
+    if err != nil {
+        return nil, status.Errorf(codes.Internal, "failed to get exchange config: %v", err)
+    }
+
+    // ИСПРАВЛЕНИЕ: Создаем ExchangeConfig как вложенную структуру
+    exchangeConfig := &orderpb.ExchangeConfig{
+        ExchangeProvider:  config.ExchangeProvider,
+        MarkupPercent:     config.MarkupPercent,
+        CurrencyPair:      config.CurrencyPair,
+        FallbackProviders: config.FallbackProviders,
+    }
+
+    if config.OrderBookPositions != nil {
+        exchangeConfig.OrderBookRange = &orderpb.OrderBookRange{
+            Start: int32(config.OrderBookPositions.Start),
+            End:   int32(config.OrderBookPositions.End),
+        }
+    }
+
+    response := &orderpb.GetExchangeConfigResponse{
+        ExchangeConfig: exchangeConfig, // Правильное присвоение
+    }
+
+    return response, nil
+}
+
+// GetAvailableExchangeProviders возвращает список доступных провайдеров
+func (h *TrafficHandler) GetAvailableExchangeProviders(ctx context.Context, req *orderpb.GetAvailableExchangeProvidersRequest) (*orderpb.GetAvailableExchangeProvidersResponse, error) {
+    providers := h.trafficUsecase.GetAvailableExchangeProviders()
+    
+    return &orderpb.GetAvailableExchangeProvidersResponse{
+        Providers: providers,
+    }, nil
+}
+
+// Обновляем GetTrafficRecords для включения конфигурации курсов в ответ
+// Обновляем GetTrafficRecords для включения конфигурации курсов в ответ
+func (h *TrafficHandler) GetTrafficRecords(ctx context.Context, r *orderpb.GetTrafficRecordsRequest) (*orderpb.GetTrafficRecordsResponse, error) {
+    page, limit := r.Page, r.Limit
+    trafficRecords, err := h.trafficUsecase.GetTrafficRecords(page, limit)
+    if err != nil {
+        return nil, err
+    }
+
+    trafficResponse := make([]*orderpb.Traffic, len(trafficRecords))
+    for i, trafficRecord := range trafficRecords {
+        trafficPB := &orderpb.Traffic{
+            Id:                  trafficRecord.ID,
+            MerchantId:          trafficRecord.MerchantID,
+            TraderId:            trafficRecord.TraderID,
+            TraderRewardPercent: trafficRecord.TraderRewardPercent,
+            TraderPriority:      trafficRecord.TraderPriority,
+            PlatformFee:         trafficRecord.PlatformFee,
+            Enabled:             trafficRecord.Enabled,
+            Name:                trafficRecord.Name,
+            ActivityParams: &orderpb.TrafficActivityParameters{
+                MerchantUnlocked:  trafficRecord.ActivityParams.MerchantUnlocked,
+                TraderUnlocked:    trafficRecord.ActivityParams.TraderUnlocked,
+                ManuallyUnlocked:  trafficRecord.ActivityParams.ManuallyUnlocked,
+                AntifraudUnlocked: trafficRecord.ActivityParams.AntifraudUnlocked,
+            },
+            AntifraudParams: &orderpb.TrafficAntifraudParameters{
+                AntifraudRequired: trafficRecord.AntifraudParams.AntifraudRequired,
+            },
+            BusinessParams: &orderpb.TrafficBusinessParameters{
+                MerchantDealsDuration: durationpb.New(trafficRecord.BusinessParams.MerchantDealsDuration),
+            },
+        }
+
+        // НОВОЕ: Добавляем конфигурацию курсов в ответ
+        if trafficRecord.ExchangeConfig != nil {
+            trafficPB.ExchangeConfig = &orderpb.ExchangeConfig{
+                ExchangeProvider:  trafficRecord.ExchangeConfig.ExchangeProvider,
+                MarkupPercent:     trafficRecord.ExchangeConfig.MarkupPercent,
+                CurrencyPair:      trafficRecord.ExchangeConfig.CurrencyPair,
+                FallbackProviders: trafficRecord.ExchangeConfig.FallbackProviders,
+            }
+
+            if trafficRecord.ExchangeConfig.OrderBookPositions != nil {
+                trafficPB.ExchangeConfig.OrderBookRange = &orderpb.OrderBookRange{
+                    Start: int32(trafficRecord.ExchangeConfig.OrderBookPositions.Start),
+                    End:   int32(trafficRecord.ExchangeConfig.OrderBookPositions.End),
+                }
+            }
+        }
+
+        trafficResponse[i] = trafficPB
+    }
+
+    return &orderpb.GetTrafficRecordsResponse{
+        TrafficRecords: trafficResponse,
     }, nil
 }
