@@ -47,7 +47,7 @@ func (bt *BackgroundTasks) startOrderAutoCancel(ctx context.Context) {
 }
 
 func (bt *BackgroundTasks) startCryptoRatesUpdate(ctx context.Context) {
-    ticker := time.NewTicker(5 * time.Minute)
+    ticker := time.NewTicker(10 * time.Second)
     defer ticker.Stop()
     
     for {
