@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+package order;
+
+import "google/protobuf/duration.proto";
+import "order/common_types.proto";
+
+option go_package = "github.com/LavaJover/shvark-order-service/proto/gen;orderpb";
+
+service BankDetailService {
+    rpc CreateBankDetail (CreateBankDetailRequest) returns (CreateBankDetailResponse);
+    rpc UpdateBankDetail (UpdateBankDetailRequest) returns (UpdateBankDetailResponse);
+    rpc DeleteBankDetail (DeleteBankDetailRequest) returns (DeleteBankDetailResponse);
+    rpc GetBankDetailByID (GetBankDetailByIDRequest) returns (GetBankDetailByIDResponse);
+    rpc GetBankDetailsByTraderID (GetBankDetailsByTraderIDRequest) returns (GetBankDetailsByTraderIDResponse);
+    rpc GetBankDetailsStatsByTraderID (GetBankDetailsStatsByTraderIDRequest) returns (GetBankDetailsStatsByTraderIDResponse);
+    rpc GetBankDetails (GetBankDetailsRequest) returns (GetBankDetailsResponse);
+}
+
+message BankDetail {
+    string bank_detail_id = 1;
+    string trader_id = 2;
+    string currency = 3;
+    string country = 4;
+    double min_amount = 5;
+    double max_amount = 6;
+    string bank_name = 7;
+    string payment_system = 8;
+    bool enabled = 9;
+    google.protobuf.Duration delay = 10;
+    string card_number = 11;
+    string phone = 12;
+    string owner = 13;
+    int32  max_orders_simultaneosly = 14;
+    double max_amount_day = 15;
+    double max_amount_month = 16;
+    double max_quantity_day = 17;
+    double max_quantity_month = 18;
+    string device_id = 19;
+    string inflow_currency = 20;
+    string bank_code = 21;
+    string nspk_code = 22;
+}
+
+message CreateBankDetailRequest {
+    string trader_id = 1;
+    string currency = 2;
+    string country = 3;
+    double min_amount = 4;
+    double max_amount = 5;
+    string bank_name = 6;
+    string payment_system = 7;
+    bool enabled = 8;
+    google.protobuf.Duration delay = 9;
+    string card_number = 10;
+    string phone = 11;
+    string owner = 12;
+    int32  max_orders_simultaneosly = 13;
+    double max_amount_day = 14;
+    double max_amount_month = 15;
+    double max_quantity_day = 16;
+    double max_quantity_month = 17;
+    string device_id = 18;
+    string inflow_currency = 19;
+    string bank_code = 20;
+    string nspk_code = 21;
+}
+
+message CreateBankDetailResponse {
+    string bank_detail_id = 1;
+}
+
+message UpdateBankDetailRequest {
+    BankDetail bank_detail = 1;
+}
+
+message UpdateBankDetailResponse {}
+
+message GetBankDetailByIDRequest {
+    string bank_detail_id = 1;
+}
+
+message GetBankDetailByIDResponse {
+    BankDetail bank_detail = 1;
+}
+
+message DeleteBankDetailRequest {
+    string bank_detail_id = 1;
+}
+
+message DeleteBankDetailResponse {}
+
+message GetBankDetailsByTraderIDRequest {
+    string trader_id = 1;
+    int32 page = 2;
+    int32 limit = 3;
+    string sort_by = 4;
+    string sort_order = 5;
+    OrderFilters filters = 6;
+}
+
+message GetBankDetailsByTraderIDResponse {
+    repeated BankDetail bank_details = 1;
+    Pagination pagination = 2;
+}
+
+message BankDetailStat {
+    string bank_detail_id = 1;
+    int32 current_count_today = 2;
+    int32 current_count_month = 3;
+    double current_amount_today = 4;
+    double current_amount_month = 5;
+}
+
+message GetBankDetailsStatsByTraderIDRequest {
+    string trader_id = 1;
+}
+
+message GetBankDetailsStatsByTraderIDResponse {
+    repeated BankDetailStat bank_detail_stat = 1;
+}
+
+message GetBankDetailsRequest {
+    optional string trader_id = 1;
+    optional string bank_code = 2;
+    optional bool enabled = 3;
+    optional string payment_system = 4;
+    optional string bank_detail_id = 5;
+    int32 page = 6;
+    int32 limit = 7;
+}
+
+message GetBankDetailsResponse {
+    repeated BankDetail bank_details = 1;
+    Pagination pagination = 2;
+}

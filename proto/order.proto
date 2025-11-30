@@ -506,46 +506,6 @@ message SetAntifraudLockTrafficStatusRequest {
 
 message SetAntifraudLockTrafficStatusResponse{}
 
-
-// type Traffic struct {
-// 	ID 					string
-// 	MerchantID 			string
-// 	TraderID 			string
-// 	TraderRewardPercent float64
-// 	PlatformFee			float64
-// 	TraderPriority 		float64
-// 	Enabled 			bool // для админов
-
-// 	// Гибкие параметры
-// 	ActivityParams 		TrafficActivityParams
-
-// 	// Для антифрода
-// 	AntifraudParams		TrafficAntifraudParams
-
-// 	// Детали блокировки
-// 	LockDetails			*TrafficLockDetails
-
-// 	// Бизнес-параметры
-// 	BusinessParams		TrafficBusinessParams
-// }
-
-// type TrafficActivityParams struct {
-// 	MerchantUnlocked	bool
-// 	TraderUnlocked		bool
-// 	AntifraudUnlocked	bool
-// 	ManuallyUnlocked	bool
-// }
-
-// type TrafficAntifraudParams struct {
-// 	AntifraudRequired bool
-// }
-
-// type TrafficLockDetails struct {
-// 	LockedAt			time.Time
-// 	UnlockedAt			time.Time
-// 	Reason				string
-// }
-
 message AddTrafficRequest {
     string merchant_id = 1;
     string trader_id = 2;

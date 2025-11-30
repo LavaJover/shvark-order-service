@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package order;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/LavaJover/shvark-order-service/proto/gen;orderpb";
+
+service TeamRelationsService {
+    rpc CreateTeamRelation (CreateTeamRelationRequest) returns (CreateTeamRelationResponse);
+    rpc GetRelationsByTeamLeadID (GetRelationsByTeamLeadIDRequest) returns (GetRelationsByTeamLeadIDResponse);
+    rpc UpdateRelationParams (UpdateRelationParamsRequest) returns (UpdateRelationParamsResponse);
+    rpc DeleteTeamRelationship (DeleteTeamRelationshipRequest) returns (DeleteTeamRelationshipResponse);
+}
+
+message DeleteTeamRelationshipRequest {
+    string relation_id = 1;
+}
+
+message DeleteTeamRelationshipResponse {}
+
+message TeamRelationship {
+    string id = 1;
+    string team_lead_id = 2;
+    string trader_id = 3;
+    double commission = 4;
+    google.protobuf.Timestamp created_at = 5;
+    google.protobuf.Timestamp updated_at = 6;
+}
+
+message CreateTeamRelationRequest {
+    string team_lead_id = 1;
+    string trader_id = 2;
+    double commission = 3;
+}
+
+message CreateTeamRelationResponse {}
+
+message GetRelationsByTeamLeadIDRequest {
+    string team_lead_id = 1;
+}
+
+message GetRelationsByTeamLeadIDResponse {
+    repeated TeamRelationship team_relations = 1; 
+}
+
+message UpdateRelationParamsRequest {
+    TeamRelationship relation = 1;
+}
+
+message UpdateRelationParamsResponse {}

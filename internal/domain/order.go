@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+type OrderType string
+
+const (
+	TypePayIn OrderType = "DEPOSIT"
+	TypePayOut OrderType = "PayOut"
+)
+
 type OrderStatus string
 
 const (
@@ -57,6 +64,7 @@ type Metrics struct {
 
 	CompletedAt		time.Time
 	CanceledAt		time.Time
+	AcceptedAt 		time.Time
 }
 
 type MerchantInfo struct {

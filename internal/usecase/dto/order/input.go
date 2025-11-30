@@ -36,23 +36,6 @@ type AdvancedParams struct {
 	Recalculated bool
 }
 
-// orderRequest := domain.Order{
-// 	MerchantID: r.MerchantId, +
-// 	AmountFiat: r.AmountFiat, +
-// 	Currency: r.Currency, +
-// 	Country: r.Country,
-// 	ClientID: r.ClientId, +
-// 	Status: domain.StatusPending,
-// 	PaymentSystem: r.PaymentSystem, +
-// 	MerchantOrderID: r.MerchantOrderId, +
-// 	Shuffle: r.Shuffle,
-// 	ExpiresAt: r.ExpiresAt.AsTime(),
-// 	CallbackURL: r.CallbackUrl, +
-// 	BankCode: r.BankCode,
-// 	NspkCode: r.NspkCode,
-// 	Type: r.Type,
-// }
-
 type GetAllOrdersInput struct {
     TraderID          string
     MerchantID        string

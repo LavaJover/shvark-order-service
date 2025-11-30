@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package order;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/LavaJover/shvark-order-service/proto/gen;orderpb";
+
+message OrderFilters {
+    repeated string statuses = 1;
+    double min_amount_fiat = 2;
+    double max_amount_fiat = 3;
+    google.protobuf.Timestamp date_from = 4;
+    google.protobuf.Timestamp date_to = 5;
+    string currency = 6;
+    string order_id = 7;
+    string merchant_order_id = 8;
+}
+
+message Pagination {
+    int64 current_page = 1;
+    int64 total_pages = 2;
+    int64 total_items = 3;
+    int64 items_per_page = 4;
+}

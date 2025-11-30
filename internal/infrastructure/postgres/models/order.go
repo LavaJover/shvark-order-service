@@ -43,9 +43,9 @@ type OrderModel struct {
 	ManuallyCompleted   bool
 
 	// Тайминги
+	AcceptedAt			time.Time
 	CompletedAt			time.Time
 	CanceledAt			time.Time
-
 }
 
 type PaymentProcessingLog struct {

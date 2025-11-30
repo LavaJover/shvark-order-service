@@ -1,0 +1,14 @@
+{
+    "protoc-language-server.protoSearchPath": [
+      "./proto"
+    ],
+    "buf.validate.protoPath": [
+      "./proto"
+    ],
+    "protobuf.includeDirs": [
+      "./proto"
+    ],
+    "files.watcherExclude": {
+      "**/gen/**": true
+    }
+  }

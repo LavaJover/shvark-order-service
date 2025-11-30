@@ -1,0 +1,196 @@
+syntax = "proto3";
+
+package order;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/LavaJover/shvark-order-service/proto/gen;orderpb";
+
+import "google/protobuf/struct.proto";
+
+service AntiFraudService {
+    // Проверка трейдера
+    rpc CheckTrader(CheckTraderRequest) returns (CheckTraderResponse);
+    rpc ProcessTraderCheck(ProcessTraderCheckRequest) returns (ProcessTraderCheckResponse);
+    
+    // Управление правилами
+    rpc CreateRule(CreateRuleRequest) returns (CreateRuleResponse);
+    rpc UpdateRule(UpdateRuleRequest) returns (UpdateRuleResponse);
+    rpc GetRules(GetRulesRequest) returns (GetRulesResponse);
+    rpc GetRule(GetRuleRequest) returns (GetRuleResponse);
+    rpc DeleteRule(DeleteRuleRequest) returns (DeleteRuleResponse);
+    
+    // Аудит
+    rpc GetAuditLogs(GetAuditLogsRequest) returns (GetAuditLogsResponse);
+    rpc GetTraderAuditHistory(GetTraderAuditHistoryRequest) returns (GetTraderAuditHistoryResponse);
+
+    rpc ManualUnlock(ManualUnlockRequest) returns (ManualUnlockResponse);
+    rpc ResetGracePeriod(ResetGracePeriodRequest) returns (ResetGracePeriodResponse);
+
+    rpc GetUnlockHistory(GetUnlockHistoryRequest) returns (GetUnlockHistoryResponse);
+}
+
+message GetUnlockHistoryRequest {
+    string trader_id = 1;
+    int32 limit = 2;
+}
+
+message UnlockHistoryItem {
+    string id = 1;
+    string trader_id = 2;
+    string admin_id = 3;
+    string reason = 4;
+    int32 grace_period_hours = 5;
+    google.protobuf.Timestamp unlocked_at = 6;
+    google.protobuf.Timestamp created_at = 7;
+}
+
+message GetUnlockHistoryResponse {
+    repeated UnlockHistoryItem items = 1;
+}
+
+message ManualUnlockRequest {
+    string trader_id = 1;
+    string admin_id = 2;
+    string reason = 3;
+    int32 grace_period_hours = 4;
+}
+
+message ManualUnlockResponse {
+    bool success = 1;
+    string message = 2;
+    google.protobuf.Timestamp grace_period_until = 3;
+}
+
+message ResetGracePeriodRequest {
+    string trader_id = 1;
+}
+
+message ResetGracePeriodResponse {
+    bool success = 1;
+    string message = 2;
+}
+// ============= Проверка трейдера =============
+
+message CheckTraderRequest {
+    string trader_id = 1;
+}
+
+message CheckTraderResponse {
+    string trader_id = 1;
+    google.protobuf.Timestamp checked_at = 2;
+    bool all_passed = 3;
+    repeated CheckResult results = 4;
+    repeated string failed_rules = 5;
+}
+
+message ProcessTraderCheckRequest {
+    string trader_id = 1;
+}
+
+message ProcessTraderCheckResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message CheckResult {
+    string rule_name = 1;
+    bool passed = 2;
+    string message = 3;
+    google.protobuf.Struct details = 4;
+}
+
+// ============= Управление правилами =============
+
+message CreateRuleRequest {
+    string name = 1;
+    string type = 2;
+    google.protobuf.Struct config = 3;
+    int32 priority = 4;
+}
+
+message CreateRuleResponse {
+    AntiFraudRule rule = 1;
+}
+
+message UpdateRuleRequest {
+    string rule_id = 1;
+    optional google.protobuf.Struct config = 2;
+    optional bool is_active = 3;
+    optional int32 priority = 4;
+}
+
+message UpdateRuleResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message GetRulesRequest {
+    bool active_only = 1;
+}
+
+message GetRulesResponse {
+    repeated AntiFraudRule rules = 1;
+}
+
+message GetRuleRequest {
+    string rule_id = 1;
+}
+
+message GetRuleResponse {
+    AntiFraudRule rule = 1;
+}
+
+message DeleteRuleRequest {
+    string rule_id = 1;
+}
+
+message DeleteRuleResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message AntiFraudRule {
+    string id = 1;
+    string name = 2;
+    string type = 3;
+    google.protobuf.Struct config = 4;
+    bool is_active = 5;
+    int32 priority = 6;
+    google.protobuf.Timestamp created_at = 7;
+    google.protobuf.Timestamp updated_at = 8;
+}
+
+// ============= Аудит =============
+
+message GetAuditLogsRequest {
+    optional string trader_id = 1;
+    optional google.protobuf.Timestamp from_date = 2;
+    optional google.protobuf.Timestamp to_date = 3;
+    bool only_failed = 4;
+    int32 limit = 5;
+    int32 offset = 6;
+}
+
+message GetAuditLogsResponse {
+    repeated AuditLog logs = 1;
+    int32 total = 2;
+}
+
+message GetTraderAuditHistoryRequest {
+    string trader_id = 1;
+    int32 limit = 2;
+}
+
+message GetTraderAuditHistoryResponse {
+    repeated AuditLog logs = 1;
+}
+
+message AuditLog {
+    string id = 1;
+    string trader_id = 2;
+    google.protobuf.Timestamp checked_at = 3;
+    bool all_passed = 4;
+    repeated CheckResult results = 5;
+    google.protobuf.Timestamp created_at = 6;
+}

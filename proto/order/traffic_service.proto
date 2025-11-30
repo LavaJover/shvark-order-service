@@ -1,0 +1,193 @@
+syntax = "proto3";
+
+package order;
+
+import "google/protobuf/duration.proto";
+
+option go_package = "github.com/LavaJover/shvark-order-service/proto/gen;orderpb";
+
+service TrafficService {
+    rpc AddTraffic (AddTrafficRequest) returns (AddTrafficResponse);
+    rpc EditTraffic (EditTrafficRequest) returns (EditTrafficResponse);
+    rpc DeleteTraffic (DeleteTrafficRequest) returns (DeleteTrafficResponse);
+    rpc GetTrafficRecords (GetTrafficRecordsRequest) returns (GetTrafficRecordsResponse);
+    rpc DisableTraderTraffic (DisableTraderTrafficRequest) returns (DisableTraderTrafficResponse);
+    rpc EnableTraderTraffic (EnableTraderTrafficRequest) returns (EnableTraderTrafficResponse);
+    rpc GetTraderTrafficStatus (GetTraderTrafficStatusRequest) returns (GetTraderTrafficStatusResponse);
+
+    // Traffic control
+    rpc SetTraderLockTrafficStatus (SetTraderLockTrafficStatusRequest) returns (SetTraderLockTrafficStatusResponse);
+    rpc SetMerchantLockTrafficStatus (SetMerchantLockTrafficStatusRequest) returns (SetMerchantLockTrafficStatusResponse);
+    rpc SetManuallyLockTrafficStatus (SetManuallyLockTrafficStatusRequest) returns (SetManuallyLockTrafficStatusResponse);
+    rpc SetAntifraudLockTrafficStatus (SetAntifraudLockTrafficStatusRequest) returns (SetAntifraudLockTrafficStatusResponse);
+
+    // Traffic monitoring
+    // New lock status getting methods
+    rpc GetTrafficLockStatuses(GetTrafficLockStatusesRequest) returns (GetTrafficLockStatusesResponse);
+    rpc CheckTrafficUnlocked(CheckTrafficUnlockedRequest) returns (CheckTrafficUnlockedResponse);
+
+    rpc GetTraderTraffic(GetTraderTrafficRequest) returns (GetTraderTrafficResponse);
+}
+
+message GetTraderTrafficRequest {
+    string trader_id = 1;
+}
+
+message GetTraderTrafficResponse {
+    repeated Traffic records = 1;
+}
+
+// Request/Response for getting lock statuses
+message GetTrafficLockStatusesRequest {
+    string traffic_id = 1;
+  }
+  
+  message GetTrafficLockStatusesResponse {
+    string traffic_id = 1;
+    bool merchant_unlocked = 2;
+    bool trader_unlocked = 3;
+    bool antifraud_unlocked = 4;
+    bool manually_unlocked = 5;
+  }
+  
+  // Request/Response for checking if traffic is unlocked
+  message CheckTrafficUnlockedRequest {
+    string traffic_id = 1;
+  }
+  
+  message CheckTrafficUnlockedResponse {
+    string traffic_id = 1;
+    bool unlocked = 2;
+  }
+
+message SetTraderLockTrafficStatusRequest {
+    string trader_id = 1;
+    bool unlocked = 2;
+}
+
+message SetTraderLockTrafficStatusResponse {}
+
+message SetMerchantLockTrafficStatusRequest {
+    string merchant_id = 1;
+    bool ubnlocked = 2;
+}
+
+message SetMerchantLockTrafficStatusResponse {}
+
+message SetManuallyLockTrafficStatusRequest {
+    string traffic_id = 1;
+    bool unlocked = 2;
+}
+
+message SetManuallyLockTrafficStatusResponse {}
+
+message SetAntifraudLockTrafficStatusRequest {
+    string trader_id = 1;
+    bool unlocked = 2;
+}
+
+message SetAntifraudLockTrafficStatusResponse{}
+
+message AddTrafficRequest {
+    string merchant_id = 1;
+    string trader_id = 2;
+    double trader_reward_percent = 3;
+    double trader_priority = 4;
+    bool enabled = 5;
+    double platform_fee = 6;
+    string name = 10;
+
+    TrafficActivityParameters activity_params = 7;
+    TrafficAntifraudParameters antifraud_params = 8;
+    TrafficBusinessParameters business_params = 9;
+}
+
+message TrafficActivityParameters {
+    bool merchant_unlocked = 1;
+    bool trader_unlocked = 2;
+    bool manually_unlocked = 3;
+    bool antifraud_unlocked = 4;
+}
+
+message TrafficAntifraudParameters {
+    bool antifraud_required = 1;
+}
+
+message TrafficBusinessParameters {
+    google.protobuf.Duration merchant_deals_duration = 1;
+}
+
+message Traffic {
+    string id = 1;
+    string merchant_id = 2;
+    string trader_id = 3;
+    double trader_reward_percent = 4;
+    double trader_priority = 5;
+    bool enabled = 6;
+    double platform_fee = 7;
+    string name = 11;
+
+    TrafficActivityParameters activity_params = 8;
+    TrafficAntifraudParameters antifraud_params = 9;
+    TrafficBusinessParameters business_params = 10;
+}
+
+message AddTrafficResponse {
+    string message = 1;
+}
+
+message EditTrafficRequest {
+    string id = 1;
+    optional string merchant_id = 2;
+    optional string trader_id = 3;
+    optional double trader_reward = 4;
+    optional double trader_proirity = 5;
+    optional double platform_fee = 6;
+    optional bool enabled = 7;
+    optional TrafficActivityParameters activity_params = 8;
+    optional TrafficAntifraudParameters antifraud_params = 9;
+    optional TrafficBusinessParameters business_params = 10;
+    optional string name = 11;
+}
+
+message EditTrafficResponse {
+    string message = 1;
+}
+
+message DeleteTrafficRequest {
+    string traffic_id = 1;
+}
+
+message DeleteTrafficResponse {
+    string message = 1;
+}
+
+// Добавить пагинацию!!!
+message GetTrafficRecordsRequest {
+    int32 page = 1;
+    int32 limit = 2; 
+}
+
+message GetTrafficRecordsResponse {
+    repeated Traffic traffic_records = 1;
+}
+
+message DisableTraderTrafficRequest {
+    string trader_id = 1;
+}
+
+message DisableTraderTrafficResponse {}
+
+message EnableTraderTrafficRequest {
+    string trader_id = 1;
+}
+
+message EnableTraderTrafficResponse {}
+
+message GetTraderTrafficStatusRequest {
+    string trader_id = 1;
+}
+
+message GetTraderTrafficStatusResponse {
+    bool status = 1;
+}
