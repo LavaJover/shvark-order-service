@@ -6,7 +6,7 @@ import (
 
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	devicedto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/device"
-	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
+	orderpb "github.com/LavaJover/shvark-order-service/proto/gen/order"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

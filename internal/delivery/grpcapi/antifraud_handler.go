@@ -5,7 +5,7 @@ import (
 
     "github.com/LavaJover/shvark-order-service/internal/domain"
     "github.com/LavaJover/shvark-order-service/internal/usecase"
-    antifraudpb "github.com/LavaJover/shvark-order-service/proto/gen"
+    antifraudpb "github.com/LavaJover/shvark-order-service/proto/gen/order"
     "google.golang.org/grpc/codes"
     "google.golang.org/grpc/status"
     "google.golang.org/protobuf/types/known/structpb"

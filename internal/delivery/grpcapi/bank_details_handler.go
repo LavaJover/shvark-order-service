@@ -8,7 +8,7 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi/mappers"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	bankdetaildto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/bank_detail"
-	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
+	orderpb "github.com/LavaJover/shvark-order-service/proto/gen/order"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 

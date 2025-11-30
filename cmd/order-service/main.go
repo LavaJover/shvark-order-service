@@ -12,7 +12,7 @@ import (
     "github.com/LavaJover/shvark-order-service/internal/app/background"
     "github.com/LavaJover/shvark-order-service/internal/app/setup"
     "github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi"
-    orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
+    orderpb "github.com/LavaJover/shvark-order-service/proto/gen/order"
     "github.com/joho/godotenv"
     "google.golang.org/grpc"
 )

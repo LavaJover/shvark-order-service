@@ -5,7 +5,7 @@ import (
 
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	relationsdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/relations"
-	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
+	orderpb "github.com/LavaJover/shvark-order-service/proto/gen/order"
 )
 
 type TeamRelationsHandler struct{

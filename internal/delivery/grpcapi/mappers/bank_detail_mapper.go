@@ -2,7 +2,7 @@ package mappers
 
 import (
 	"github.com/LavaJover/shvark-order-service/internal/domain"
-	orderpb "github.com/LavaJover/shvark-order-service/proto/gen"
+	orderpb "github.com/LavaJover/shvark-order-service/proto/gen/order"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
