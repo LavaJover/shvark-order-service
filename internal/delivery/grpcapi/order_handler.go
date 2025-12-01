@@ -125,6 +125,77 @@ func (h *OrderHandler) CreatePayInOrder(ctx context.Context, r *orderpb.CreatePa
     }, nil
 }
 
+func (h *OrderHandler) CreatePayOutOrder(ctx context.Context, r *orderpb.CreatePayOutOrderRequest) (*orderpb.CreatePayOutOrderResponse, error) {
+	input := &orderdto.CreatePayOutOrderInput{
+		MerchantParams: orderdto.MerchantParams{
+			MerchantID: r.MerchantId,
+			MerchantOrderID: r.MerchantOrderId,
+			ClientID: r.ClientId,
+		},
+		AdvancedParams: orderdto.AdvancedParams{
+			Shuffle: r.Shuffle,
+			CallbackUrl: r.CallbackUrl,
+			Recalculated: false,
+		},
+		PaymentDetails: orderdto.PaymentDetails{
+			PaymentSystem: r.PaymentDetails.PaymentSystem,
+			CardNumber: r.PaymentDetails.CardNumber,
+			Phone: r.PaymentDetails.Phone,
+			Owner: r.PaymentDetails.Owner,
+			Currency: r.PaymentDetails.Currency,
+			UsdRate: 0,
+			AmoutFiat: r.PaymentDetails.AmountFiat,
+			BankInfo: orderdto.BankInfo{
+				BankName: r.PaymentDetails.BankInfo.BankName,
+				BankCode: r.PaymentDetails.BankInfo.BankCode,
+				NspkCode: r.PaymentDetails.BankInfo.NspkCode,
+			},
+		},
+		Type: r.Type,
+		ExpiresAt: r.ExpiresAt.AsTime(),
+	}
+	createOrderOutput, err := h.uc.CreatePayOutOrder(input)
+	if err != nil {
+		return nil, err
+	}
+    return &orderpb.CreatePayOutOrderResponse{
+        Order: &orderpb.Order{
+            OrderId: createOrderOutput.Order.ID,
+            Status: string(createOrderOutput.Order.Status),
+            Type: string(createOrderOutput.Order.Type),
+            BankDetail: &orderpb.BankDetail{
+                BankDetailId: createOrderOutput.BankDetail.ID,
+                TraderId: createOrderOutput.BankDetail.TraderInfo.TraderID,
+                Currency: createOrderOutput.Order.AmountInfo.Currency,
+                Country: createOrderOutput.BankDetail.Country, 
+                MinAmount: float64(createOrderOutput.BankDetail.MinOrderAmount),
+                MaxAmount: float64(createOrderOutput.BankDetail.MaxOrderAmount),
+                BankName: createOrderOutput.BankDetail.BankName,
+                PaymentSystem: createOrderOutput.BankDetail.PaymentSystem,
+                Owner: createOrderOutput.BankDetail.PaymentDetails.Owner,
+                CardNumber: createOrderOutput.BankDetail.PaymentDetails.CardNumber,
+                Phone: createOrderOutput.BankDetail.PaymentDetails.Phone,
+                DeviceId: createOrderOutput.BankDetail.DeviceInfo.DeviceID,
+                InflowCurrency: createOrderOutput.BankDetail.InflowCurrency,
+                BankCode: createOrderOutput.BankDetail.PaymentDetails.BankCode,
+                NspkCode: createOrderOutput.BankDetail.PaymentDetails.NspkCode,
+            },
+            AmountFiat: float64(createOrderOutput.Order.AmountInfo.AmountFiat),
+            AmountCrypto: createOrderOutput.Order.AmountInfo.AmountCrypto,
+            ExpiresAt: timestamppb.New(createOrderOutput.Order.ExpiresAt),
+            Shuffle: createOrderOutput.Order.Shuffle,
+            MerchantOrderId: createOrderOutput.Order.MerchantInfo.MerchantOrderID,
+            ClientId: createOrderOutput.Order.MerchantInfo.ClientID,
+            CallbackUrl: createOrderOutput.Order.CallbackUrl,
+            TraderRewardPercent: createOrderOutput.Order.TraderReward,
+            CreatedAt: timestamppb.New(createOrderOutput.Order.CreatedAt),
+            UpdatedAt: timestamppb.New(createOrderOutput.Order.UpdatedAt),
+            Recalculated: createOrderOutput.Order.Recalculated,
+            CryptoRubRate: createOrderOutput.Order.AmountInfo.CryptoRate,
+        },
+    }, nil
+}
+
 func (h *OrderHandler) ApproveOrder(ctx context.Context, r *orderpb.ApproveOrderRequest) (*orderpb.ApproveOrderResponse, error) {
 	orderID := r.OrderId
 	if err := h.uc.ApproveOrder(orderID); err != nil {

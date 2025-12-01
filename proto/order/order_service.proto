@@ -11,6 +11,7 @@ option go_package = "github.com/LavaJover/shvark-order-service/proto/gen;orderpb
 
 service OrderService {
     rpc CreatePayInOrder (CreatePayInOrderRequest) returns (CreatePayInOrderResponse);
+    rpc CreatePayOutOrder (CreatePayOutOrderRequest) returns (CreatePayOutOrderResponse);
     rpc ApproveOrder (ApproveOrderRequest) returns (ApproveOrderResponse);
     rpc CancelOrder (CancelOrderRequest) returns (CancelOrderResponse);
     rpc AcceptOrder (AcceptOrderRequest) returns (AcceptOrderResponse);
@@ -41,6 +42,37 @@ message AcceptOrderRequest {
 
 message AcceptOrderResponse {
 
+}
+
+message CreatePayOutOrderRequest {
+    string merchant_id = 1;
+    string client_id = 2;
+    google.protobuf.Timestamp expires_at = 3;
+    string merchant_order_id = 4;
+    int32 shuffle = 5;
+    string callback_url = 6;
+    string type = 7;
+    PaymentDetails payment_details = 8;
+}
+
+message PaymentDetails {
+    string card_number = 1;
+    string phone = 2;
+    string owner = 3;
+    string currency = 4;
+    double amount_fiat = 5;
+    string payment_system = 6;
+    BankInfo bank_info = 7;
+}
+
+message BankInfo {
+    string bank_code = 1;
+    string bank_name = 2;
+    string nspk_code = 3;
+}
+
+message CreatePayOutOrderResponse {
+    Order order = 1;
 }
 
 // ==================== AUTOMATIC PAYMENT ====================
