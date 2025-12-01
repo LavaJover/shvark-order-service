@@ -48,7 +48,7 @@ func NewOrderHandler(
 func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRequest) (*orderpb.CreateOrderResponse, error) {
     amountCrypto := r.AmountFiat / usdt.UsdtRubRates
 
-    createOrderInput := orderdto.CreateOrderInput{
+    createOrderInput := orderdto.CreatePayInOrderInput{
         MerchantParams: orderdto.MerchantParams{
             MerchantID: r.MerchantId,
             MerchantOrderID: r.MerchantOrderId,
@@ -74,7 +74,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
     }
     
     // ИСПОЛЬЗУЕМ АТОМАРНЫЙ МЕТОД вместо обычного
-    createOrderOutput, err := h.uc.CreateOrderAtomic(&createOrderInput)
+    createOrderOutput, err := h.uc.CreatePayInOrderAtomic(&createOrderInput)
     if err != nil {
         if createOrderInput.AdvancedParams.CallbackUrl != "" {
             notifier.SendCallback(

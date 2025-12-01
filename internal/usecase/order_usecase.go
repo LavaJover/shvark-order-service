@@ -24,7 +24,15 @@ import (
 )
 
 type OrderUsecase interface {
-	CreateOrder(input *orderdto.CreateOrderInput) (*orderdto.OrderOutput, error)
+	CreatePayInOrder(input *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error)
+    CreatePayInOrderAtomic(input *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) // Добавляем новый метод
+    CreatePayOutOrder(input *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error)
+
+    AcceptOrder(orderID string) error
+	ApproveOrder(orderID string) error
+	CancelOrder(orderID string) error
+    CancelExpiredOrders(context.Context) error
+
 	GetOrderByID(orderID string) (*domain.Order, error)
 	GetOrderByMerchantOrderID(merchantOrderID string) (*domain.Order, error)
 	GetOrdersByTraderID(
@@ -34,17 +42,11 @@ type OrderUsecase interface {
 		filters domain.OrderFilters,
 		) ([]*orderdto.OrderOutput, int64, error)
 	FindExpiredOrders() ([]*domain.Order, error)
-	CancelExpiredOrders(context.Context) error
-	ApproveOrder(orderID string) error
-	CancelOrder(orderID string) error
-	GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*domain.OrderStatistics, error)
-
-	GetOrders(filter domain.Filter, sortField string, page, size int) ([]*domain.Order, int64, error)
-
+    GetOrders(filter domain.Filter, sortField string, page, size int) ([]*domain.Order, int64, error)
 	GetAllOrders(input *orderdto.GetAllOrdersInput) (*orderdto.GetAllOrdersOutput, error)
-	ProcessAutomaticPayment(ctx context.Context, req *AutomaticPaymentRequest) (*domain.AutomaticPaymentResult, error)
+    GetOrderStatistics(traderID string, dateFrom, dateTo time.Time) (*domain.OrderStatistics, error)
 
-	CreateOrderAtomic(input *orderdto.CreateOrderInput) (*orderdto.OrderOutput, error) // Добавляем новый метод
+	ProcessAutomaticPayment(ctx context.Context, req *AutomaticPaymentRequest) (*domain.AutomaticPaymentResult, error)
 }
 
 type DefaultOrderUsecase struct {
@@ -218,7 +220,7 @@ func (uc *DefaultOrderUsecase)FilterByEqualAmountFiat(bankDetails []*domain.Bank
 	return result, nil
 }
 
-func (uc *DefaultOrderUsecase) FindEligibleBankDetails(input *orderdto.CreateOrderInput) ([]*domain.BankDetail, error) {
+func (uc *DefaultOrderUsecase) FindEligibleBankDetails(input *orderdto.CreatePayInOrderInput) ([]*domain.BankDetail, error) {
 	bankDetails, err := uc.BankDetailUsecase.FindSuitableBankDetails(
 		&bankdetaildto.FindSuitableBankDetailsInput{
 			AmountFiat: input.AmountFiat,
@@ -265,7 +267,7 @@ func (uc *DefaultOrderUsecase) CheckIdempotency(clientID string) error {
 	return nil
 }
 
-func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreateOrderInput) (*orderdto.OrderOutput, error) {
+func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) {
     start := time.Now()
     slog.Info("CreateOrder started")
     
@@ -1026,7 +1028,7 @@ func (uc *DefaultOrderUsecase) publishAutomaticApprovalEvent(order *domain.Order
 	}
 }
 
-func (uc *DefaultOrderUsecase) FindEligibleBankDetailsWithLock(input *orderdto.CreateOrderInput) ([]*domain.BankDetail, error) {
+func (uc *DefaultOrderUsecase) FindEligibleBankDetailsWithLock(input *orderdto.CreatePayInOrderInput) ([]*domain.BankDetail, error) {
     // Используем метод с блокировкой вместо обычного
     bankDetails, err := uc.BankDetailUsecase.FindSuitableBankDetailsWithLock(
         &bankdetaildto.FindSuitableBankDetailsInput{
@@ -1071,7 +1073,7 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetailsWithLock(input *orderdto.C
 
 // CreateOrderAtomic атомарно создает заказ в транзакции
 // CreateOrderAtomic атомарно создает заказ в транзакции
-func (uc *DefaultOrderUsecase) CreateOrderAtomic(createOrderInput *orderdto.CreateOrderInput) (*orderdto.OrderOutput, error) {
+func (uc *DefaultOrderUsecase) CreateOrderAtomic(createOrderInput *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) {
     start := time.Now()
     slog.Info("CreateOrderAtomic started")
     
@@ -1207,7 +1209,7 @@ func (uc *DefaultOrderUsecase) CreateOrderAtomic(createOrderInput *orderdto.Crea
     }, nil
 }
 // Вспомогательные методы для атомарного создания
-func (uc *DefaultOrderUsecase) findEligibleBankDetailsInTx(bankDetailRepo domain.BankDetailRepository, input *orderdto.CreateOrderInput) ([]*domain.BankDetail, error) {
+func (uc *DefaultOrderUsecase) findEligibleBankDetailsInTx(bankDetailRepo domain.BankDetailRepository, input *orderdto.CreatePayInOrderInput) ([]*domain.BankDetail, error) {
     bankDetails, err := bankDetailRepo.FindSuitableBankDetailsInTx(
         &domain.SuitablleBankDetailsQuery{
             AmountFiat:    input.AmountFiat,

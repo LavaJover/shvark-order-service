@@ -2,7 +2,7 @@ package orderdto
 
 import "time"
 
-type CreateOrderInput struct {
+type CreatePayInOrderInput struct {
 	MerchantParams
 	PaymentSearchParams
 	AdvancedParams
@@ -26,6 +26,7 @@ type PaymentSearchParams struct {
 }
 
 type BankInfo struct {
+	BankName string
 	BankCode string
 	NspkCode string
 }
