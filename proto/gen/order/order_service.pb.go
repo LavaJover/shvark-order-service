@@ -2811,7 +2811,7 @@ func (x *GetOrderDisputeInfoResponse) GetDispute() *OrderDispute {
 	return nil
 }
 
-type CreateOrderRequest struct {
+type CreatePayInOrderRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	MerchantId      string                 `protobuf:"bytes,1,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
 	AmountFiat      float64                `protobuf:"fixed64,2,opt,name=amount_fiat,json=amountFiat,proto3" json:"amount_fiat,omitempty"`
@@ -2830,20 +2830,20 @@ type CreateOrderRequest struct {
 	sizeCache       protoimpl.SizeCache
 }
 
-func (x *CreateOrderRequest) Reset() {
-	*x = CreateOrderRequest{}
+func (x *CreatePayInOrderRequest) Reset() {
+	*x = CreatePayInOrderRequest{}
 	mi := &file_order_order_service_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateOrderRequest) String() string {
+func (x *CreatePayInOrderRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateOrderRequest) ProtoMessage() {}
+func (*CreatePayInOrderRequest) ProtoMessage() {}
 
-func (x *CreateOrderRequest) ProtoReflect() protoreflect.Message {
+func (x *CreatePayInOrderRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_order_order_service_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2855,123 +2855,123 @@ func (x *CreateOrderRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateOrderRequest.ProtoReflect.Descriptor instead.
-func (*CreateOrderRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreatePayInOrderRequest.ProtoReflect.Descriptor instead.
+func (*CreatePayInOrderRequest) Descriptor() ([]byte, []int) {
 	return file_order_order_service_proto_rawDescGZIP(), []int{39}
 }
 
-func (x *CreateOrderRequest) GetMerchantId() string {
+func (x *CreatePayInOrderRequest) GetMerchantId() string {
 	if x != nil {
 		return x.MerchantId
 	}
 	return ""
 }
 
-func (x *CreateOrderRequest) GetAmountFiat() float64 {
+func (x *CreatePayInOrderRequest) GetAmountFiat() float64 {
 	if x != nil {
 		return x.AmountFiat
 	}
 	return 0
 }
 
-func (x *CreateOrderRequest) GetCurrency() string {
+func (x *CreatePayInOrderRequest) GetCurrency() string {
 	if x != nil {
 		return x.Currency
 	}
 	return ""
 }
 
-func (x *CreateOrderRequest) GetCountry() string {
+func (x *CreatePayInOrderRequest) GetCountry() string {
 	if x != nil {
 		return x.Country
 	}
 	return ""
 }
 
-func (x *CreateOrderRequest) GetClientId() string {
+func (x *CreatePayInOrderRequest) GetClientId() string {
 	if x != nil {
 		return x.ClientId
 	}
 	return ""
 }
 
-func (x *CreateOrderRequest) GetPaymentSystem() string {
+func (x *CreatePayInOrderRequest) GetPaymentSystem() string {
 	if x != nil {
 		return x.PaymentSystem
 	}
 	return ""
 }
 
-func (x *CreateOrderRequest) GetExpiresAt() *timestamppb.Timestamp {
+func (x *CreatePayInOrderRequest) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.ExpiresAt
 	}
 	return nil
 }
 
-func (x *CreateOrderRequest) GetMerchantOrderId() string {
+func (x *CreatePayInOrderRequest) GetMerchantOrderId() string {
 	if x != nil {
 		return x.MerchantOrderId
 	}
 	return ""
 }
 
-func (x *CreateOrderRequest) GetShuffle() int32 {
+func (x *CreatePayInOrderRequest) GetShuffle() int32 {
 	if x != nil {
 		return x.Shuffle
 	}
 	return 0
 }
 
-func (x *CreateOrderRequest) GetCallbackUrl() string {
+func (x *CreatePayInOrderRequest) GetCallbackUrl() string {
 	if x != nil {
 		return x.CallbackUrl
 	}
 	return ""
 }
 
-func (x *CreateOrderRequest) GetBankCode() string {
+func (x *CreatePayInOrderRequest) GetBankCode() string {
 	if x != nil {
 		return x.BankCode
 	}
 	return ""
 }
 
-func (x *CreateOrderRequest) GetNspkCode() string {
+func (x *CreatePayInOrderRequest) GetNspkCode() string {
 	if x != nil {
 		return x.NspkCode
 	}
 	return ""
 }
 
-func (x *CreateOrderRequest) GetType() string {
+func (x *CreatePayInOrderRequest) GetType() string {
 	if x != nil {
 		return x.Type
 	}
 	return ""
 }
 
-type CreateOrderResponse struct {
+type CreatePayInOrderResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Order         *Order                 `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateOrderResponse) Reset() {
-	*x = CreateOrderResponse{}
+func (x *CreatePayInOrderResponse) Reset() {
+	*x = CreatePayInOrderResponse{}
 	mi := &file_order_order_service_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateOrderResponse) String() string {
+func (x *CreatePayInOrderResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateOrderResponse) ProtoMessage() {}
+func (*CreatePayInOrderResponse) ProtoMessage() {}
 
-func (x *CreateOrderResponse) ProtoReflect() protoreflect.Message {
+func (x *CreatePayInOrderResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_order_order_service_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2983,12 +2983,12 @@ func (x *CreateOrderResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateOrderResponse.ProtoReflect.Descriptor instead.
-func (*CreateOrderResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreatePayInOrderResponse.ProtoReflect.Descriptor instead.
+func (*CreatePayInOrderResponse) Descriptor() ([]byte, []int) {
 	return file_order_order_service_proto_rawDescGZIP(), []int{40}
 }
 
-func (x *CreateOrderResponse) GetOrder() *Order {
+func (x *CreatePayInOrderResponse) GetOrder() *Order {
 	if x != nil {
 		return x.Order
 	}
@@ -3938,8 +3938,8 @@ const file_order_order_service_proto_rawDesc = "" +
 	"\n" +
 	"dispute_id\x18\x01 \x01(\tR\tdisputeId\"L\n" +
 	"\x1bGetOrderDisputeInfoResponse\x12-\n" +
-	"\adispute\x18\x01 \x01(\v2\x13.order.OrderDisputeR\adispute\"\xc2\x03\n" +
-	"\x12CreateOrderRequest\x12\x1f\n" +
+	"\adispute\x18\x01 \x01(\v2\x13.order.OrderDisputeR\adispute\"\xc7\x03\n" +
+	"\x17CreatePayInOrderRequest\x12\x1f\n" +
 	"\vmerchant_id\x18\x01 \x01(\tR\n" +
 	"merchantId\x12\x1f\n" +
 	"\vamount_fiat\x18\x02 \x01(\x01R\n" +
@@ -3956,8 +3956,8 @@ const file_order_order_service_proto_rawDesc = "" +
 	" \x01(\tR\vcallbackUrl\x12\x1b\n" +
 	"\tbank_code\x18\v \x01(\tR\bbankCode\x12\x1b\n" +
 	"\tnspk_code\x18\f \x01(\tR\bnspkCode\x12\x12\n" +
-	"\x04type\x18\r \x01(\tR\x04type\"9\n" +
-	"\x13CreateOrderResponse\x12\"\n" +
+	"\x04type\x18\r \x01(\tR\x04type\">\n" +
+	"\x18CreatePayInOrderResponse\x12\"\n" +
 	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"0\n" +
 	"\x13ApproveOrderRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\"0\n" +
@@ -4014,9 +4014,9 @@ const file_order_order_service_proto_rawDesc = "" +
 	"\x06orders\x18\x01 \x03(\v2\f.order.OrderR\x06orders\x121\n" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2\x11.order.PaginationR\n" +
-	"pagination2\xda\f\n" +
-	"\fOrderService\x12D\n" +
-	"\vCreateOrder\x12\x19.order.CreateOrderRequest\x1a\x1a.order.CreateOrderResponse\x12G\n" +
+	"pagination2\xe9\f\n" +
+	"\fOrderService\x12S\n" +
+	"\x10CreatePayInOrder\x12\x1e.order.CreatePayInOrderRequest\x1a\x1f.order.CreatePayInOrderResponse\x12G\n" +
 	"\fApproveOrder\x12\x1a.order.ApproveOrderRequest\x1a\x1b.order.ApproveOrderResponse\x12D\n" +
 	"\vCancelOrder\x12\x19.order.CancelOrderRequest\x1a\x1a.order.CancelOrderResponse\x12D\n" +
 	"\vAcceptOrder\x12\x19.order.AcceptOrderRequest\x1a\x1a.order.AcceptOrderResponse\x12G\n" +
@@ -4089,8 +4089,8 @@ var file_order_order_service_proto_goTypes = []any{
 	(*RejectOrderDisputeResponse)(nil),        // 36: order.RejectOrderDisputeResponse
 	(*GetOrderDisputeInfoRequest)(nil),        // 37: order.GetOrderDisputeInfoRequest
 	(*GetOrderDisputeInfoResponse)(nil),       // 38: order.GetOrderDisputeInfoResponse
-	(*CreateOrderRequest)(nil),                // 39: order.CreateOrderRequest
-	(*CreateOrderResponse)(nil),               // 40: order.CreateOrderResponse
+	(*CreatePayInOrderRequest)(nil),           // 39: order.CreatePayInOrderRequest
+	(*CreatePayInOrderResponse)(nil),          // 40: order.CreatePayInOrderResponse
 	(*ApproveOrderRequest)(nil),               // 41: order.ApproveOrderRequest
 	(*ApproveOrderResponse)(nil),              // 42: order.ApproveOrderResponse
 	(*CancelOrderRequest)(nil),                // 43: order.CancelOrderRequest
@@ -4145,8 +4145,8 @@ var file_order_order_service_proto_depIdxs = []int32{
 	47, // 32: order.OrderDispute.order:type_name -> order.Order
 	53, // 33: order.OrderDispute.accept_at:type_name -> google.protobuf.Timestamp
 	32, // 34: order.GetOrderDisputeInfoResponse.dispute:type_name -> order.OrderDispute
-	53, // 35: order.CreateOrderRequest.expires_at:type_name -> google.protobuf.Timestamp
-	47, // 36: order.CreateOrderResponse.order:type_name -> order.Order
+	53, // 35: order.CreatePayInOrderRequest.expires_at:type_name -> google.protobuf.Timestamp
+	47, // 36: order.CreatePayInOrderResponse.order:type_name -> order.Order
 	47, // 37: order.GetOrderByIDResponse.order:type_name -> order.Order
 	56, // 38: order.Order.bank_detail:type_name -> order.BankDetail
 	53, // 39: order.Order.expires_at:type_name -> google.protobuf.Timestamp
@@ -4159,7 +4159,7 @@ var file_order_order_service_proto_depIdxs = []int32{
 	47, // 46: order.GetOrdersByTraderIDResponse.orders:type_name -> order.Order
 	54, // 47: order.GetOrdersByTraderIDResponse.pagination:type_name -> order.Pagination
 	3,  // 48: order.AutomaticStats.DeviceStatsEntry.value:type_name -> order.DeviceStats
-	39, // 49: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
+	39, // 49: order.OrderService.CreatePayInOrder:input_type -> order.CreatePayInOrderRequest
 	41, // 50: order.OrderService.ApproveOrder:input_type -> order.ApproveOrderRequest
 	43, // 51: order.OrderService.CancelOrder:input_type -> order.CancelOrderRequest
 	0,  // 52: order.OrderService.AcceptOrder:input_type -> order.AcceptOrderRequest
@@ -4178,7 +4178,7 @@ var file_order_order_service_proto_depIdxs = []int32{
 	6,  // 65: order.OrderService.ProcessAutomaticPayment:input_type -> order.ProcessAutomaticPaymentRequest
 	11, // 66: order.OrderService.GetAutomaticLogs:input_type -> order.GetAutomaticLogsRequest
 	2,  // 67: order.OrderService.GetAutomaticStats:input_type -> order.GetAutomaticStatsRequest
-	40, // 68: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
+	40, // 68: order.OrderService.CreatePayInOrder:output_type -> order.CreatePayInOrderResponse
 	42, // 69: order.OrderService.ApproveOrder:output_type -> order.ApproveOrderResponse
 	44, // 70: order.OrderService.CancelOrder:output_type -> order.CancelOrderResponse
 	1,  // 71: order.OrderService.AcceptOrder:output_type -> order.AcceptOrderResponse

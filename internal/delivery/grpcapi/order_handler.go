@@ -45,7 +45,7 @@ func NewOrderHandler(
 	}
 }
 
-func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRequest) (*orderpb.CreateOrderResponse, error) {
+func (h *OrderHandler) CreatePayInOrder(ctx context.Context, r *orderpb.CreatePayInOrderRequest) (*orderpb.CreatePayInOrderResponse, error) {
     amountCrypto := r.AmountFiat / usdt.UsdtRubRates
 
     createOrderInput := orderdto.CreatePayInOrderInput{
@@ -87,7 +87,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
         return nil, err
     }
 
-    return &orderpb.CreateOrderResponse{
+    return &orderpb.CreatePayInOrderResponse{
         Order: &orderpb.Order{
             OrderId: createOrderOutput.Order.ID,
             Status: string(createOrderOutput.Order.Status),

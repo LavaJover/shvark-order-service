@@ -10,7 +10,7 @@ import "order/common_types.proto";
 option go_package = "github.com/LavaJover/shvark-order-service/proto/gen;orderpb";
 
 service OrderService {
-    rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
+    rpc CreatePayInOrder (CreatePayInOrderRequest) returns (CreatePayInOrderResponse);
     rpc ApproveOrder (ApproveOrderRequest) returns (ApproveOrderResponse);
     rpc CancelOrder (CancelOrderRequest) returns (CancelOrderResponse);
     rpc AcceptOrder (AcceptOrderRequest) returns (AcceptOrderResponse);
@@ -328,7 +328,7 @@ message GetOrderDisputeInfoResponse {
     OrderDispute dispute = 1;
 }
 
-message CreateOrderRequest {
+message CreatePayInOrderRequest {
     string merchant_id = 1;
     double amount_fiat = 2;
     string currency = 3;
@@ -344,7 +344,7 @@ message CreateOrderRequest {
     string type = 13;
 }
 
-message CreateOrderResponse {
+message CreatePayInOrderResponse {
     Order order = 1;
 }
 
