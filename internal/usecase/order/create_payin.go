@@ -209,7 +209,7 @@ func (uc *DefaultOrderUsecase) CheckIdempotency(clientID string) error {
 	return nil
 }
 
-func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) {
+func (uc *DefaultOrderUsecase) CreatePayInOrder(createOrderInput *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) {
     start := time.Now()
     slog.Info("CreateOrder started")
     
@@ -277,7 +277,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreatePayI
             Currency:     createOrderInput.Currency,
         },
         BankDetailID:  chosenBankDetail.ID,
-        Type:          createOrderInput.Type,
+        Type:          domain.TypePayIn,
         Recalculated:  createOrderInput.Recalculated,
         Shuffle:       createOrderInput.Shuffle,
         TraderReward:  traderReward,
@@ -349,7 +349,7 @@ func (uc *DefaultOrderUsecase) CreateOrder(createOrderInput *orderdto.CreatePayI
 
 /////////////////// ATOMIC ///////////////////////////
 // CreateOrderAtomic атомарно создает заказ в транзакции
-func (uc *DefaultOrderUsecase) CreateOrderAtomic(createOrderInput *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) {
+func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) {
     start := time.Now()
     slog.Info("CreateOrderAtomic started")
     
@@ -423,7 +423,7 @@ func (uc *DefaultOrderUsecase) CreateOrderAtomic(createOrderInput *orderdto.Crea
             Currency:     createOrderInput.Currency,
         },
         BankDetailID:  chosenBankDetail.ID,
-        Type:          createOrderInput.Type,
+        Type:          domain.TypePayIn,
         Recalculated:  createOrderInput.Recalculated,
         Shuffle:       createOrderInput.Shuffle,
         TraderReward:  traderReward,

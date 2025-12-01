@@ -15,6 +15,8 @@ import (
 	disputedto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/dispute"
 	orderdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/order"
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen/order"
+	orderuc "github.com/LavaJover/shvark-order-service/internal/usecase/order"
+	disputeuc "github.com/LavaJover/shvark-order-service/internal/usecase/dispute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -22,16 +24,16 @@ import (
 )
 
 type OrderHandler struct {
-	uc usecase.OrderUsecase
-	disputeUc usecase.DisputeUsecase
+	uc orderuc.OrderUsecase
+	disputeUc disputeuc.DisputeUsecase
 	bankDetailUc usecase.BankDetailUsecase
 	automaticUc usecase.AutomaticUsecase
 	orderpb.UnimplementedOrderServiceServer
 }
 
 func NewOrderHandler(
-	uc usecase.OrderUsecase,
-	disputeUc usecase.DisputeUsecase,
+	uc orderuc.OrderUsecase,
+	disputeUc disputeuc.DisputeUsecase,
 	bankDetailUc usecase.BankDetailUsecase,
 	automaticUc usecase.AutomaticUsecase,
 	) *OrderHandler {
@@ -42,8 +44,6 @@ func NewOrderHandler(
 		automaticUc: automaticUc,
 	}
 }
-
-// internal/delivery/grpc/handlers/order_handler.go
 
 func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRequest) (*orderpb.CreateOrderResponse, error) {
     amountCrypto := r.AmountFiat / usdt.UsdtRubRates
@@ -91,7 +91,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, r *orderpb.CreateOrderRe
         Order: &orderpb.Order{
             OrderId: createOrderOutput.Order.ID,
             Status: string(createOrderOutput.Order.Status),
-            Type: createOrderOutput.Order.Type,
+            Type: string(createOrderOutput.Order.Type),
             BankDetail: &orderpb.BankDetail{
                 BankDetailId: createOrderOutput.BankDetail.ID,
                 TraderId: createOrderOutput.BankDetail.TraderInfo.TraderID,
@@ -150,7 +150,7 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 		Order: &orderpb.Order{
 			OrderId: orderID,
 			Status: string(order.Status),
-			Type: order.Type,
+			Type: string(order.Type),
 			BankDetail: &orderpb.BankDetail{
 				BankDetailId: order.BankDetailID,
 				TraderId: order.RequisiteDetails.TraderID,
@@ -199,7 +199,7 @@ func (h *OrderHandler) GetOrderByMerchantOrderID(ctx context.Context, r *orderpb
 		Order: &orderpb.Order{
 			OrderId: order.ID,
 			Status: string(order.Status),
-			Type: order.Type,
+			Type: string(order.Type),
 			BankDetail: &orderpb.BankDetail{
 				BankDetailId: order.BankDetailID,
 				TraderId: order.RequisiteDetails.TraderID,
@@ -287,7 +287,7 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 		orders[i] = &orderpb.Order{
 			OrderId: order.Order.ID,
 			Status: string(order.Order.Status),
-			Type: order.Order.Type,
+			Type: string(order.Order.Type),
 			BankDetail: &orderpb.BankDetail{
 				BankDetailId: order.BankDetail.ID,
 				TraderId: order.BankDetail.TraderID,
@@ -349,6 +349,15 @@ func (h *OrderHandler) CancelOrder(ctx context.Context, r *orderpb.CancelOrderRe
 	return &orderpb.CancelOrderResponse{
 		Message: "Order successfully canceled",
 	}, nil
+}
+
+func (h *OrderHandler) AcceptOrder(ctx context.Context, r *orderpb.AcceptOrderRequest) (*orderpb.AcceptOrderResponse, error) {
+	orderID := r.OrderId
+	if err := h.uc.AcceptOrder(orderID); err != nil {
+		return nil, err
+	}
+
+	return &orderpb.AcceptOrderResponse{}, nil
 }
 
 func (h *OrderHandler) CreateOrderDispute(ctx context.Context, r *orderpb.CreateOrderDisputeRequest) (*orderpb.CreateOrderDisputeResponse, error) {
@@ -465,7 +474,7 @@ func (h *OrderHandler) GetOrderDisputes(ctx context.Context, r *orderpb.GetOrder
 				CreatedAt: timestamppb.New(order.CreatedAt),
 				UpdatedAt: timestamppb.New(order.UpdatedAt),
 				CryptoRubRate: order.AmountInfo.CryptoRate,
-				Type: order.Type,
+				Type: string(order.Type),
 				BankDetail: &orderpb.BankDetail{
 					BankDetailId: order.BankDetailID,
 					TraderId: order.RequisiteDetails.TraderID,
@@ -584,7 +593,7 @@ func (h *OrderHandler) GetOrders(ctx context.Context, r *orderpb.GetOrdersReques
             TimeExpires:  timestamppb.New(o.ExpiresAt),
             TimeComplete: timestamppb.New(o.UpdatedAt),
             StoreName:    "UNKNOWN", // TODO: заменить на реальное значение
-            Type:         o.Type,    // ИСПРАВЛЕНО: берем из модели
+            Type:         string(o.Type),    // ИСПРАВЛЕНО: берем из модели
             Status:       string(o.Status),
             CurrencyRate: o.AmountInfo.CryptoRate,
             SumInvoice: &orderpb.Amount{
@@ -732,7 +741,7 @@ func (h *OrderHandler) GetAllOrders(
 			Recalculated: order.Recalculated,
 			CryptoRubRate: order.AmountInfo.CryptoRate,
 			MerchantId: order.MerchantInfo.MerchantID,
-			Type: order.Type,
+			Type: string(order.Type),
 			Metrics: &orderpb.OrderMetrics{
 				CompletedAt: timestamppb.New(order.Metrics.CompletedAt),
 				CancelledAd: timestamppb.New(order.Metrics.CanceledAt),
@@ -758,7 +767,7 @@ func (h *OrderHandler) ProcessAutomaticPayment(
 	}
 
 	// Преобразование gRPC запроса в доменную модель
-	paymentReq := &usecase.AutomaticPaymentRequest{
+	paymentReq := &orderuc.AutomaticPaymentRequest{
 		Group:         req.Group,
 		Amount:        req.Amount,
 		PaymentSystem: req.PaymentSystem,

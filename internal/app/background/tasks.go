@@ -7,15 +7,21 @@ import (
     
     "github.com/LavaJover/shvark-order-service/internal/infrastructure/usdt"
     "github.com/LavaJover/shvark-order-service/internal/usecase"
+    orderuc "github.com/LavaJover/shvark-order-service/internal/usecase/order"
+    disputeuc "github.com/LavaJover/shvark-order-service/internal/usecase/dispute"
 )
 
 type BackgroundTasks struct {
-    OrderUsecase    usecase.OrderUsecase
-    DisputeUsecase  usecase.DisputeUsecase
+    OrderUsecase    orderuc.OrderUsecase
+    DisputeUsecase  disputeuc.DisputeUsecase
     DeviceUsecase   usecase.DeviceUsecase
 }
 
-func NewBackgroundTasks(orderUC usecase.OrderUsecase, disputeUC usecase.DisputeUsecase, deviceUC usecase.DeviceUsecase) *BackgroundTasks {
+func NewBackgroundTasks(
+    orderUC orderuc.OrderUsecase, 
+    disputeUC disputeuc.DisputeUsecase, 
+    deviceUC usecase.DeviceUsecase,
+) *BackgroundTasks {
     return &BackgroundTasks{
         OrderUsecase:   orderUC,
         DisputeUsecase: disputeUC,

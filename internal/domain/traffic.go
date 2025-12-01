@@ -69,4 +69,5 @@ type TrafficRepository interface {
 		ManuallyUnlocked  bool
 	}, error)
 	GetTrafficByTraderID(traderID string) ([]*Traffic, error) // НОВОЕ
+	GetTrafficByMerchantID(merchantID string) ([]*Traffic, error)
 }

@@ -29,7 +29,7 @@ type Order struct {
 	MerchantInfo	MerchantInfo
 	AmountInfo 		AmountInfo
 	BankDetailID 	string
-	Type 			string
+	Type 			OrderType
 	Recalculated 	bool
 	Shuffle 		int32
 	TraderReward 	float64

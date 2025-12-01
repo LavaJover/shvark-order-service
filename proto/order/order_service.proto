@@ -13,6 +13,7 @@ service OrderService {
     rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
     rpc ApproveOrder (ApproveOrderRequest) returns (ApproveOrderResponse);
     rpc CancelOrder (CancelOrderRequest) returns (CancelOrderResponse);
+    rpc AcceptOrder (AcceptOrderRequest) returns (AcceptOrderResponse);
     rpc GetOrderByID (GetOrderByIDRequest) returns (GetOrderByIDResponse);
     rpc GetOrderByMerchantOrderID (GetOrderByMerchantOrderIDRequest) returns (GetOrderByMerchantOrderIDResponse);
     rpc GetOrdersByTraderID (GetOrdersByTraderIDRequest) returns (GetOrdersByTraderIDResponse);
@@ -32,6 +33,14 @@ service OrderService {
     rpc ProcessAutomaticPayment(ProcessAutomaticPaymentRequest) returns (ProcessAutomaticPaymentResponse);
     rpc GetAutomaticLogs(GetAutomaticLogsRequest) returns (GetAutomaticLogsResponse);
     rpc GetAutomaticStats(GetAutomaticStatsRequest) returns (GetAutomaticStatsResponse);
+}
+
+message AcceptOrderRequest {
+    string order_id = 1;
+}
+
+message AcceptOrderResponse {
+
 }
 
 // ==================== AUTOMATIC PAYMENT ====================

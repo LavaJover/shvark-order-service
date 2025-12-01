@@ -24,6 +24,7 @@ type TrafficUsecase interface {
 	IsTrafficUnlocked(trafficID string) (*trafficdto.TrafficUnlockedResponse, error)
 	GetLockStatuses(trafficID string) (*trafficdto.LockStatusesResponse, error)
 	GetTrafficByTraderID(traderID string) ([]*domain.Traffic, error) // НОВОЕ
+	GetTrafficByMerchantID(merchantID string) ([]*domain.Traffic, error)
 }
 
 type DefaultTrafficUsecase struct {
@@ -132,4 +133,12 @@ func (uc *DefaultTrafficUsecase) GetTrafficByTraderID(traderID string) ([]*domai
     }
 
     return uc.TrafficRepo.GetTrafficByTraderID(traderID)
+}
+
+func (uc *DefaultTrafficUsecase) GetTrafficByMerchantID(merchantID string) ([]*domain.Traffic, error) {
+    if merchantID == "" {
+        return nil, fmt.Errorf("trader_id is required")
+    }
+
+    return uc.TrafficRepo.GetTrafficByMerchantID(merchantID)
 }

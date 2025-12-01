@@ -14,7 +14,7 @@ import (
 type OrderUsecase interface {
 	CreatePayInOrder(input *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error)
     CreatePayInOrderAtomic(input *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) // Добавляем новый метод
-    CreatePayOutOrder(input *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error)
+    CreatePayOutOrder(input *orderdto.CreatePayOutOrderInput) (*orderdto.OrderOutput, error)
 
     AcceptOrder(orderID string) error
 	ApproveOrder(orderID string) error
