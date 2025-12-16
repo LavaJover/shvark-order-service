@@ -15,7 +15,7 @@ type OrderModel struct {
 	Country 	  		string
 	ClientID   	  		string
 	Status 		  		domain.OrderStatus	`gorm:"index:idx_status_expires"`
-	BankDetailsID 		string  			`gorm:"type:uuid"`	
+	BankDetailsID 		*string  			`gorm:"type:uuid"`	
 	BankDetail 	  		BankDetailModel   	`gorm:"foreignKey:BankDetailsID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 	ExpiresAt  	  		time.Time			`gorm:"index:idx_status_expires"`
 	CreatedAt 	  		time.Time			`gorm:"index:idx_created_at"`

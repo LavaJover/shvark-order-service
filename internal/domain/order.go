@@ -28,7 +28,7 @@ type Order struct {
 	Status 			OrderStatus
 	MerchantInfo	MerchantInfo
 	AmountInfo 		AmountInfo
-	BankDetailID 	string
+	BankDetailID 	*string
 	Type 			OrderType
 	Recalculated 	bool
 	Shuffle 		int32

@@ -107,7 +107,7 @@ func (uc *DefaultOrderUsecase) GetOrdersByTraderID(
 	var orderOutputs []*orderdto.OrderOutput
 	for _, order := range orders {
 		bankDetailID := order.BankDetailID
-		bankDetail, err := uc.BankDetailUsecase.GetBankDetailByID(bankDetailID)
+		bankDetail, err := uc.BankDetailUsecase.GetBankDetailByID(*bankDetailID)
 		if err != nil {
 			return nil, 0, err
 		}

@@ -119,7 +119,7 @@ func (uc *DefaultOrderUsecase) CreatePayOutOrder (createOrderInput *orderdto.Cre
             CryptoRate:   cryptoRate,
             Currency:     createOrderInput.Currency,
         },
-        BankDetailID:  "",
+        BankDetailID:  nil,
         Type:          domain.TypePayIn,
         Recalculated:  createOrderInput.Recalculated,
         Shuffle:       createOrderInput.Shuffle,

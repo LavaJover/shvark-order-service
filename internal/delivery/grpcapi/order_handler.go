@@ -223,7 +223,7 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 			Status: string(order.Status),
 			Type: string(order.Type),
 			BankDetail: &orderpb.BankDetail{
-				BankDetailId: order.BankDetailID,
+				BankDetailId: *order.BankDetailID,
 				TraderId: order.RequisiteDetails.TraderID,
 				Currency: order.AmountInfo.Currency,
 				Country: "unknown",
@@ -272,7 +272,7 @@ func (h *OrderHandler) GetOrderByMerchantOrderID(ctx context.Context, r *orderpb
 			Status: string(order.Status),
 			Type: string(order.Type),
 			BankDetail: &orderpb.BankDetail{
-				BankDetailId: order.BankDetailID,
+				BankDetailId: *order.BankDetailID,
 				TraderId: order.RequisiteDetails.TraderID,
 				Currency: order.AmountInfo.Currency,
 				Country: "unknown",
@@ -547,7 +547,7 @@ func (h *OrderHandler) GetOrderDisputes(ctx context.Context, r *orderpb.GetOrder
 				CryptoRubRate: order.AmountInfo.CryptoRate,
 				Type: string(order.Type),
 				BankDetail: &orderpb.BankDetail{
-					BankDetailId: order.BankDetailID,
+					BankDetailId: *order.BankDetailID,
 					TraderId: order.RequisiteDetails.TraderID,
 					Currency: order.AmountInfo.Currency,
 					Country: "unknown",
@@ -781,11 +781,15 @@ func (h *OrderHandler) GetAllOrders(
 		// if err != nil {
 		// 	return nil, err
 		// }
+		bankDetailId := ""
+		if order.BankDetailID != nil {
+			bankDetailId = *order.BankDetailID
+		}
         res.Orders[i] = &orderpb.Order{
 			OrderId: order.ID,
 			Status: string(order.Status),
 			BankDetail: &orderpb.BankDetail{
-				BankDetailId: order.BankDetailID,
+				BankDetailId: bankDetailId,
 				TraderId: order.RequisiteDetails.TraderID,
 				Currency: order.AmountInfo.Currency,
 				Country: "unknown",
