@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/LavaJover/shvark-order-service/internal/domain"
 )
 
 func SendCallback(
@@ -30,6 +32,9 @@ func SendCallback(
         query := parsedURL.Query()
         query.Set("id", internalID)
         query.Set("status", status)
+        if status == string(domain.StatusCompleted) {
+            query.Set("usdRate", strconv.FormatFloat(reconciliationRate, 'f', 6, 64))
+        }
         if reconciliationSum != 0 && reconciliationAmount != 0 && reconciliationRate != 0 {
             query.Set("reconciliationSum", strconv.FormatFloat(reconciliationSum, 'f', 6, 64))
             query.Set("reconciliationAmount", strconv.FormatFloat(reconciliationAmount, 'f', 6, 64))

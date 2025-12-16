@@ -543,7 +543,7 @@ func (uc *DefaultOrderUsecase) ApproveOrder(orderID string) error {
 			order.CallbackUrl,
 			order.MerchantInfo.MerchantOrderID,
 			string(domain.StatusCompleted),
-			0, 0, 0,
+			0, 0, order.AmountInfo.CryptoRate,
 		)
 	}
 
