@@ -563,7 +563,7 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsWithLock(tx *gorm.DB, ban
     startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
     startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
     
-    // SQL запрос для проверки лимитов
+    // SQL запрос для проверки лимитов с ДОБАВЛЕНИЕМ проверки на дубликаты
     sqlQuery := `
         WITH bank_detail_stats AS (
             SELECT 
@@ -573,21 +573,25 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsWithLock(tx *gorm.DB, ban
                 COALESCE(SUM(CASE WHEN status = ANY($4::text[]) AND created_at >= $5 THEN amount_fiat END), 0) as day_amount,
                 COUNT(CASE WHEN status = ANY($6::text[]) AND created_at >= $7 THEN 1 END) as month_count,
                 COALESCE(SUM(CASE WHEN status = ANY($8::text[]) AND created_at >= $9 THEN amount_fiat END), 0) as month_amount,
-                MAX(CASE WHEN status = $10 THEN created_at END) as last_completed_time
+                MAX(CASE WHEN status = $10 THEN created_at END) as last_completed_time,
+                -- ВОССТАНАВЛИВАЕМ проверку на дубликаты
+                COUNT(CASE WHEN status = $11 AND amount_fiat = $12 THEN 1 END) as duplicate_count
             FROM order_models 
-            WHERE bank_details_id::text = ANY($11::text[])
+            WHERE bank_details_id::text = ANY($13::text[])
             GROUP BY bank_details_id
         )
         SELECT bd.* 
         FROM bank_detail_models bd
         LEFT JOIN bank_detail_stats bds ON bd.id::text = bds.bank_details_id_text
-        WHERE bd.id::text = ANY($12::text[])
+        WHERE bd.id::text = ANY($14::text[])
           AND COALESCE(bds.pending_count, 0) < bd.max_orders_simultaneosly
           AND COALESCE(bds.day_count, 0) + 1 <= bd.max_quantity_day
-          AND COALESCE(bds.day_amount, 0) + $13 <= bd.max_amount_day
+          AND COALESCE(bds.day_amount, 0) + $15 <= bd.max_amount_day
           AND COALESCE(bds.month_count, 0) + 1 <= bd.max_quantity_month
-          AND COALESCE(bds.month_amount, 0) + $14 <= bd.max_amount_month
+          AND COALESCE(bds.month_amount, 0) + $16 <= bd.max_amount_month
           AND (bds.last_completed_time IS NULL OR bds.last_completed_time <= NOW() - (bd.delay / 1000000000.0) * INTERVAL '1 SECOND')
+          -- ВОССТАНАВЛИВАЕМ условие по дубликатам
+          AND COALESCE(bds.duplicate_count, 0) = 0
     `
     
     var finalCandidates []models.BankDetailModel
@@ -595,20 +599,22 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsWithLock(tx *gorm.DB, ban
     pendingCompletedStatuses := []string{string(domain.StatusPending), string(domain.StatusCompleted)}
     
     err := tx.Raw(sqlQuery,
-        string(domain.StatusPending),
-        pq.Array(pendingCompletedStatuses),
-        startOfDay,
-        pq.Array(pendingCompletedStatuses),
-        startOfDay,
-        pq.Array(pendingCompletedStatuses),
-        startOfMonth,
-        pq.Array(pendingCompletedStatuses),
-        startOfMonth,
-        string(domain.StatusCompleted),
-        pq.Array(bankDetailIDs),
-        pq.Array(bankDetailIDs),
-        searchQuery.AmountFiat,
-        searchQuery.AmountFiat,
+        string(domain.StatusPending),           // $1
+        pq.Array(pendingCompletedStatuses),     // $2
+        startOfDay,                             // $3
+        pq.Array(pendingCompletedStatuses),     // $4
+        startOfDay,                             // $5
+        pq.Array(pendingCompletedStatuses),     // $6
+        startOfMonth,                           // $7
+        pq.Array(pendingCompletedStatuses),     // $8
+        startOfMonth,                           // $9
+        string(domain.StatusCompleted),         // $10
+        string(domain.StatusPending),           // $11 - статус для проверки дубликатов
+        searchQuery.AmountFiat,                 // $12 - сумма для проверки дубликатов
+        pq.Array(bankDetailIDs),                // $13
+        pq.Array(bankDetailIDs),                // $14
+        searchQuery.AmountFiat,                 // $15
+        searchQuery.AmountFiat,                 // $16
     ).Scan(&finalCandidates).Error
     
     if err != nil {
@@ -712,21 +718,25 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsInTx(baseCandidates []mod
                 COALESCE(SUM(CASE WHEN status = ANY($4::text[]) AND created_at >= $5 THEN amount_fiat END), 0) as day_amount,
                 COUNT(CASE WHEN status = ANY($6::text[]) AND created_at >= $7 THEN 1 END) as month_count,
                 COALESCE(SUM(CASE WHEN status = ANY($8::text[]) AND created_at >= $9 THEN amount_fiat END), 0) as month_amount,
-                MAX(CASE WHEN status = $10 THEN created_at END) as last_completed_time
+                MAX(CASE WHEN status = $10 THEN created_at END) as last_completed_time,
+                -- ВОССТАНАВЛИВАЕМ проверку на дубликаты
+                COUNT(CASE WHEN status = $11 AND amount_fiat = $12 THEN 1 END) as duplicate_count
             FROM order_models 
-            WHERE bank_details_id::text = ANY($11::text[])
+            WHERE bank_details_id::text = ANY($13::text[])
             GROUP BY bank_details_id
         )
         SELECT bd.* 
         FROM bank_detail_models bd
         LEFT JOIN bank_detail_stats bds ON bd.id::text = bds.bank_details_id_text
-        WHERE bd.id::text = ANY($12::text[])
+        WHERE bd.id::text = ANY($14::text[])
           AND COALESCE(bds.pending_count, 0) < bd.max_orders_simultaneosly
           AND COALESCE(bds.day_count, 0) + 1 <= bd.max_quantity_day
-          AND COALESCE(bds.day_amount, 0) + $13 <= bd.max_amount_day
+          AND COALESCE(bds.day_amount, 0) + $15 <= bd.max_amount_day
           AND COALESCE(bds.month_count, 0) + 1 <= bd.max_quantity_month
-          AND COALESCE(bds.month_amount, 0) + $14 <= bd.max_amount_month
+          AND COALESCE(bds.month_amount, 0) + $16 <= bd.max_amount_month
           AND (bds.last_completed_time IS NULL OR bds.last_completed_time <= NOW() - (bd.delay / 1000000000.0) * INTERVAL '1 SECOND')
+          -- ВОССТАНАВЛИВАЕМ условие по дубликатам
+          AND COALESCE(bds.duplicate_count, 0) = 0
     `
     
     var finalCandidates []models.BankDetailModel
@@ -734,20 +744,22 @@ func (r *DefaultBankDetailRepo) applyDynamicConstraintsInTx(baseCandidates []mod
     pendingCompletedStatuses := []string{string(domain.StatusPending), string(domain.StatusCompleted)}
     
     err := r.DB.Raw(finalQuery,
-        string(domain.StatusPending),
-        pq.Array(pendingCompletedStatuses),
-        startOfDay,
-        pq.Array(pendingCompletedStatuses),
-        startOfDay,
-        pq.Array(pendingCompletedStatuses),
-        startOfMonth,
-        pq.Array(pendingCompletedStatuses),
-        startOfMonth,
-        string(domain.StatusCompleted),
-        pq.Array(bankDetailIDs),
-        pq.Array(bankDetailIDs),
-        searchQuery.AmountFiat,
-        searchQuery.AmountFiat,
+        string(domain.StatusPending),           // $1
+        pq.Array(pendingCompletedStatuses),     // $2
+        startOfDay,                             // $3
+        pq.Array(pendingCompletedStatuses),     // $4
+        startOfDay,                             // $5
+        pq.Array(pendingCompletedStatuses),     // $6
+        startOfMonth,                           // $7
+        pq.Array(pendingCompletedStatuses),     // $8
+        startOfMonth,                           // $9
+        string(domain.StatusCompleted),         // $10
+        string(domain.StatusPending),           // $11 - статус для проверки дубликатов
+        searchQuery.AmountFiat,                 // $12 - сумма для проверки дубликатов
+        pq.Array(bankDetailIDs),                // $13
+        pq.Array(bankDetailIDs),                // $14
+        searchQuery.AmountFiat,                 // $15
+        searchQuery.AmountFiat,                 // $16
     ).Scan(&finalCandidates).Error
     
     if err != nil {
