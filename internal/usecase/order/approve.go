@@ -94,6 +94,9 @@ func (uc *DefaultOrderUsecase) processPayInApprove(order *domain.Order) error {
 		)
 	}
 
+	// ✅ ЗАПИСЬ МЕТРИКИ ЗАВЕРШЕННОГО ЗАКАЗА
+	uc.recordOrderCompletedMetrics(order)
+
 	return nil
 }
 

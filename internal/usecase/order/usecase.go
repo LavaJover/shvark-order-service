@@ -7,6 +7,7 @@ import (
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/kafka"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/metrics"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
 	orderdto "github.com/LavaJover/shvark-order-service/internal/usecase/dto/order"
 )
@@ -44,6 +45,7 @@ type DefaultOrderUsecase struct {
 	BankDetailUsecase 	usecase.BankDetailUsecase
 	TeamRelationsUsecase usecase.TeamRelationsUsecase
 	Publisher 			*publisher.KafkaPublisher
+	Metrics				*metrics.OrderMetrics	
 }
 
 func NewDefaultOrderUsecase(
@@ -52,7 +54,8 @@ func NewDefaultOrderUsecase(
 	trafficUsecase usecase.TrafficUsecase,
 	bankDetailUsecase usecase.BankDetailUsecase,
 	kafkaPublisher *publisher.KafkaPublisher,
-	teamRelationsUsecase usecase.TeamRelationsUsecase) *DefaultOrderUsecase {
+	teamRelationsUsecase usecase.TeamRelationsUsecase,
+	orderMetrics *metrics.OrderMetrics) *DefaultOrderUsecase {
 
 	return &DefaultOrderUsecase{
 		OrderRepo: orderRepo,
@@ -61,5 +64,6 @@ func NewDefaultOrderUsecase(
 		BankDetailUsecase: bankDetailUsecase,
 		Publisher: kafkaPublisher,
 		TeamRelationsUsecase: teamRelationsUsecase,
+		Metrics: orderMetrics,
 	}
 }

@@ -5,9 +5,10 @@ import (
 
 	"github.com/LavaJover/shvark-order-service/internal/config"
 	"github.com/LavaJover/shvark-order-service/internal/delivery/http/handlers"
+	"github.com/LavaJover/shvark-order-service/internal/infrastructure/metrics"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
-    orderuc "github.com/LavaJover/shvark-order-service/internal/usecase/order"
-    disputeuc "github.com/LavaJover/shvark-order-service/internal/usecase/dispute"
+	disputeuc "github.com/LavaJover/shvark-order-service/internal/usecase/dispute"
+	orderuc "github.com/LavaJover/shvark-order-service/internal/usecase/order"
 )
 
 type UseCases struct {
@@ -30,6 +31,7 @@ func InitializeUseCases(deps *Dependencies) (*UseCases, error) {
     bankDetailUsecase := usecase.NewDefaultBankDetailUsecase(deps.Repositories.BankDetailRepo)
     teamRelationsUsecase := usecase.NewDefaultTeamRelationsUsecase(deps.Repositories.TeamRelationsRepo)
     deviceUsecase := usecase.NewDefaultDeviceUsecase(deps.Repositories.DeviceRepo)
+    orderMetrics := metrics.NewOrderMetrics()
     
     orderUsecase := orderuc.NewDefaultOrderUsecase(
         deps.Repositories.OrderRepo,
@@ -38,6 +40,7 @@ func InitializeUseCases(deps *Dependencies) (*UseCases, error) {
         bankDetailUsecase,
         deps.OrderPublisher,
         teamRelationsUsecase,
+        orderMetrics,
     )
     
     disputeUsecase := disputeuc.NewDefaultDisputeUsecase(

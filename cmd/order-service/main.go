@@ -1,20 +1,22 @@
 package main
 
 import (
-    "context"
-    "fmt"
-    "log"
-    "net"
-    "os"
-    "os/signal"
-    "syscall"
+	"context"
+	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
-    "github.com/LavaJover/shvark-order-service/internal/app/background"
-    "github.com/LavaJover/shvark-order-service/internal/app/setup"
-    "github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi"
-    orderpb "github.com/LavaJover/shvark-order-service/proto/gen/order"
-    "github.com/joho/godotenv"
-    "google.golang.org/grpc"
+	"github.com/LavaJover/shvark-order-service/internal/app/background"
+	"github.com/LavaJover/shvark-order-service/internal/app/setup"
+	"github.com/LavaJover/shvark-order-service/internal/delivery/grpcapi"
+	orderpb "github.com/LavaJover/shvark-order-service/proto/gen/order"
+	"github.com/joho/godotenv"
+	"google.golang.org/grpc"
+    "github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -69,6 +71,11 @@ func main() {
     if err := grpcServer.Serve(lis); err != nil {
         log.Fatalf("Failed to serve: %v", err)
     }
+
+    go func() {
+        http.Handle("/metrics", promhttp.Handler())
+        http.ListenAndServe(":8081", nil)
+    }()
 }
 
 func setupGRPCServer(useCases *setup.UseCases, antiFraudSystem *setup.AntiFraudSystem) *grpc.Server {

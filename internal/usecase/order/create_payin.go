@@ -457,6 +457,10 @@ func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto
     }
     committed = true
 
+    // ✅ ЗАПИСЬ МЕТРИКИ СОЗДАННОГО ЗАКАЗА
+    uc.recordOrderCreatedMetrics(&order)
+
+
     // Отправляем колбэк о создании
     if createOrderInput.AdvancedParams.CallbackUrl != "" {
         notifier.SendCallback(
