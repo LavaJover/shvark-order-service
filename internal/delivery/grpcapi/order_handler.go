@@ -217,13 +217,19 @@ func (h *OrderHandler) GetOrderByID(ctx context.Context, r *orderpb.GetOrderByID
 		return nil, err
 	}
 
+	// БЕЗОПАСНОЕ извлечение BankDetailID
+	bankDetailId := ""
+	if order.BankDetailID != nil {
+		bankDetailId = *order.BankDetailID
+	}
+
 	return &orderpb.GetOrderByIDResponse{
 		Order: &orderpb.Order{
 			OrderId: orderID,
 			Status: string(order.Status),
 			Type: string(order.Type),
 			BankDetail: &orderpb.BankDetail{
-				BankDetailId: *order.BankDetailID,
+				BankDetailId: bankDetailId,
 				TraderId: order.RequisiteDetails.TraderID,
 				Currency: order.AmountInfo.Currency,
 				Country: "unknown",
@@ -266,13 +272,19 @@ func (h *OrderHandler) GetOrderByMerchantOrderID(ctx context.Context, r *orderpb
 		return nil, err
 	}
 
+	// БЕЗОПАСНОЕ извлечение BankDetailID
+	bankDetailId := ""
+	if order.BankDetailID != nil {
+		bankDetailId = *order.BankDetailID
+	}
+
 	return &orderpb.GetOrderByMerchantOrderIDResponse{
 		Order: &orderpb.Order{
 			OrderId: order.ID,
 			Status: string(order.Status),
 			Type: string(order.Type),
 			BankDetail: &orderpb.BankDetail{
-				BankDetailId: *order.BankDetailID,
+				BankDetailId: bankDetailId,
 				TraderId: order.RequisiteDetails.TraderID,
 				Currency: order.AmountInfo.Currency,
 				Country: "unknown",
@@ -524,6 +536,12 @@ func (h *OrderHandler) GetOrderDisputes(ctx context.Context, r *orderpb.GetOrder
 		if err != nil {
 			return nil, err
 		}
+
+		// БЕЗОПАСНОЕ извлечение BankDetailID
+		bankDetailId := ""
+		if order.BankDetailID != nil {
+			bankDetailId = *order.BankDetailID
+		}
 		disputesResp[i] = &orderpb.OrderDispute{
 			DisputeId: dispute.ID,
 			OrderId: dispute.OrderID,
@@ -547,7 +565,7 @@ func (h *OrderHandler) GetOrderDisputes(ctx context.Context, r *orderpb.GetOrder
 				CryptoRubRate: order.AmountInfo.CryptoRate,
 				Type: string(order.Type),
 				BankDetail: &orderpb.BankDetail{
-					BankDetailId: *order.BankDetailID,
+					BankDetailId: bankDetailId,
 					TraderId: order.RequisiteDetails.TraderID,
 					Currency: order.AmountInfo.Currency,
 					Country: "unknown",

@@ -9,7 +9,7 @@ type OrderType string
 
 const (
 	TypePayIn OrderType = "DEPOSIT"
-	TypePayOut OrderType = "PayOut"
+	TypePayOut OrderType = "PAYOUT"
 )
 
 type OrderStatus string
