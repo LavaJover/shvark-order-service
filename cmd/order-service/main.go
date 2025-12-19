@@ -70,7 +70,10 @@ func main() {
 
     go func() {
         http.Handle("/metrics", promhttp.Handler())
-        http.ListenAndServe(":8081", nil)
+        log.Printf("Metrics server starting on :8081")
+        if err := http.ListenAndServe(":8081", nil); err != nil {
+            log.Fatalf("Failed to start metrics server: %v", err)
+        }
     }()
 
     if err := grpcServer.Serve(lis); err != nil {
