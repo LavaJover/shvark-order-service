@@ -31,6 +31,11 @@ type OrderMetrics struct {
 	BankDetailsFoundTotal prometheus.CounterVec
 	BankDetailsSearchDuration prometheus.HistogramVec
 
+	// ===== ORPHAN ORDERS: Заявки без реквизитов =====
+	OrdersPendingRequisitesTotal prometheus.CounterVec
+	OrdersPendingRequisitesAmountTotal prometheus.CounterVec
+	// ===== КОНЕЦ =====
+
 	// ===== КОНЕЦ НОВЫХ МЕТРИК =====
 
 	// Метрики по статусам
@@ -125,6 +130,23 @@ func NewOrderMetrics() *OrderMetrics {
 			[]string{"merchant_id", "payment_system", "found"},
 		),
 		// ===== КОНЕЦ НОВЫХ МЕТРИК =====
+		// ===== ORPHAN ORDERS =====
+		OrdersPendingRequisitesTotal: *promauto.NewCounterVec(
+		    prometheus.CounterOpts{
+		        Name: "orders_pending_requisites_total",
+		        Help: "Количество заявок, сохраненных с StatusFailed из-за отсутствия реквизитов",
+		    },
+		    []string{"merchant_id", "payment_system", "currency"},
+		),
+
+		OrdersPendingRequisitesAmountTotal: *promauto.NewCounterVec(
+		    prometheus.CounterOpts{
+		        Name: "orders_pending_requisites_amount_total",
+		        Help: "Сумма заявок со статусом StatusFailed (нет реквизитов)",
+		    },
+		    []string{"merchant_id", "payment_system", "currency"},
+		),
+		// ===== КОНЕЦ =====
 
 		// Успешно завершенные заказы (COMPLETED)
 		OrdersCompletedTotal: *promauto.NewCounterVec(
@@ -367,4 +389,10 @@ func (m *OrderMetrics) RecordTraderReward(traderID, currency string, rewardAmoun
 // RecordError записывает ошибку
 func (m *OrderMetrics) RecordError(merchantID, errorType string) {
 	m.OrderErrorsTotal.WithLabelValues(merchantID, errorType).Inc()
+}
+
+// RecordOrderPendingRequisites записывает заявку которая ждет реквизитов (StatusFailed)
+func (m *OrderMetrics) RecordOrderPendingRequisites(merchantID, paymentSystem, currency string, amountFiat float64) {
+    m.OrdersPendingRequisitesTotal.WithLabelValues(merchantID, paymentSystem, currency).Inc()
+    m.OrdersPendingRequisitesAmountTotal.WithLabelValues(merchantID, paymentSystem, currency).Add(amountFiat)
 }

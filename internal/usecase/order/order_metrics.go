@@ -104,3 +104,22 @@ func (uc *DefaultOrderUsecase) recordOrderErrorMetrics(merchantID, errorType str
 
 	uc.Metrics.RecordError(merchantID, errorType)
 }
+
+// recordOrderPendingRequisitesMetrics - записывает заявку которая ждет реквизитов
+func (uc *DefaultOrderUsecase) recordOrderPendingRequisitesMetrics(order *domain.Order) {
+    if uc.Metrics == nil {
+        return
+    }
+
+    paymentSystem := order.RequisiteDetails.PaymentSystem
+    if paymentSystem == "" {
+        paymentSystem = "unknown"
+    }
+
+    uc.Metrics.RecordOrderPendingRequisites(
+        order.MerchantInfo.MerchantID,
+        paymentSystem,
+        order.AmountInfo.Currency,
+        order.AmountInfo.AmountFiat,
+    )
+}

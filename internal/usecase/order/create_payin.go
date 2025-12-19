@@ -394,9 +394,53 @@ func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto
     }
     
     if len(bankDetails) == 0 {
-        log.Printf("Реквизиты для заявки не найдены!\n")
-        return nil, fmt.Errorf("no available bank details")
+        log.Printf("Реквизиты для заявки не найдены! Сохраняем с StatusFailed\n")
+        
+        // Создаём заявку с StatusFailed
+        order := domain.Order{
+            ID: uuid.New().String(),
+            Status: domain.StatusFailed,  // ← КЛЮЧЕВОЙ СТАТУС
+            MerchantInfo: domain.MerchantInfo{
+                MerchantID: createOrderInput.MerchantID,
+                MerchantOrderID: createOrderInput.MerchantOrderID,
+                ClientID: createOrderInput.ClientID,
+            },
+            AmountInfo: domain.AmountInfo{
+                AmountFiat: createOrderInput.AmountFiat,
+                AmountCrypto: createOrderInput.AmountCrypto,
+                CryptoRate: createOrderInput.CryptoRate,
+                Currency: createOrderInput.Currency,
+            },
+            Type: domain.TypePayIn,
+            TraderReward: 0,
+            PlatformFee: 0,
+            CallbackUrl: createOrderInput.CallbackUrl,
+            RequisiteDetails: domain.RequisiteDetails{
+                PaymentSystem: createOrderInput.PaymentSystem,
+            },
+            CreatedAt: time.Now(),
+            UpdatedAt: time.Now(),
+            ExpiresAt: time.Now().Add(24 * time.Hour),
+        }
+        
+        // Сохраняем в БД через транзакцию
+        if err := txRepo.CreateOrderInTx(&order); err != nil {
+            log.Printf("Ошибка сохранения заявки: %v\n", err)
+            return nil, fmt.Errorf("failed to save order: %w", err)
+        }
+        
+        // Коммитим транзакцию
+        if err := txRepo.Commit(); err != nil {
+            return nil, fmt.Errorf("failed to commit: %w", err)
+        }
+        committed = true
+        
+        // ✅ ЗАПИСЫВАЕМ МЕТРИКУ для ожидающих реквизитов
+        uc.recordOrderPendingRequisitesMetrics(&order)
+        
+        return nil, fmt.Errorf("no available bank details (order saved as FAILED)")
     }
+    
     log.Printf("Для заявки найдены доступные реквизиты!\n")
 
     // Выбор лучшего реквизита
