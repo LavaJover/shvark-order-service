@@ -68,14 +68,14 @@ func main() {
     // Обработка graceful shutdown
     go gracefulShutdown(grpcServer, cancel)
 
-    if err := grpcServer.Serve(lis); err != nil {
-        log.Fatalf("Failed to serve: %v", err)
-    }
-
     go func() {
         http.Handle("/metrics", promhttp.Handler())
         http.ListenAndServe(":8081", nil)
     }()
+
+    if err := grpcServer.Serve(lis); err != nil {
+        log.Fatalf("Failed to serve: %v", err)
+    }
 }
 
 func setupGRPCServer(useCases *setup.UseCases, antiFraudSystem *setup.AntiFraudSystem) *grpc.Server {
