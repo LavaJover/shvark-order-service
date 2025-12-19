@@ -352,6 +352,13 @@ func (uc *DefaultOrderUsecase) CreatePayInOrder(createOrderInput *orderdto.Creat
 func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) {
     start := time.Now()
     slog.Info("CreateOrderAtomic started")
+
+    // ===== НОВОЕ: Переменные для метрик =====
+	paymentSystem := createOrderInput.PaymentSystem
+	// merchantID := createOrderInput.MerchantID
+	// amountFiat := createOrderInput.AmountFiat
+	// currency := createOrderInput.Currency
+	// ===== КОНЕЦ НОВЫХ ПЕРЕМЕННЫХ =====
     
     // Начинаем транзакцию
     txRepo, err := uc.OrderRepo.BeginTx()
@@ -458,7 +465,7 @@ func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto
     committed = true
 
     // ✅ ЗАПИСЬ МЕТРИКИ СОЗДАННОГО ЗАКАЗА
-    uc.recordOrderCreatedMetrics(&order)
+    uc.recordOrderCreatedMetrics(&order, paymentSystem)
 
 
     // Отправляем колбэк о создании
@@ -490,44 +497,64 @@ func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto
 }
 // Вспомогательные методы для атомарного создания
 func (uc *DefaultOrderUsecase) findEligibleBankDetailsInTx(bankDetailRepo domain.BankDetailRepository, input *orderdto.CreatePayInOrderInput) ([]*domain.BankDetail, error) {
-    bankDetails, err := bankDetailRepo.FindSuitableBankDetailsInTx(
-        &domain.SuitablleBankDetailsQuery{
-            AmountFiat:    input.AmountFiat,
-            Currency:      input.Currency,
-            PaymentSystem: input.PaymentSystem,
-            BankCode:      input.BankInfo.BankCode,
-            NspkCode:      input.BankInfo.NspkCode,
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
+	t := time.Now()
+	searchDuration := 0.0
+	defer func() {
+		searchDuration = time.Since(t).Seconds()
+	}()
+	
+	bankDetails, err := bankDetailRepo.FindSuitableBankDetailsInTx(
+		&domain.SuitablleBankDetailsQuery{
+			AmountFiat: input.AmountFiat,
+			Currency: input.Currency,
+			PaymentSystem: input.PaymentSystem,
+			BankCode: input.BankInfo.BankCode,
+			NspkCode: input.BankInfo.NspkCode,
+		},
+	)
 
-    if len(bankDetails) == 0 {
-        log.Printf("Отсеились по статическим параметрам\n")
-        return []*domain.BankDetail{}, nil
-    }
+	if err != nil {
+		// ❌ ОШИБКА - ЗАПИСЫВАЕМ МЕТРИКУ
+		uc.Metrics.RecordBankDetailsNotFound(input.MerchantParams.MerchantID, input.PaymentSystem, input.Currency, input.AmountFiat)
+		uc.Metrics.RecordBankDetailsSearchDuration(input.MerchantParams.MerchantID, input.PaymentSystem, searchDuration, false)
+		return nil, err
+	}
 
-    // Filter by Traffic
-    bankDetails, err = uc.FilterByTraffic(bankDetails, input.MerchantParams.MerchantID)
-    if err != nil {
-        return nil, err
-    }
-    if len(bankDetails) == 0 {
-        log.Printf("Отсеились по трафику\n")
-    }
+	if len(bankDetails) == 0 {
+		// ❌ ПУСТО - ЗАПИСЫВАЕМ МЕТРИКУ
+		uc.Metrics.RecordBankDetailsNotFound(input.MerchantParams.MerchantID, input.PaymentSystem, input.Currency, input.AmountFiat)
+		uc.Metrics.RecordBankDetailsSearchDuration(input.MerchantParams.MerchantID, input.PaymentSystem, searchDuration, false)
+		log.Printf("Отсеились по статическим параметрам\n")
+		return []*domain.BankDetail{}, nil
+	}
 
-    // Filter by Trader Available balances
-    bankDetails, err = uc.FilterByTraderBalanceOptimal(bankDetails, input.AmountCrypto)
-    if err != nil {
-        return nil, err
-    }
-    if len(bankDetails) == 0 {
-        log.Printf("Отсеились по балансу трейдеров\n")
-    }
+	// ✅ НАЙДЕНЫ - ЗАПИСЫВАЕМ МЕТРИКУ
+	uc.Metrics.RecordBankDetailsFound(input.MerchantParams.MerchantID, input.PaymentSystem)
+	uc.Metrics.RecordBankDetailsSearchDuration(input.MerchantParams.MerchantID, input.PaymentSystem, searchDuration, true)
 
-    return bankDetails, nil
+	// 0) Filter by Traffic
+	bankDetails, err = uc.FilterByTraffic(bankDetails, input.MerchantParams.MerchantID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(bankDetails) == 0 {
+		log.Printf("Отсеились по трафику\n")
+	}
+
+	// 1) Filter by Trader Available balances
+	bankDetails, err = uc.FilterByTraderBalanceOptimal(bankDetails, input.AmountCrypto)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(bankDetails) == 0 {
+		log.Printf("Отсеились по балансу трейдеров\n")
+	}
+
+	return bankDetails, nil
 }
+
 
 func (uc *DefaultOrderUsecase) checkIdempotencyInTx(orderRepo domain.OrderRepository, clientID string) error {
     orders, err := orderRepo.GetCreatedOrdersByClientIDInTx(clientID)

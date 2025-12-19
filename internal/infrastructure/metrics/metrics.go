@@ -8,46 +8,57 @@ import (
 // OrderMetrics содержит все метрики для заказов
 type OrderMetrics struct {
 	// Счетчики создаваемых сделок
-	OrdersCreatedTotal          prometheus.CounterVec
-	OrdersCreatedAmountTotal    prometheus.CounterVec
-	OrdersCreatedCount          prometheus.GaugeVec
-	
+	OrdersCreatedTotal prometheus.CounterVec
+	OrdersCreatedAmountTotal prometheus.CounterVec
+	OrdersCreatedCount prometheus.GaugeVec
+
 	// Успешно завершенные сделки (COMPLETED)
-	OrdersCompletedTotal        prometheus.CounterVec
-	OrdersCompletedAmountTotal  prometheus.CounterVec
-	OrdersCompletedCount        prometheus.GaugeVec
-	
+	OrdersCompletedTotal prometheus.CounterVec
+	OrdersCompletedAmountTotal prometheus.CounterVec
+	OrdersCompletedCount prometheus.GaugeVec
+
 	// Отмененные сделки (CANCELED)
-	OrdersCanceledTotal         prometheus.CounterVec
-	OrdersCanceledAmountTotal   prometheus.CounterVec
-	OrdersCanceledCount         prometheus.GaugeVec
-	
+	OrdersCanceledTotal prometheus.CounterVec
+	OrdersCanceledAmountTotal prometheus.CounterVec
+	OrdersCanceledCount prometheus.GaugeVec
+
+	// ===== НОВЫЕ МЕТРИКИ =====
+	// Банк реквизиты не найдены (невыдача)
+	BankDetailsNotFoundTotal prometheus.CounterVec
+	BankDetailsNotFoundAmountTotal prometheus.CounterVec
+
+	// Успешный поиск банк реквизитов
+	BankDetailsFoundTotal prometheus.CounterVec
+	BankDetailsSearchDuration prometheus.HistogramVec
+
+	// ===== КОНЕЦ НОВЫХ МЕТРИК =====
+
 	// Метрики по статусам
-	OrderStatusGauge            prometheus.GaugeVec
-	
+	OrderStatusGauge prometheus.GaugeVec
+
 	// Метрики по типам (PAYIN/PAYOUT)
-	OrderTypeCreatedTotal       prometheus.CounterVec
-	
-	// Метрики по мерчантам
-	MerchantOrdersCreatedTotal  prometheus.CounterVec
+	OrderTypeCreatedTotal prometheus.CounterVec
+
+	// По мерчантам
+	MerchantOrdersCreatedTotal prometheus.CounterVec
 	MerchantOrdersCompletedTotal prometheus.CounterVec
 	MerchantOrdersCanceledTotal prometheus.CounterVec
-	MerchantAmountCreatedTotal  prometheus.CounterVec
+	MerchantAmountCreatedTotal prometheus.CounterVec
 	MerchantAmountCompletedTotal prometheus.CounterVec
-	
-	// Метрики по трейдерам
-	TraderOrdersCompletedTotal  prometheus.CounterVec
-	TraderAmountCompletedTotal  prometheus.CounterVec
-	
+
+	// По трейдерам
+	TraderOrdersCompletedTotal prometheus.CounterVec
+	TraderAmountCompletedTotal prometheus.CounterVec
+
 	// Время обработки
-	OrderProcessingDuration     prometheus.HistogramVec
-	
+	OrderProcessingDuration prometheus.HistogramVec
+
 	// Комиссии и награды
-	PlatformFeeTotal            prometheus.CounterVec
-	TraderRewardTotal           prometheus.CounterVec
-	
+	PlatformFeeTotal prometheus.CounterVec
+	TraderRewardTotal prometheus.CounterVec
+
 	// Ошибки
-	OrderErrorsTotal            prometheus.CounterVec
+	OrderErrorsTotal prometheus.CounterVec
 }
 
 // NewOrderMetrics создает новый экземпляр метрик
@@ -59,15 +70,17 @@ func NewOrderMetrics() *OrderMetrics {
 				Name: "orders_created_total",
 				Help: "Общее количество созданных заказов",
 			},
-			[]string{"merchant_id", "order_type", "currency"},
+			[]string{"merchant_id", "order_type", "currency", "payment_system"},
 		),
+
 		OrdersCreatedAmountTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "orders_created_amount_total",
 				Help: "Общая сумма созданных заказов в фиате",
 			},
-			[]string{"merchant_id", "currency"},
+			[]string{"merchant_id", "currency", "payment_system"},
 		),
+
 		OrdersCreatedCount: *promauto.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "orders_created_count",
@@ -75,22 +88,61 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"merchant_id"},
 		),
-		
+
+		// ===== НОВЫЕ МЕТРИКИ =====
+		// Банк реквизиты НЕ найдены (невыдача заявок)
+		BankDetailsNotFoundTotal: *promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "bank_details_not_found_total",
+				Help: "Общее количество заявок, для которых не найдены банковские реквизиты",
+			},
+			[]string{"merchant_id", "payment_system"},
+		),
+
+		BankDetailsNotFoundAmountTotal: *promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "bank_details_not_found_amount_total",
+				Help: "Общая сумма невыданных заявок из-за отсутствия реквизитов",
+			},
+			[]string{"merchant_id", "currency", "payment_system"},
+		),
+
+		// Успешный поиск банк реквизитов
+		BankDetailsFoundTotal: *promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "bank_details_found_total",
+				Help: "Общее количество успешно найденных банковских реквизитов",
+			},
+			[]string{"merchant_id", "payment_system"},
+		),
+
+		BankDetailsSearchDuration: *promauto.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name:    "bank_details_search_duration_seconds",
+				Help:    "Время поиска банковских реквизитов в секундах",
+				Buckets: prometheus.ExponentialBuckets(0.01, 2, 10), // 10ms, 20ms, 40ms...
+			},
+			[]string{"merchant_id", "payment_system", "found"},
+		),
+		// ===== КОНЕЦ НОВЫХ МЕТРИК =====
+
 		// Успешно завершенные заказы (COMPLETED)
 		OrdersCompletedTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "orders_completed_total",
 				Help: "Общее количество завершенных заказов (статус COMPLETED)",
 			},
-			[]string{"merchant_id", "order_type", "currency"},
+			[]string{"merchant_id", "order_type", "currency", "payment_system"},
 		),
+
 		OrdersCompletedAmountTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "orders_completed_amount_total",
 				Help: "Общая сумма завершенных заказов в фиате",
 			},
-			[]string{"merchant_id", "currency"},
+			[]string{"merchant_id", "currency", "payment_system"},
 		),
+
 		OrdersCompletedCount: *promauto.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "orders_completed_count",
@@ -98,22 +150,24 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"merchant_id"},
 		),
-		
+
 		// Отмененные заказы (CANCELED)
 		OrdersCanceledTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "orders_canceled_total",
 				Help: "Общее количество отмененных заказов (невыдача)",
 			},
-			[]string{"merchant_id", "order_type", "currency"},
+			[]string{"merchant_id", "order_type", "currency", "payment_system"},
 		),
+
 		OrdersCanceledAmountTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "orders_canceled_amount_total",
 				Help: "Общая сумма отмененных заказов в фиате",
 			},
-			[]string{"merchant_id", "currency"},
+			[]string{"merchant_id", "currency", "payment_system"},
 		),
+
 		OrdersCanceledCount: *promauto.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "orders_canceled_count",
@@ -121,7 +175,7 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"merchant_id"},
 		),
-		
+
 		// Статусы
 		OrderStatusGauge: *promauto.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -130,7 +184,7 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"merchant_id", "status"},
 		),
-		
+
 		// По типам
 		OrderTypeCreatedTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -139,7 +193,7 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"merchant_id", "order_type"},
 		),
-		
+
 		// По мерчантам
 		MerchantOrdersCreatedTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -148,6 +202,7 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"merchant_id"},
 		),
+
 		MerchantOrdersCompletedTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "merchant_orders_completed_total",
@@ -155,6 +210,7 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"merchant_id"},
 		),
+
 		MerchantOrdersCanceledTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "merchant_orders_canceled_total",
@@ -162,6 +218,7 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"merchant_id"},
 		),
+
 		MerchantAmountCreatedTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "merchant_amount_created_total",
@@ -169,6 +226,7 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"merchant_id", "currency"},
 		),
+
 		MerchantAmountCompletedTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "merchant_amount_completed_total",
@@ -176,7 +234,7 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"merchant_id", "currency"},
 		),
-		
+
 		// По трейдерам
 		TraderOrdersCompletedTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -185,6 +243,7 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"trader_id"},
 		),
+
 		TraderAmountCompletedTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "trader_amount_completed_total",
@@ -192,7 +251,7 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"trader_id", "currency"},
 		),
-		
+
 		// Время обработки
 		OrderProcessingDuration: *promauto.NewHistogramVec(
 			prometheus.HistogramOpts{
@@ -202,7 +261,7 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"merchant_id", "status"},
 		),
-		
+
 		// Комиссии
 		PlatformFeeTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -211,6 +270,7 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"merchant_id", "currency"},
 		),
+
 		TraderRewardTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "trader_reward_total",
@@ -218,7 +278,7 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"trader_id", "currency"},
 		),
-		
+
 		// Ошибки
 		OrderErrorsTotal: *promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -231,19 +291,42 @@ func NewOrderMetrics() *OrderMetrics {
 }
 
 // RecordOrderCreated записывает созданный заказ
-func (m *OrderMetrics) RecordOrderCreated(merchantID, orderType, currency string, amountFiat float64) {
-	m.OrdersCreatedTotal.WithLabelValues(merchantID, orderType, currency).Inc()
-	m.OrdersCreatedAmountTotal.WithLabelValues(merchantID, currency).Add(amountFiat)
+func (m *OrderMetrics) RecordOrderCreated(merchantID, orderType, currency, paymentSystem string, amountFiat float64) {
+	m.OrdersCreatedTotal.WithLabelValues(merchantID, orderType, currency, paymentSystem).Inc()
+	m.OrdersCreatedAmountTotal.WithLabelValues(merchantID, currency, paymentSystem).Add(amountFiat)
 	m.OrdersCreatedCount.WithLabelValues(merchantID).Inc()
 	m.OrderTypeCreatedTotal.WithLabelValues(merchantID, orderType).Inc()
 	m.MerchantOrdersCreatedTotal.WithLabelValues(merchantID).Inc()
 	m.MerchantAmountCreatedTotal.WithLabelValues(merchantID, currency).Add(amountFiat)
 }
 
+// ===== НОВЫЕ МЕТОДЫ =====
+// RecordBankDetailsNotFound записывает случай, когда реквизиты не найдены
+func (m *OrderMetrics) RecordBankDetailsNotFound(merchantID, paymentSystem, currency string, amountFiat float64) {
+	m.BankDetailsNotFoundTotal.WithLabelValues(merchantID, paymentSystem).Inc()
+	m.BankDetailsNotFoundAmountTotal.WithLabelValues(merchantID, currency, paymentSystem).Add(amountFiat)
+}
+
+// RecordBankDetailsFound записывает успешный поиск реквизитов
+func (m *OrderMetrics) RecordBankDetailsFound(merchantID, paymentSystem string) {
+	m.BankDetailsFoundTotal.WithLabelValues(merchantID, paymentSystem).Inc()
+}
+
+// RecordBankDetailsSearchDuration записывает время поиска реквизитов
+func (m *OrderMetrics) RecordBankDetailsSearchDuration(merchantID, paymentSystem string, durationSeconds float64, found bool) {
+	foundStr := "false"
+	if found {
+		foundStr = "true"
+	}
+	m.BankDetailsSearchDuration.WithLabelValues(merchantID, paymentSystem, foundStr).Observe(durationSeconds)
+}
+
+// ===== КОНЕЦ НОВЫХ МЕТОДОВ =====
+
 // RecordOrderCompleted записывает завершенный заказ
-func (m *OrderMetrics) RecordOrderCompleted(merchantID, orderType, currency string, amountFiat float64, traderID string) {
-	m.OrdersCompletedTotal.WithLabelValues(merchantID, orderType, currency).Inc()
-	m.OrdersCompletedAmountTotal.WithLabelValues(merchantID, currency).Add(amountFiat)
+func (m *OrderMetrics) RecordOrderCompleted(merchantID, orderType, currency, paymentSystem string, amountFiat float64, traderID string) {
+	m.OrdersCompletedTotal.WithLabelValues(merchantID, orderType, currency, paymentSystem).Inc()
+	m.OrdersCompletedAmountTotal.WithLabelValues(merchantID, currency, paymentSystem).Add(amountFiat)
 	m.OrdersCompletedCount.WithLabelValues(merchantID).Inc()
 	m.MerchantOrdersCompletedTotal.WithLabelValues(merchantID).Inc()
 	m.MerchantAmountCompletedTotal.WithLabelValues(merchantID, currency).Add(amountFiat)
@@ -253,9 +336,9 @@ func (m *OrderMetrics) RecordOrderCompleted(merchantID, orderType, currency stri
 }
 
 // RecordOrderCanceled записывает отмененный заказ
-func (m *OrderMetrics) RecordOrderCanceled(merchantID, orderType, currency string, amountFiat float64) {
-	m.OrdersCanceledTotal.WithLabelValues(merchantID, orderType, currency).Inc()
-	m.OrdersCanceledAmountTotal.WithLabelValues(merchantID, currency).Add(amountFiat)
+func (m *OrderMetrics) RecordOrderCanceled(merchantID, orderType, currency, paymentSystem string, amountFiat float64) {
+	m.OrdersCanceledTotal.WithLabelValues(merchantID, orderType, currency, paymentSystem).Inc()
+	m.OrdersCanceledAmountTotal.WithLabelValues(merchantID, currency, paymentSystem).Add(amountFiat)
 	m.OrdersCanceledCount.WithLabelValues(merchantID).Inc()
 	m.MerchantOrdersCanceledTotal.WithLabelValues(merchantID).Inc()
 	m.OrdersCreatedCount.WithLabelValues(merchantID).Dec()

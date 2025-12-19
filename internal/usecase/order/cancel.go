@@ -83,8 +83,8 @@ func (uc *DefaultOrderUsecase) processPayInCancel(order *domain.Order) error {
 		)
 	}
 
-	// ✅ ЗАПИСЬ МЕТРИКИ ОТМЕНЕННОГО ЗАКАЗА
-	uc.recordOrderCanceledMetrics(order)
+	// ✅ ЗАПИСЬ МЕТРИКИ ОТМЕНЕННОГО ЗАКАЗА (с payment_system)
+	uc.recordOrderCanceledMetrics(order, order.RequisiteDetails.PaymentSystem)
 	
 	return nil
 }
@@ -137,6 +137,9 @@ func (uc *DefaultOrderUsecase) processPayOutCancel(order *domain.Order) error {
 			0, 0, 0,
 		)
 	}
+
+	// ✅ ЗАПИСЬ МЕТРИКИ ОТМЕНЕННОГО ЗАКАЗА (с payment_system)
+	uc.recordOrderCanceledMetrics(order, order.RequisiteDetails.PaymentSystem)
 
 	return nil
 }
