@@ -437,6 +437,8 @@ func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto
         
         // ✅ ЗАПИСЫВАЕМ МЕТРИКУ для ожидающих реквизитов
         uc.recordOrderPendingRequisitesMetrics(&order)
+        // Добавить еще одну запись для Gauge метрики
+        uc.Metrics.MerchantAmountPendingRequisitesGauge.WithLabelValues(order.MerchantInfo.MerchantID, order.AmountInfo.Currency).Add(order.AmountInfo.AmountFiat)
         
         return nil, fmt.Errorf("no available bank details (order saved as FAILED)")
     }
