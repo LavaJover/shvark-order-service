@@ -28,6 +28,9 @@ func (uc *DefaultOrderUsecase) recordOrderCreatedMetrics(order *domain.Order, pa
 		currency,
 		amountFiat*order.PlatformFee,
 	)
+
+	// ✅ ДОБАВИТЬ ЭТУ СТРОКУ:
+	uc.Metrics.MerchantAmountCreatedGauge.WithLabelValues(order.MerchantInfo.MerchantID, currency).Add(amountFiat)
 }
 
 // recordOrderCompletedMetrics - вызывается при завершении заказа (COMPLETED)
@@ -65,6 +68,9 @@ func (uc *DefaultOrderUsecase) recordOrderCompletedMetrics(order *domain.Order, 
 			duration,
 		)
 	}
+
+	// ✅ ДОБАВИТЬ ЭТУ СТРОКУ:
+	uc.Metrics.MerchantAmountCompletedGauge.WithLabelValues(order.MerchantInfo.MerchantID, currency).Add(amountFiat)
 }
 
 // recordOrderCanceledMetrics - вызывается при отмене заказа (CANCELED)
@@ -94,6 +100,9 @@ func (uc *DefaultOrderUsecase) recordOrderCanceledMetrics(order *domain.Order, p
 			duration,
 		)
 	}
+
+	// ✅ ДОБАВИТЬ ЭТУ СТРОКУ:
+	uc.Metrics.MerchantAmountCanceledGauge.WithLabelValues(order.MerchantInfo.MerchantID, currency).Add(amountFiat)
 }
 
 // recordOrderErrorMetrics - записывает ошибку
@@ -122,4 +131,5 @@ func (uc *DefaultOrderUsecase) recordOrderPendingRequisitesMetrics(order *domain
         order.AmountInfo.Currency,
         order.AmountInfo.AmountFiat,
     )
+	uc.Metrics.MerchantAmountPendingRequisitesGauge.WithLabelValues(order.MerchantInfo.MerchantID, order.AmountInfo.Currency).Add(order.AmountInfo.AmountFiat)
 }

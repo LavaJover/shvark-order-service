@@ -12,6 +12,20 @@ type OrderMetrics struct {
 	OrdersCreatedAmountTotal prometheus.CounterVec
 	OrdersCreatedCount prometheus.GaugeVec
 
+	// ===== НОВЫЕ GAUGE МЕТРИКИ ДЛЯ СУММ (для фильтрации по времени) =====
+	// Текущая сумма созданных заявок по мерчантам
+	MerchantAmountCreatedGauge prometheus.GaugeVec
+	
+	// Текущая сумма невыданных заявок по мерчантам
+	MerchantAmountPendingRequisitesGauge prometheus.GaugeVec
+	
+	// Текущая сумма выданных заявок по мерчантам
+	MerchantAmountCompletedGauge prometheus.GaugeVec
+	
+	// Текущая сумма отменённых заявок по мерчантам
+	MerchantAmountCanceledGauge prometheus.GaugeVec
+	// ===== КОНЕЦ НОВЫХ GAUGE МЕТРИК =====
+
 	// Успешно завершенные сделки (COMPLETED)
 	OrdersCompletedTotal prometheus.CounterVec
 	OrdersCompletedAmountTotal prometheus.CounterVec
@@ -93,6 +107,40 @@ func NewOrderMetrics() *OrderMetrics {
 			},
 			[]string{"merchant_id"},
 		),
+		
+		// ===== НОВЫЕ GAUGE МЕТРИКИ ДЛЯ СУММ =====
+		MerchantAmountCreatedGauge: *promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "merchant_amount_created_gauge",
+				Help: "Текущая сумма созданных заявок по мерчантам",
+			},
+			[]string{"merchant_id", "currency"},
+		),
+		
+		MerchantAmountPendingRequisitesGauge: *promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "merchant_amount_pending_requisites_gauge",
+				Help: "Текущая сумма невыданных заявок по мерчантам",
+			},
+			[]string{"merchant_id", "currency"},
+		),
+		
+		MerchantAmountCompletedGauge: *promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "merchant_amount_completed_gauge",
+				Help: "Текущая сумма выданных заявок по мерчантам",
+			},
+			[]string{"merchant_id", "currency"},
+		),
+		
+		MerchantAmountCanceledGauge: *promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "merchant_amount_canceled_gauge",
+				Help: "Текущая сумма отменённых заявок по мерчантам",
+			},
+			[]string{"merchant_id", "currency"},
+		),
+		// ===== КОНЕЦ НОВЫХ GAUGE МЕТРИК =====		
 
 		// ===== НОВЫЕ МЕТРИКИ =====
 		// Банк реквизиты НЕ найдены (невыдача заявок)
