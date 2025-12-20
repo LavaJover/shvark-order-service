@@ -71,7 +71,7 @@ func (uc *DefaultOrderUsecase) recordOrderCompletedMetrics(order *domain.Order, 
 
 	// ✅ ДОБАВИТЬ ЭТУ СТРОКУ:
 	uc.Metrics.MerchantAmountCompletedGauge.WithLabelValues(order.MerchantInfo.MerchantID, currency).Add(amountFiat)
-	uc.Metrics.MerchantAmountCreatedGauge.WithLabelValues(order.MerchantInfo.MerchantID, currency).Sub(amountFiat)
+	//uc.Metrics.MerchantAmountCreatedGauge.WithLabelValues(order.MerchantInfo.MerchantID, currency).Sub(amountFiat)
 }
 
 // recordOrderCanceledMetrics - вызывается при отмене заказа (CANCELED)
@@ -104,7 +104,7 @@ func (uc *DefaultOrderUsecase) recordOrderCanceledMetrics(order *domain.Order, p
 
 	// ✅ ДОБАВИТЬ ЭТУ СТРОКУ:
 	uc.Metrics.MerchantAmountCanceledGauge.WithLabelValues(order.MerchantInfo.MerchantID, currency).Add(amountFiat)
-	uc.Metrics.MerchantAmountCreatedGauge.WithLabelValues(order.MerchantInfo.MerchantID, currency).Sub(amountFiat)
+	//uc.Metrics.MerchantAmountCreatedGauge.WithLabelValues(order.MerchantInfo.MerchantID, currency).Sub(amountFiat)
 }
 
 // recordOrderErrorMetrics - записывает ошибку
