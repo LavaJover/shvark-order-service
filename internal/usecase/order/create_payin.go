@@ -424,16 +424,16 @@ func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto
         }
         
         // Сохраняем в БД через транзакцию
-        if err := txRepo.CreateOrderInTx(&order); err != nil {
-            log.Printf("Ошибка сохранения заявки: %v\n", err)
-            return nil, fmt.Errorf("failed to save order: %w", err)
-        }
+        // if err := txRepo.CreateOrderInTx(&order); err != nil {
+        //     log.Printf("Ошибка сохранения заявки: %v\n", err)
+        //     return nil, fmt.Errorf("failed to save order: %w", err)
+        // }
         
-        // Коммитим транзакцию
-        if err := txRepo.Commit(); err != nil {
-            return nil, fmt.Errorf("failed to commit: %w", err)
-        }
-        committed = true
+        // // Коммитим транзакцию
+        // if err := txRepo.Commit(); err != nil {
+        //     return nil, fmt.Errorf("failed to commit: %w", err)
+        // }
+        // committed = true
         
         // ✅ ЗАПИСЫВАЕМ МЕТРИКУ для ожидающих реквизитов
         uc.recordOrderPendingRequisitesMetrics(&order)
