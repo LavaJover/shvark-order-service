@@ -90,7 +90,7 @@ func (uc *DefaultOrderUsecase) processPayInApprove(order *domain.Order) error {
 			order.CallbackUrl,
 			order.MerchantInfo.MerchantOrderID,
 			string(domain.StatusCompleted),
-			0, 0, 0,
+			0, 0, order.AmountInfo.CryptoRate,
 		)
 	}
 
