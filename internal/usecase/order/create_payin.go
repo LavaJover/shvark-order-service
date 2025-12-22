@@ -352,6 +352,7 @@ func (uc *DefaultOrderUsecase) CreatePayInOrder(createOrderInput *orderdto.Creat
 func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) {
     start := time.Now()
     slog.Info("CreateOrderAtomic started")
+    slog.Info("%s\n%s\n%f\n", createOrderInput.MerchantID, createOrderInput.PaymentSystem, createOrderInput.AmountFiat)
 
     // ===== НОВОЕ: Переменные для метрик =====
 	paymentSystem := createOrderInput.PaymentSystem
