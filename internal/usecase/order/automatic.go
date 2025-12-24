@@ -159,10 +159,10 @@ func (uc *DefaultOrderUsecase) findMatchingOrders(ctx context.Context, req *Auto
 		return nil, err
 	}
 
-	// Фильтрация по сумме (с допуском ±1%)
+	// Фильтрация по сумме (с допуском ±1%) и банку
 	var matchingOrders []*domain.Order
 	for _, order := range orders {
-		if uc.isAmountMatching(order.AmountInfo.AmountFiat, req.Amount) {
+		if uc.isAmountMatching(order.AmountInfo.AmountFiat, req.Amount) && order.RequisiteDetails.BankCode == req.PaymentSystem{
 			matchingOrders = append(matchingOrders, order)
 		}
 	}
