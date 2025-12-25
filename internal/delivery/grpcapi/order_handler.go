@@ -387,6 +387,7 @@ func (h *OrderHandler) GetOrdersByTraderID(ctx context.Context, r *orderpb.GetOr
 				Phone: order.BankDetail.Phone,
 				BankCode: order.BankDetail.BankCode,
 				NspkCode: order.BankDetail.NspkCode,
+				DeviceId: order.BankDetail.DeviceID,
 			},
 			AmountFiat: float64(order.Order.AmountInfo.AmountFiat),
 			AmountCrypto: float64(order.Order.AmountInfo.AmountCrypto),
