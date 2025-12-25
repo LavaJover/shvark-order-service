@@ -657,6 +657,7 @@ type ProcessAutomaticPaymentRequest struct {
 	ReceivedAt    int64                  `protobuf:"varint,6,opt,name=received_at,json=receivedAt,proto3" json:"received_at,omitempty"`
 	Text          string                 `protobuf:"bytes,7,opt,name=text,proto3" json:"text,omitempty"`
 	Metadata      map[string]string      `protobuf:"bytes,8,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	TraderId      string                 `protobuf:"bytes,9,opt,name=trader_id,json=traderId,proto3" json:"trader_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -745,6 +746,13 @@ func (x *ProcessAutomaticPaymentRequest) GetMetadata() map[string]string {
 		return x.Metadata
 	}
 	return nil
+}
+
+func (x *ProcessAutomaticPaymentRequest) GetTraderId() string {
+	if x != nil {
+		return x.TraderId
+	}
+	return ""
 }
 
 type ProcessAutomaticPaymentResponse struct {
@@ -3993,7 +4001,7 @@ const file_order_order_service_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
 	"\x05value\x18\x02 \x01(\v2\x12.order.DeviceStatsR\x05value:\x028\x01\"H\n" +
 	"\x19GetAutomaticStatsResponse\x12+\n" +
-	"\x05stats\x18\x01 \x01(\v2\x15.order.AutomaticStatsR\x05stats\"\xf0\x02\n" +
+	"\x05stats\x18\x01 \x01(\v2\x15.order.AutomaticStatsR\x05stats\"\x8d\x03\n" +
 	"\x1eProcessAutomaticPaymentRequest\x12\x14\n" +
 	"\x05group\x18\x01 \x01(\tR\x05group\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\x01R\x06amount\x12%\n" +
@@ -4003,7 +4011,8 @@ const file_order_order_service_proto_rawDesc = "" +
 	"\vreceived_at\x18\x06 \x01(\x03R\n" +
 	"receivedAt\x12\x12\n" +
 	"\x04text\x18\a \x01(\tR\x04text\x12O\n" +
-	"\bmetadata\x18\b \x03(\v23.order.ProcessAutomaticPaymentRequest.MetadataEntryR\bmetadata\x1a;\n" +
+	"\bmetadata\x18\b \x03(\v23.order.ProcessAutomaticPaymentRequest.MetadataEntryR\bmetadata\x12\x1b\n" +
+	"\ttrader_id\x18\t \x01(\tR\btraderId\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc0\x01\n" +

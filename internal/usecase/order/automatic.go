@@ -25,6 +25,7 @@ type AutomaticPaymentRequest struct {
 	Methods       []string
 	ReceivedAt    int64
 	Text          string
+	TraderID	  string
 	Metadata      map[string]string
 }
 
@@ -45,6 +46,7 @@ func (uc *DefaultOrderUsecase) ProcessAutomaticPayment(ctx context.Context, req 
         ReceivedAt:    time.Unix(req.ReceivedAt, 0),
         Text:          req.Text,
         CreatedAt:     time.Now(),
+		TraderID: 	   req.TraderID,
     }
     
     // 1. Поиск подходящих сделок

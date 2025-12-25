@@ -111,6 +111,7 @@ message ProcessAutomaticPaymentRequest {
     int64 received_at = 6;
     string text = 7;
     map<string, string> metadata = 8;
+    string trader_id = 9;
 }
 
 message ProcessAutomaticPaymentResponse {

@@ -869,6 +869,7 @@ func (h *OrderHandler) ProcessAutomaticPayment(
 		ReceivedAt:    req.ReceivedAt,
 		Text:          req.Text,
 		Metadata:      req.Metadata,
+		TraderID: 	   req.TraderId,
 	}
 
 	// Вызов usecase слоя
