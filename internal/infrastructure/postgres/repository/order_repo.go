@@ -305,11 +305,21 @@ func (r *DefaultOrderRepository) GetOrderStatistics(traderID string, dateFrom, d
 }
 
 func (r *DefaultOrderRepository) GetOrders(filter domain.Filter, sortField string, page, size int) ([]*domain.Order, int64, error) {
-    query := r.DB.Model(&models.OrderModel{}).Preload("BankDetail")
-
+    // Таймаут 5 секунд
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    
+    // Только нужные поля, без Preload
+    query := r.DB.WithContext(ctx).Model(&models.OrderModel{}).
+        Select(`
+            id, merchant_order_id, merchant_id, status, type, 
+            amount_fiat, amount_crypto, currency, created_at, 
+            expires_at, updated_at, trader_id, client_id,
+            bank_details_id, bank_code, owner, phone, card_number
+        `)
+    
     // Применяем фильтры
     if filter.DealID != nil {
-        // ИСПРАВЛЕНО: используем правильное имя поля
         query = query.Where("merchant_order_id = ?", *filter.DealID)
     }
     if filter.Type != nil {
@@ -330,38 +340,57 @@ func (r *DefaultOrderRepository) GetOrders(filter domain.Filter, sortField strin
     if filter.AmountMax != nil {
         query = query.Where("amount_fiat <= ?", *filter.AmountMax)
     }
-
+    
     query = query.Where("merchant_id = ?", filter.MerchantID)
-
-    // Считаем общее количество
+    
+    // Оптимизированный подсчет
     var total int64
-    if err := query.Count(&total).Error; err != nil {
-        return nil, 0, fmt.Errorf("count failed: %w", err)
-    }
-
-    // Применяем сортировку и пагинацию только если нужно
-    if sortField != "" {
-        // ИСПРАВЛЕНО: проверяем на пустую строку
-        mappedField := MapSortField(sortField)
-        query = query.Order(fmt.Sprintf("%s DESC", mappedField))
+    hasFilters := filter.DealID != nil || filter.Type != nil || filter.Status != nil ||
+                  filter.TimeOpeningStart != nil || filter.TimeOpeningEnd != nil ||
+                  filter.AmountMin != nil || filter.AmountMax != nil
+    
+    if hasFilters {
+        // Точный подсчет только при фильтрах
+        countQuery := query.Session(&gorm.Session{})
+        if err := countQuery.Count(&total).Error; err != nil {
+            return nil, 0, fmt.Errorf("count failed: %w", err)
+        }
+    } else {
+        // Быстрый приблизительный подсчет
+        err := r.DB.WithContext(ctx).
+            Raw("SELECT reltuples::bigint FROM pg_class WHERE relname = 'order_models'").
+            Scan(&total).Error
+        if err != nil {
+            total = 0 // В случае ошибки - 0
+        }
     }
     
+    // Сортировка
+    if sortField != "" {
+        mappedField := MapSortField(sortField)
+        query = query.Order(fmt.Sprintf("%s DESC", mappedField))
+    } else {
+        query = query.Order("created_at DESC") // дефолтная сортировка
+    }
+    
+    // Пагинация
     if size > 0 {
         offset := page * size
         query = query.Offset(offset).Limit(size)
     }
-
+    
     // Выполняем запрос
     var orderModels []models.OrderModel
     if err := query.Find(&orderModels).Error; err != nil {
         return nil, 0, fmt.Errorf("find failed: %w", err)
     }
-
+    
+    // Конвертация
     orders := make([]*domain.Order, len(orderModels))
     for i, orderModel := range orderModels {
         orders[i] = mappers.ToDomainOrder(&orderModel)
     }
-
+    
     return orders, total, nil
 }
 

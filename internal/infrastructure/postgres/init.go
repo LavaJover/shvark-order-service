@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"log"
+	"time"  // Добавьте этот импорт
 
 	"github.com/LavaJover/shvark-order-service/internal/config"
 	"github.com/LavaJover/shvark-order-service/internal/infrastructure/postgres/models"
@@ -23,8 +24,28 @@ func MustInitDB(cfg *config.OrderConfig) *gorm.DB {
 		log.Fatalf("failed to init db: %v\n", err.Error())
 	}
 
+	// 🔥 НАСТРОЙКА ПУЛА СОЕДИНЕНИЙ
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("failed to get underlying sql.DB: %v", err)
+	}
+
+	// Оптимальные настройки для 1 экземпляра сервиса при max_connections=150
+	sqlDB.SetMaxOpenConns(35)           // 35 одновременных соединений (23% от 150)
+	sqlDB.SetMaxIdleConns(12)           // 12 соединений в пуле простоя
+	sqlDB.SetConnMaxLifetime(15 * time.Minute)  // 15 минут макс. время жизни
+	sqlDB.SetConnMaxIdleTime(2 * time.Minute)   // 2 минуты простоя
+
+	// Проверяем соединение
+	if err := sqlDB.Ping(); err != nil {
+		log.Fatalf("failed to ping database: %v", err)
+	}
+
+	log.Printf("✅ Database pool configured: MaxOpenConns=%d, MaxIdleConns=%d, ConnMaxLifetime=%v, ConnMaxIdleTime=%v", 
+		35, 12, 15*time.Minute, 2*time.Minute)
+
 	// Автомиграция моделей
-	db.AutoMigrate(
+	err = db.AutoMigrate(
 		&models.DeviceModel{}, 
 		&models.TrafficModel{}, 
 		&models.BankDetailModel{}, 
@@ -37,6 +58,10 @@ func MustInitDB(cfg *config.OrderConfig) *gorm.DB {
 		&engine.UnlockAuditLog{},
 		&models.AutomaticLogModel{},
 	)
+	if err != nil {
+		log.Printf("⚠️ AutoMigrate warnings: %v", err)
+		// Не фатальная ошибка, продолжаем
+	}
 
 	// Применяем SQL миграции
 	applySQLMigrations(db, dsn)
@@ -75,5 +100,15 @@ func applySQLMigrations(db *gorm.DB, dsn string) {
 		return
 	}
 
-	log.Println("SQL migrations applied successfully")
+	log.Println("✅ SQL migrations applied successfully")
+}
+
+// Функция для graceful shutdown (опционально)
+func CloseDB(db *gorm.DB) error {
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+	log.Println("Closing database connections...")
+	return sqlDB.Close()
 }
