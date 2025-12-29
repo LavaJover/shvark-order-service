@@ -3583,6 +3583,7 @@ type Order struct {
 	MerchantId          string                 `protobuf:"bytes,16,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
 	Type                string                 `protobuf:"bytes,17,opt,name=type,proto3" json:"type,omitempty"`
 	Metrics             *OrderMetrics          `protobuf:"bytes,18,opt,name=metrics,proto3" json:"metrics,omitempty"`
+	StoreId             string                 `protobuf:"bytes,19,opt,name=store_id,json=storeId,proto3" json:"store_id,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -3741,6 +3742,13 @@ func (x *Order) GetMetrics() *OrderMetrics {
 		return x.Metrics
 	}
 	return nil
+}
+
+func (x *Order) GetStoreId() string {
+	if x != nil {
+		return x.StoreId
+	}
+	return ""
 }
 
 type OrderMetrics struct {
@@ -4302,7 +4310,7 @@ const file_order_order_service_proto_rawDesc = "" +
 	"\x13GetOrderByIDRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\":\n" +
 	"\x14GetOrderByIDResponse\x12\"\n" +
-	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\xcf\x05\n" +
+	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\xea\x05\n" +
 	"\x05Order\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x122\n" +
@@ -4328,7 +4336,8 @@ const file_order_order_service_proto_rawDesc = "" +
 	"\vmerchant_id\x18\x10 \x01(\tR\n" +
 	"merchantId\x12\x12\n" +
 	"\x04type\x18\x11 \x01(\tR\x04type\x12-\n" +
-	"\ametrics\x18\x12 \x01(\v2\x13.order.OrderMetricsR\ametrics\"\xec\x01\n" +
+	"\ametrics\x18\x12 \x01(\v2\x13.order.OrderMetricsR\ametrics\x12\x19\n" +
+	"\bstore_id\x18\x13 \x01(\tR\astoreId\"\xec\x01\n" +
 	"\fOrderMetrics\x12=\n" +
 	"\fcompleted_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\vcompletedAt\x12=\n" +
 	"\fcancelled_ad\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\vcancelledAd\x12/\n" +

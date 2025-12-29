@@ -19,6 +19,7 @@ type UseCases struct {
     DeviceUsecase       usecase.DeviceUsecase
     DisputeUsecase      disputeuc.DisputeUsecase
     AutomaticUsecase    usecase.AutomaticUsecase
+    MerchantStoreUsecase usecase.MerchantStoreUsecase
 }
 
 func InitializeUseCases(deps *Dependencies) (*UseCases, error) {
@@ -27,7 +28,17 @@ func InitializeUseCases(deps *Dependencies) (*UseCases, error) {
         return nil, fmt.Errorf("wallet handler: %w", err)
     }
     
-    trafficUsecase := usecase.NewDefaultTrafficUsecase(deps.Repositories.TrafficRepo)
+    // Создаем MerchantStoreUsecase
+    merchantStoreUsecase := usecase.NewDefaultMerchantStoreUsecase(
+        deps.Repositories.MerchantStoreRepo,
+        deps.Repositories.TrafficRepo,
+    )
+    
+    // TrafficUsecase теперь зависит от MerchantStoreUsecase
+    trafficUsecase := usecase.NewDefaultTrafficUsecase(
+        deps.Repositories.TrafficRepo,
+        merchantStoreUsecase,
+    )
     bankDetailUsecase := usecase.NewDefaultBankDetailUsecase(deps.Repositories.BankDetailRepo)
     teamRelationsUsecase := usecase.NewDefaultTeamRelationsUsecase(deps.Repositories.TeamRelationsRepo)
     deviceUsecase := usecase.NewDefaultDeviceUsecase(deps.Repositories.DeviceRepo)
@@ -41,6 +52,7 @@ func InitializeUseCases(deps *Dependencies) (*UseCases, error) {
         deps.OrderPublisher,
         teamRelationsUsecase,
         orderMetrics,
+        merchantStoreUsecase, // Добавляем MerchantStoreUsecase
     )
     
     disputeUsecase := disputeuc.NewDefaultDisputeUsecase(
@@ -51,6 +63,8 @@ func InitializeUseCases(deps *Dependencies) (*UseCases, error) {
         deps.DisputePublisher,
         teamRelationsUsecase,
         deps.Repositories.BankDetailRepo,
+        trafficUsecase,
+         // Добавляем MerchantStoreUsecase
     )
     
     automaticUsecase := usecase.NewDefaultAutomaticUsecase(deps.Repositories.OrderRepo)
@@ -63,6 +77,7 @@ func InitializeUseCases(deps *Dependencies) (*UseCases, error) {
         DeviceUsecase:       deviceUsecase,
         DisputeUsecase:      disputeUsecase,
         AutomaticUsecase:    automaticUsecase,
+        MerchantStoreUsecase: merchantStoreUsecase,
     }, nil
 }
 

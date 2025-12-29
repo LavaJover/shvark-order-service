@@ -27,6 +27,7 @@ type DefaultDisputeUsecase struct {
 	kafkaPublisher *publisher.KafkaPublisher
 	teamRelationsUsecase usecase.TeamRelationsUsecase
 	bankDetailRepo domain.BankDetailRepository
+	TrafficUsecase usecase.TrafficUsecase
 }
 
 func NewDefaultDisputeUsecase(
@@ -37,6 +38,7 @@ func NewDefaultDisputeUsecase(
 	kafkaPublisher *publisher.KafkaPublisher,
 	teamRelationsUsecase usecase.TeamRelationsUsecase,
 	bankDetailRepo domain.BankDetailRepository,
+	trafficUsecase usecase.TrafficUsecase,
 	) *DefaultDisputeUsecase {
 	return &DefaultDisputeUsecase{
 		disputeRepo: disputeRepo,
@@ -46,5 +48,6 @@ func NewDefaultDisputeUsecase(
 		kafkaPublisher: kafkaPublisher,
 		teamRelationsUsecase: teamRelationsUsecase,
 		bankDetailRepo: bankDetailRepo,
+		TrafficUsecase: trafficUsecase,
 	}
 }

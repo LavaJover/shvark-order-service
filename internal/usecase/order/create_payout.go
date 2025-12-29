@@ -27,7 +27,7 @@ func (uc *DefaultOrderUsecase) pickTraderForPayOut(trafficRecords []*domain.Traf
         }
 
         activity := traffic.ActivityParams
-        if !activity.MerchantUnlocked || !activity.TraderUnlocked || 
+        if !activity.TraderUnlocked || 
            !activity.AntifraudUnlocked || !activity.ManuallyUnlocked {
             continue
         }
@@ -65,6 +65,30 @@ func (uc *DefaultOrderUsecase) pickTraderForPayOut(trafficRecords []*domain.Traf
 
 func (uc *DefaultOrderUsecase) CreatePayOutOrder (createOrderInput *orderdto.CreatePayOutOrderInput) (*orderdto.OrderOutput, error) {
     slog.Info("CreatePayOutOrder started")
+
+    // ===== ВАЛИДАЦИЯ И ПОЛУЧЕНИЕ STORE =====
+    if createOrderInput.StoreID == "" {
+        return nil, fmt.Errorf("store_id is required")
+    }
+
+    // Получаем стор по ID
+    store, err := uc.MerchantStoreUsecase.GetMerchantStoreByID(createOrderInput.StoreID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get merchant store: %w", err)
+    }
+
+    if store == nil {
+        return nil, fmt.Errorf("merchant store not found")
+    }
+    
+    if !store.IsActive {
+        return nil, fmt.Errorf("merchant store is not active")
+    }
+
+    // Проверяем лимиты стора
+    if err := uc.validateStoreLimits(store, createOrderInput.AmoutFiat); err != nil {
+        return nil, err
+    }
     
 	// Проверить баланс мерча
 	merchantID := createOrderInput.MerchantID
@@ -102,8 +126,23 @@ func (uc *DefaultOrderUsecase) CreatePayOutOrder (createOrderInput *orderdto.Cre
         )
     }
 
-    traderReward := chosenTraffic.TraderRewardPercent
-    platformFee := chosenTraffic.PlatformFee
+    // ===== ПОЛУЧЕНИЕ ТРАФИКА С ДАННЫМИ STORE (JOIN) =====
+    trafficWithStore, err := uc.TrafficUsecase.GetTrafficWithStoreByTraderStore(
+        chosenTraffic.TraderID, 
+        store.ID,
+    )
+
+    if err != nil {
+        return nil, fmt.Errorf("failed to get traffic with store: %w", err)
+    }
+    
+    if trafficWithStore == nil {
+        return nil, fmt.Errorf("traffic not found for trader %s and store %s", 
+            chosenTraffic.TraderID, store.ID)
+    }
+    
+    traffic := &trafficWithStore.Traffic
+    storeFromTraffic := &trafficWithStore.Store
 
     order := domain.Order{
         ID:     uuid.New().String(),
@@ -111,6 +150,7 @@ func (uc *DefaultOrderUsecase) CreatePayOutOrder (createOrderInput *orderdto.Cre
         MerchantInfo: domain.MerchantInfo{
             MerchantID:     createOrderInput.MerchantID,
             MerchantOrderID: createOrderInput.MerchantOrderID,
+            StoreID: createOrderInput.StoreID,
             ClientID:       createOrderInput.ClientID,
         },
         AmountInfo: domain.AmountInfo{
@@ -123,10 +163,10 @@ func (uc *DefaultOrderUsecase) CreatePayOutOrder (createOrderInput *orderdto.Cre
         Type:          domain.TypePayOut,
         Recalculated:  createOrderInput.Recalculated,
         Shuffle:       createOrderInput.Shuffle,
-        TraderReward:  traderReward,
-        PlatformFee:   platformFee,
+        TraderReward:  traffic.TraderRewardPercent,
+        PlatformFee:   storeFromTraffic.PlatformFee,
         CallbackUrl:   createOrderInput.CallbackUrl,
-        ExpiresAt:     time.Now().Add(chosenTraffic.BusinessParams.MerchantDealsDuration),
+        ExpiresAt:     time.Now().Add(storeFromTraffic.DealsDuration),
 
         RequisiteDetails: domain.RequisiteDetails{
             TraderID: chosenTraffic.TraderID,

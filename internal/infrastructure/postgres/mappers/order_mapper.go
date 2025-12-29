@@ -13,6 +13,7 @@ func ToDomainOrder(model *models.OrderModel) *domain.Order {
 			MerchantID: model.MerchantID,
 			MerchantOrderID: model.MerchantOrderID,
 			ClientID: model.ClientID,
+			StoreID: model.StoreID,
 		},
 		AmountInfo: domain.AmountInfo{
 			AmountFiat: model.AmountFiat,
@@ -56,6 +57,7 @@ func ToGORMOrder(order *domain.Order) *models.OrderModel {
 	return &models.OrderModel{
 		ID: order.ID,
 		MerchantID: order.MerchantInfo.MerchantID,
+		StoreID: order.MerchantInfo.StoreID,
 		AmountFiat: order.AmountInfo.AmountFiat,
 		AmountCrypto: order.AmountInfo.AmountCrypto,
 		Currency: order.AmountInfo.Currency,

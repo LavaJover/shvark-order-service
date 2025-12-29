@@ -71,6 +71,7 @@ type MerchantInfo struct {
 	MerchantID 		string
 	MerchantOrderID string
 	ClientID 		string
+	StoreID			string
 }
 
 type AmountInfo struct {

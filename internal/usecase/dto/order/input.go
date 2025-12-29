@@ -12,6 +12,7 @@ type CreatePayInOrderInput struct {
 
 type MerchantParams struct {
 	MerchantID 		string
+	StoreID			string
 	MerchantOrderID string
 	ClientID 		string
 }

@@ -27,14 +27,10 @@ func (r *DefaultTrafficRepository) CreateTraffic(traffic *domain.Traffic) error 
 		TraderRewardPercent: traffic.TraderRewardPercent,
 		TraderPriority: traffic.TraderPriority,
 		Enabled: traffic.Enabled,
-		PlatformFee: traffic.PlatformFee,
-		MerchantUnlocked: traffic.ActivityParams.MerchantUnlocked,
 		TraderUnlocked: traffic.ActivityParams.TraderUnlocked,
 		AntifraudUnlocked: traffic.ActivityParams.AntifraudUnlocked,
 		ManuallyUnlocked: traffic.ActivityParams.ManuallyUnlocked,
 		AntifraudRequired: traffic.AntifraudParams.AntifraudRequired,
-		MerchantDealsDuration: traffic.BusinessParams.MerchantDealsDuration,
-		Name: traffic.Name,
 	}
 
 	if err := r.DB.Create(&trafficModel).Error; err != nil {
@@ -73,7 +69,6 @@ func (r *DefaultTrafficRepository) UpdateTraffic(input *trafficdto.EditTrafficIn
 
 	// Обновляем вложенные структуры если они переданы
 	if input.ActivityParams != nil {
-		updates["merchant_unlocked"] = input.ActivityParams.MerchantUnlocked
 		updates["trader_unlocked"] = input.ActivityParams.TraderUnlocked
 		updates["antifraud_unlocked"] = input.ActivityParams.AntifraudUnlocked
 		updates["manually_unlocked"] = input.ActivityParams.ManuallyUnlocked
@@ -138,19 +133,13 @@ func (r *DefaultTrafficRepository) GetTrafficRecords(page, limit int32) ([]*doma
 			TraderRewardPercent: trafficModel.TraderRewardPercent,
 			TraderPriority: trafficModel.TraderPriority,
 			Enabled: trafficModel.Enabled,
-			PlatformFee: trafficModel.PlatformFee,
-			Name: trafficModel.Name,
 			ActivityParams: domain.TrafficActivityParams{
-				MerchantUnlocked: trafficModel.MerchantUnlocked,
 				TraderUnlocked: trafficModel.TraderUnlocked,
 				AntifraudUnlocked: trafficModel.AntifraudUnlocked,
 				ManuallyUnlocked: trafficModel.ManuallyUnlocked,
 			},
 			AntifraudParams: domain.TrafficAntifraudParams{
 				AntifraudRequired: trafficModel.AntifraudRequired,
-			},
-			BusinessParams: domain.TrafficBusinessParams{
-				MerchantDealsDuration: trafficModel.MerchantDealsDuration,
 			},
 		}
 	}
@@ -171,19 +160,13 @@ func (r *DefaultTrafficRepository) GetTrafficByID(trafficID string) (*domain.Tra
 		TraderRewardPercent: trafficModel.TraderRewardPercent,
 		TraderPriority: trafficModel.TraderPriority,
 		Enabled: trafficModel.Enabled,
-		PlatformFee: trafficModel.PlatformFee,
-		Name: trafficModel.Name,
 		ActivityParams: domain.TrafficActivityParams{
-			MerchantUnlocked: trafficModel.MerchantUnlocked,
 			TraderUnlocked: trafficModel.TraderUnlocked,
 			AntifraudUnlocked: trafficModel.AntifraudUnlocked,
 			ManuallyUnlocked: trafficModel.ManuallyUnlocked,
 		},
 		AntifraudParams: domain.TrafficAntifraudParams{
 			AntifraudRequired: trafficModel.AntifraudRequired,
-		},
-		BusinessParams: domain.TrafficBusinessParams{
-			MerchantDealsDuration: trafficModel.MerchantDealsDuration,
 		},
 	}, nil
 }
@@ -201,19 +184,13 @@ func (r *DefaultTrafficRepository) GetTrafficByTraderMerchant(traderID, merchant
 		TraderRewardPercent: trafficModel.TraderRewardPercent,
 		TraderPriority: trafficModel.TraderPriority,
 		Enabled: trafficModel.Enabled,
-		PlatformFee: trafficModel.PlatformFee,
-		Name: trafficModel.Name,
 		ActivityParams: domain.TrafficActivityParams{
-			MerchantUnlocked: trafficModel.MerchantUnlocked,
 			TraderUnlocked: trafficModel.TraderUnlocked,
 			AntifraudUnlocked: trafficModel.AntifraudUnlocked,
 			ManuallyUnlocked: trafficModel.ManuallyUnlocked,
 		},
 		AntifraudParams: domain.TrafficAntifraudParams{
 			AntifraudRequired: trafficModel.AntifraudRequired,
-		},
-		BusinessParams: domain.TrafficBusinessParams{
-			MerchantDealsDuration: trafficModel.MerchantDealsDuration,
 		},
 	}, nil
 }
@@ -364,7 +341,6 @@ func (r *DefaultTrafficRepository) GetLockStatuses(trafficID string) (*struct {
 		AntifraudUnlocked bool
 		ManuallyUnlocked  bool
 	}{
-		MerchantUnlocked:  traffic.MerchantUnlocked,
 		TraderUnlocked:    traffic.TraderUnlocked,
 		AntifraudUnlocked: traffic.AntifraudUnlocked,
 		ManuallyUnlocked:  traffic.ManuallyUnlocked,
@@ -385,7 +361,7 @@ func (r *DefaultTrafficRepository) IsTrafficUnlocked(trafficID string) (bool, er
 		return false, fmt.Errorf("failed to check traffic unlock status for %s: %w", trafficID, result.Error)
 	}
 
-	return traffic.MerchantUnlocked || traffic.TraderUnlocked || 
+	return traffic.TraderUnlocked || 
 	       traffic.AntifraudUnlocked || traffic.ManuallyUnlocked, nil
 }
 
@@ -407,19 +383,13 @@ func (r *DefaultTrafficRepository) GetTrafficByTraderID(traderID string) ([]*dom
 			TraderRewardPercent: tm.TraderRewardPercent,
 			TraderPriority: tm.TraderPriority,
 			Enabled: tm.Enabled,
-			PlatformFee: tm.PlatformFee,
-			Name: tm.Name,
 			ActivityParams: domain.TrafficActivityParams{
-				MerchantUnlocked: tm.MerchantUnlocked,
 				TraderUnlocked: tm.TraderUnlocked,
 				AntifraudUnlocked: tm.AntifraudUnlocked,
 				ManuallyUnlocked: tm.ManuallyUnlocked,
 			},
 			AntifraudParams: domain.TrafficAntifraudParams{
 				AntifraudRequired: tm.AntifraudRequired,
-			},
-			BusinessParams: domain.TrafficBusinessParams{
-				MerchantDealsDuration: tm.MerchantDealsDuration,
 			},
 		})
     }
@@ -444,10 +414,7 @@ func (r *DefaultTrafficRepository) GetTrafficByMerchantID(merchantID string) ([]
 			TraderRewardPercent: tm.TraderRewardPercent,
 			TraderPriority: tm.TraderPriority,
 			Enabled: tm.Enabled,
-			PlatformFee: tm.PlatformFee,
-			Name: tm.Name,
 			ActivityParams: domain.TrafficActivityParams{
-				MerchantUnlocked: tm.MerchantUnlocked,
 				TraderUnlocked: tm.TraderUnlocked,
 				AntifraudUnlocked: tm.AntifraudUnlocked,
 				ManuallyUnlocked: tm.ManuallyUnlocked,
@@ -455,11 +422,177 @@ func (r *DefaultTrafficRepository) GetTrafficByMerchantID(merchantID string) ([]
 			AntifraudParams: domain.TrafficAntifraudParams{
 				AntifraudRequired: tm.AntifraudRequired,
 			},
-			BusinessParams: domain.TrafficBusinessParams{
-				MerchantDealsDuration: tm.MerchantDealsDuration,
-			},
 		})
     }
 
     return traffics, nil
+}
+
+// GetTrafficWithStoreByTraderStore возвращает Traffic с данными стора через JOIN
+func (r *DefaultTrafficRepository) GetTrafficWithStoreByTraderStore(traderID, storeID string) (*domain.TrafficWithStore, error) {
+    var trafficModel models.TrafficModel
+    var storeModel models.MerchantStoreModel
+    
+    // Выполняем JOIN запрос
+    result := r.DB.
+        Joins("JOIN merchant_stores ON merchant_stores.id = traffics.merchant_store_id").
+        Where("traffics.trader_id = ? AND traffics.merchant_store_id = ?", traderID, storeID).
+        First(&trafficModel)
+    
+    if result.Error != nil {
+        if result.Error == gorm.ErrRecordNotFound {
+            return nil, nil
+        }
+        return nil, result.Error
+    }
+    
+    // Получаем данные стора
+    if err := r.DB.Where("id = ?", storeID).First(&storeModel).Error; err != nil {
+        return nil, err
+    }
+    
+    return &domain.TrafficWithStore{
+        Traffic: *r.trafficModelToDomain(&trafficModel),
+        Store:   *r.storeModelToDomain(&storeModel),
+    }, nil
+}
+
+// GetTrafficByTraderStore возвращает только Traffic (без JOIN)
+func (r *DefaultTrafficRepository) GetTrafficByTraderStore(traderID, storeID string) (*domain.Traffic, error) {
+    var model models.TrafficModel
+    
+    result := r.DB.
+        Where("trader_id = ? AND merchant_store_id = ?", traderID, storeID).
+        First(&model)
+    
+    if result.Error != nil {
+        if result.Error == gorm.ErrRecordNotFound {
+            return nil, nil
+        }
+        return nil, result.Error
+    }
+    
+    return r.trafficModelToDomain(&model), nil
+}
+
+// GetActiveTrafficsByStore возвращает активные трафики для стора
+func (r *DefaultTrafficRepository) GetActiveTrafficsByStore(storeID string) ([]*domain.Traffic, error) {
+    var models []*models.TrafficModel
+    
+    err := r.DB.
+        Where("merchant_store_id = ? AND enabled = ?", storeID, true).
+        Find(&models).Error
+    
+    if err != nil {
+        return nil, err
+    }
+    
+    traffics := make([]*domain.Traffic, len(models))
+    for i, model := range models {
+        traffics[i] = r.trafficModelToDomain(model)
+    }
+    
+    return traffics, nil
+}
+
+// GetTrafficByStoreID возвращает все трафики для стора
+func (r *DefaultTrafficRepository) GetTrafficByStoreID(storeID string) ([]*domain.Traffic, error) {
+    var models []*models.TrafficModel
+    
+    err := r.DB.
+        Where("merchant_store_id = ?", storeID).
+        Find(&models).Error
+    
+    if err != nil {
+        return nil, err
+    }
+    
+    traffics := make([]*domain.Traffic, len(models))
+    for i, model := range models {
+        traffics[i] = r.trafficModelToDomain(model)
+    }
+    
+    return traffics, nil
+}
+
+// IsTrafficActive проверяет, активен ли трафик
+func (r *DefaultTrafficRepository) IsTrafficActive(traderID, storeID string) (bool, error) {
+    var count int64
+    
+    err := r.DB.Model(&models.TrafficModel{}).
+        Where("trader_id = ? AND merchant_store_id = ? AND enabled = ? "+
+            "AND merchant_unlocked = ? AND trader_unlocked = ? "+
+            "AND antifraud_unlocked = ? AND manually_unlocked = ?",
+            traderID, storeID, true,
+            true, true, true, true).
+        Count(&count).Error
+    
+    if err != nil {
+        return false, err
+    }
+    
+    return count > 0, nil
+}
+
+// Вспомогательные методы преобразования
+func (r *DefaultTrafficRepository) trafficModelToDomain(model *models.TrafficModel) *domain.Traffic {
+    return &domain.Traffic{
+        ID:                  model.ID,
+        MerchantStoreID:     model.MerchantStoreID,
+        TraderID:            model.TraderID,
+        MerchantID:          model.MerchantID,
+        TraderRewardPercent: model.TraderRewardPercent,
+        TraderPriority:      model.TraderPriority,
+        Enabled:             model.Enabled,
+        CreatedAt:           model.CreatedAt,
+        UpdatedAt:           model.UpdatedAt,
+		ActivityParams: domain.TrafficActivityParams{
+			TraderUnlocked: model.TraderUnlocked,
+			AntifraudUnlocked: model.AntifraudUnlocked,
+			ManuallyUnlocked: model.ManuallyUnlocked,
+		},
+		AntifraudParams: domain.TrafficAntifraudParams{
+			AntifraudRequired: model.AntifraudRequired,
+			AntifraudLockedAt: model.AntifraudLockedAt,
+			AntifraudUnlockedAt: model.AntifraudUnlockedAt,
+			AntifraudLockReason: model.AntifraudLockReason,
+		},
+		BusinessParams: domain.TrafficBusinessParams{
+			StoreName: model.StoreName,
+			StoreCategory: model.StoreCategory,
+			MaxDailyDeals: model.MaxDailyDeals,
+			MinDealAmount: model.MinDealAmount,
+			MaxDealAmount: model.MaxDealAmount,
+			Currency: model.Currency,
+		},
+    }
+}
+
+func (r *DefaultTrafficRepository) storeModelToDomain(model *models.MerchantStoreModel) *domain.MerchantStore {
+    return &domain.MerchantStore{
+        ID:            model.ID,
+        MerchantID:    model.MerchantID,
+        PlatformFee:   model.PlatformFee,
+        IsActive:      model.IsActive,
+        Name:          model.Name,
+        DealsDuration: model.DealsDuration,
+        Description:   model.Description,
+        Category:      model.Category,
+        MaxDailyDeals: model.MaxDailyDeals,
+        MinDealAmount: model.MinDealAmount,
+        MaxDealAmount: model.MaxDealAmount,
+        Currency:      model.Currency,
+        CreatedAt:     model.CreatedAt,
+        UpdatedAt:     model.UpdatedAt,
+    }
+}
+
+// Добавляем недостающий метод UpdateTrafficStore
+func (r *DefaultTrafficRepository) UpdateTrafficStore(trafficID, storeID, merchantID string) error {
+    return r.DB.Model(&models.TrafficModel{}).
+        Where("id = ?", trafficID).
+        Updates(map[string]interface{}{
+            "merchant_store_id": storeID,
+            "merchant_id":       merchantID,
+        }).Error
 }

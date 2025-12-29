@@ -27,6 +27,7 @@ type Repositories struct {
     DeviceRepo        domain.DeviceRepository
     DisputeRepo       domain.DisputeRepository
     AntiFraudRepo     domain.AntiFraudRepository
+    MerchantStoreRepo domain.MerchantStoreRepository
 }
 
 func InitializeDependencies() (*Dependencies, error) {
@@ -52,6 +53,7 @@ func InitializeDependencies() (*Dependencies, error) {
         DeviceRepo:        repository.NewDefaultDeviceRepository(db),
         DisputeRepo:       repository.NewDefaultDisputeRepository(db),
         AntiFraudRepo:     repository.NewAntiFraudRepository(db),
+        MerchantStoreRepo: repository.NewMerchantStoreRepository(db),
     }
     
     return &Dependencies{

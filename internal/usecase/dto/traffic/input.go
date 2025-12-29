@@ -3,7 +3,8 @@ package trafficdto
 import "time"
 
 type EditTrafficInput struct {
-	ID 						string 					
+	ID 						string
+	StoreID              	*string  // Добавляем поле для смены стора 					
 	MerchantID 				*string 				
 	TraderID 				*string 				
 	TraderReward 			*float64 				
@@ -17,7 +18,6 @@ type EditTrafficInput struct {
 }
 
 type TrafficActivityParams struct {
-	MerchantUnlocked 	bool 
 	TraderUnlocked   	bool 
 	AntifraudUnlocked 	bool 
 	ManuallyUnlocked  	bool 

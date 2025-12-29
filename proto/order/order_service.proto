@@ -425,6 +425,7 @@ message Order {
     string merchant_id = 16;
     string type = 17;
     OrderMetrics metrics = 18;
+    string store_id = 19;
 }
 
 message OrderMetrics{

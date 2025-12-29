@@ -27,6 +27,13 @@ service TrafficService {
     rpc CheckTrafficUnlocked(CheckTrafficUnlockedRequest) returns (CheckTrafficUnlockedResponse);
 
     rpc GetTraderTraffic(GetTraderTrafficRequest) returns (GetTraderTrafficResponse);
+
+    // Новые методы для работы с Store
+    // rpc GetTraderTraffic(GetTraderTrafficRequest) returns (GetTraderTrafficResponse);
+    rpc GetTrafficByStore(GetTrafficByStoreRequest) returns (GetTrafficByStoreResponse);
+    rpc GetTrafficByMerchant(GetTrafficByMerchantRequest) returns (GetTrafficByMerchantResponse);
+    rpc GetTrafficByTraderStore(GetTrafficByTraderStoreRequest) returns (GetTrafficByTraderStoreResponse);
+    rpc ChangeTrafficStore(ChangeTrafficStoreRequest) returns (ChangeTrafficStoreResponse);
 }
 
 message GetTraderTrafficRequest {
@@ -89,13 +96,14 @@ message SetAntifraudLockTrafficStatusRequest {
 message SetAntifraudLockTrafficStatusResponse{}
 
 message AddTrafficRequest {
-    string merchant_id = 1;
+    string store_id = 1;
     string trader_id = 2;
     double trader_reward_percent = 3;
     double trader_priority = 4;
     bool enabled = 5;
     double platform_fee = 6;
     string name = 10;
+    string merchant_id = 11;
 
     TrafficActivityParameters activity_params = 7;
     TrafficAntifraudParameters antifraud_params = 8;
@@ -120,6 +128,7 @@ message TrafficBusinessParameters {
 message Traffic {
     string id = 1;
     string merchant_id = 2;
+    string store_id = 12;
     string trader_id = 3;
     double trader_reward_percent = 4;
     double trader_priority = 5;
@@ -141,13 +150,51 @@ message EditTrafficRequest {
     optional string merchant_id = 2;
     optional string trader_id = 3;
     optional double trader_reward = 4;
-    optional double trader_proirity = 5;
+    optional double trader_priority = 5;
     optional double platform_fee = 6;
     optional bool enabled = 7;
     optional TrafficActivityParameters activity_params = 8;
     optional TrafficAntifraudParameters antifraud_params = 9;
     optional TrafficBusinessParameters business_params = 10;
     optional string name = 11;
+    optional string store_id = 12;
+}
+
+// Добавляем новые сообщения для методов с Store
+message GetTrafficByStoreRequest {
+    string store_id = 1;
+    optional bool only_active = 2;
+}
+
+message GetTrafficByStoreResponse {
+    repeated Traffic traffic_records = 1;
+}
+
+message GetTrafficByMerchantRequest {
+    string merchant_id = 1;
+    optional bool only_active = 2;
+}
+
+message GetTrafficByMerchantResponse {
+    repeated Traffic traffic_records = 1;
+}
+
+message GetTrafficByTraderStoreRequest {
+    string trader_id = 1;
+    string store_id = 2;
+}
+
+message GetTrafficByTraderStoreResponse {
+    Traffic traffic = 1;
+}
+
+message ChangeTrafficStoreRequest {
+    string traffic_id = 1;
+    string new_store_id = 2;
+}
+
+message ChangeTrafficStoreResponse {
+    bool success = 1;
 }
 
 message EditTrafficResponse {

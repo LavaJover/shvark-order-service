@@ -3,6 +3,7 @@ package grpcapi
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/LavaJover/shvark-order-service/internal/domain"
 	"github.com/LavaJover/shvark-order-service/internal/usecase"
@@ -10,7 +11,6 @@ import (
 	orderpb "github.com/LavaJover/shvark-order-service/proto/gen/order"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 type TrafficHandler struct {
@@ -22,78 +22,57 @@ func NewTrafficHandler(trafficUsecase usecase.TrafficUsecase) *TrafficHandler {
 	return &TrafficHandler{trafficUsecase: trafficUsecase}
 }
 
-func (h *TrafficHandler) AddTraffic(ctx context.Context, r *orderpb.AddTrafficRequest) (*orderpb.AddTrafficResponse, error) {
-	traffic := &domain.Traffic{
-		MerchantID: r.MerchantId,
-		TraderID: r.TraderId,
-		TraderRewardPercent: r.TraderRewardPercent,
-		TraderPriority: r.TraderPriority,
-		Enabled: r.Enabled,
-		PlatformFee: r.PlatformFee,
-		Name: r.Name,
-		ActivityParams: domain.TrafficActivityParams{
-			MerchantUnlocked: r.ActivityParams.MerchantUnlocked,
-			TraderUnlocked: r.ActivityParams.TraderUnlocked,
-			AntifraudUnlocked: r.ActivityParams.AntifraudUnlocked,
-			ManuallyUnlocked: r.ActivityParams.ManuallyUnlocked,
-		},
-		AntifraudParams: domain.TrafficAntifraudParams{
-			AntifraudRequired: r.AntifraudParams.AntifraudRequired,
-		},
-		BusinessParams: domain.TrafficBusinessParams{
-			MerchantDealsDuration: r.BusinessParams.MerchantDealsDuration.AsDuration(),
-		},
-	}
-
-	if err := h.trafficUsecase.AddTraffic(traffic); err != nil {
-		return &orderpb.AddTrafficResponse{
-			Message: "failed to add new traffic",
-		}, err
-	}
-
-	return &orderpb.AddTrafficResponse{
-		Message: "Successfully added new traffic",
-	}, nil
-}
-
 func (h *TrafficHandler) EditTraffic(ctx context.Context, r *orderpb.EditTrafficRequest) (*orderpb.EditTrafficResponse, error) {
-
-	input := &trafficdto.EditTrafficInput{
-		ID: r.Id,
-		MerchantID: r.MerchantId,
-		TraderID: r.TraderId,
-		TraderReward: r.TraderReward,
-		TraderPriority: r.TraderProirity,
-		PlatformFee: r.PlatformFee,
-		Enabled: r.Enabled,
-		Name: r.Name,
-		ActivityParams: &trafficdto.TrafficActivityParams{},
-		AntifraudParams: &trafficdto.TrafficAntifraudParams{},
-		BusinessParams: &trafficdto.TrafficBusinessParams{},
-	}
-	if r.ActivityParams != nil {
-		input.ActivityParams.MerchantUnlocked = r.ActivityParams.MerchantUnlocked
-		input.ActivityParams.TraderUnlocked = r.ActivityParams.TraderUnlocked
-		input.ActivityParams.AntifraudUnlocked = r.ActivityParams.AntifraudUnlocked
-		input.ActivityParams.ManuallyUnlocked = r.ActivityParams.ManuallyUnlocked
-	}
-	if r.AntifraudParams != nil {
-		input.AntifraudParams.AntifraudRequired = r.AntifraudParams.AntifraudRequired
-	}
-
-	if r.BusinessParams != nil {
-		input.BusinessParams.MerchantDealsDuration = r.BusinessParams.MerchantDealsDuration.AsDuration()
-	}
-
-	if err := h.trafficUsecase.EditTraffic(input); err != nil {
-		return &orderpb.EditTrafficResponse{
-			Message: "failed to update traffic",
-		}, nil
-	}
-
-	return &orderpb.EditTrafficResponse{
-		Message: "traffic updated successfully",
-	}, nil
+    input := &trafficdto.EditTrafficInput{
+        ID: r.Id,
+    }
+    
+    // Правильно обрабатываем optional поля
+    if r.StoreId != nil {
+        input.StoreID = r.StoreId
+    }
+    
+    if r.TraderReward != nil {
+        traderReward := float64(*r.TraderReward)
+        input.TraderReward = &traderReward
+    }
+    
+    if r.TraderPriority != nil {
+        traderPriority := float64(*r.TraderPriority)
+        input.TraderPriority = &traderPriority
+    }
+    
+    if r.Enabled != nil {
+        input.Enabled = r.Enabled
+    }
+    
+    if r.Name != nil {
+        input.Name = r.Name
+    }
+    
+    if r.ActivityParams != nil {
+        input.ActivityParams = &trafficdto.TrafficActivityParams{
+            TraderUnlocked:    r.ActivityParams.TraderUnlocked,
+            AntifraudUnlocked: r.ActivityParams.AntifraudUnlocked,
+            ManuallyUnlocked:  r.ActivityParams.ManuallyUnlocked,
+        }
+    }
+    
+    if r.AntifraudParams != nil {
+        input.AntifraudParams = &trafficdto.TrafficAntifraudParams{
+            AntifraudRequired: r.AntifraudParams.AntifraudRequired,
+        }
+    }
+    
+    if err := h.trafficUsecase.EditTraffic(input); err != nil {
+        return &orderpb.EditTrafficResponse{
+            Message: "failed to update traffic",
+        }, err
+    }
+    
+    return &orderpb.EditTrafficResponse{
+        Message: "traffic updated successfully",
+    }, nil
 }
 
 func (h *TrafficHandler) DeleteTraffic(ctx context.Context, r *orderpb.DeleteTrafficRequest) (*orderpb.DeleteTrafficResponse, error) {
@@ -124,11 +103,8 @@ func (h *TrafficHandler) GetTrafficRecords(ctx context.Context, r *orderpb.GetTr
 			TraderId: trafficRecord.TraderID,
 			TraderRewardPercent: trafficRecord.TraderRewardPercent,
 			TraderPriority: trafficRecord.TraderPriority,
-			PlatformFee: trafficRecord.PlatformFee,
 			Enabled: trafficRecord.Enabled,
-			Name: trafficRecord.Name,
 			ActivityParams: &orderpb.TrafficActivityParameters{
-				MerchantUnlocked: trafficRecord.ActivityParams.MerchantUnlocked,
 				TraderUnlocked: trafficRecord.ActivityParams.TraderUnlocked,
 				ManuallyUnlocked: trafficRecord.ActivityParams.ManuallyUnlocked,
 				AntifraudUnlocked: trafficRecord.ActivityParams.AntifraudUnlocked,
@@ -137,7 +113,6 @@ func (h *TrafficHandler) GetTrafficRecords(ctx context.Context, r *orderpb.GetTr
 				AntifraudRequired: trafficRecord.AntifraudParams.AntifraudRequired,
 			},
 			BusinessParams: &orderpb.TrafficBusinessParameters{
-				MerchantDealsDuration: durationpb.New(trafficRecord.BusinessParams.MerchantDealsDuration),
 			},
 		}
 	}
@@ -268,12 +243,9 @@ func (h *TrafficHandler) GetTraderTraffic(ctx context.Context, req *orderpb.GetT
             MerchantId:          traffic.MerchantID,
             TraderId:            traffic.TraderID,
             TraderRewardPercent: traffic.TraderRewardPercent,
-            PlatformFee:         traffic.PlatformFee,
             TraderPriority:      traffic.TraderPriority,
             Enabled:             traffic.Enabled,
-            Name:                traffic.Name,
             ActivityParams: &orderpb.TrafficActivityParameters{
-                MerchantUnlocked:  traffic.ActivityParams.MerchantUnlocked,
                 TraderUnlocked:    traffic.ActivityParams.TraderUnlocked,
                 AntifraudUnlocked: traffic.ActivityParams.AntifraudUnlocked,
                 ManuallyUnlocked:  traffic.ActivityParams.ManuallyUnlocked,
@@ -281,13 +253,200 @@ func (h *TrafficHandler) GetTraderTraffic(ctx context.Context, req *orderpb.GetT
             AntifraudParams: &orderpb.TrafficAntifraudParameters{
                 AntifraudRequired: traffic.AntifraudParams.AntifraudRequired,
             },
-            BusinessParams: &orderpb.TrafficBusinessParameters{
-                MerchantDealsDuration: durationpb.New(traffic.BusinessParams.MerchantDealsDuration),
-            },
         })
     }
 
     return &orderpb.GetTraderTrafficResponse{
         Records: records,
+    }, nil
+}
+
+// GetTrafficByStore получает трафик по стор ID
+func (h *TrafficHandler) GetTrafficByStore(ctx context.Context, req *orderpb.GetTrafficByStoreRequest) (*orderpb.GetTrafficByStoreResponse, error) {
+    if req.StoreId == "" {
+        return nil, status.Error(codes.InvalidArgument, "store_id is required")
+    }
+    
+    traffics, err := h.trafficUsecase.GetTrafficByStoreID(req.StoreId)
+    if err != nil {
+        log.Printf("Failed to get traffic by store: %v", err)
+        return nil, status.Errorf(codes.Internal, "failed to get traffic: %v", err)
+    }
+    
+    // Проверяем optional поле OnlyActive
+    var filteredTraffics []*domain.Traffic
+    for _, traffic := range traffics {
+        if req.OnlyActive != nil && *req.OnlyActive && !traffic.Enabled {
+            continue
+        }
+        filteredTraffics = append(filteredTraffics, traffic)
+    }
+    
+    trafficResponse := make([]*orderpb.Traffic, len(filteredTraffics))
+    for i, traffic := range filteredTraffics {
+        trafficResponse[i] = &orderpb.Traffic{
+            Id:                  traffic.ID,
+            StoreId:            traffic.MerchantStoreID,
+            MerchantId:         traffic.MerchantID,
+            TraderId:           traffic.TraderID,
+            TraderRewardPercent: traffic.TraderRewardPercent,
+            TraderPriority:     traffic.TraderPriority,
+            Enabled:            traffic.Enabled,
+            ActivityParams: &orderpb.TrafficActivityParameters{
+                TraderUnlocked:    traffic.ActivityParams.TraderUnlocked,
+                ManuallyUnlocked:  traffic.ActivityParams.ManuallyUnlocked,
+                AntifraudUnlocked: traffic.ActivityParams.AntifraudUnlocked,
+            },
+            AntifraudParams: &orderpb.TrafficAntifraudParameters{
+                AntifraudRequired: traffic.AntifraudParams.AntifraudRequired,
+            },
+        }
+    }
+    
+    return &orderpb.GetTrafficByStoreResponse{
+        TrafficRecords: trafficResponse,
+    }, nil
+}
+
+// GetTrafficByMerchant получает трафик по мерчанту
+// GetTrafficByMerchant получает трафик по мерчанту
+func (h *TrafficHandler) GetTrafficByMerchant(ctx context.Context, req *orderpb.GetTrafficByMerchantRequest) (*orderpb.GetTrafficByMerchantResponse, error) {
+    if req.MerchantId == "" {
+        return nil, status.Error(codes.InvalidArgument, "merchant_id is required")
+    }
+    
+    traffics, err := h.trafficUsecase.GetTrafficByMerchantID(req.MerchantId)
+    if err != nil {
+        log.Printf("Failed to get traffic by merchant: %v", err)
+        return nil, status.Errorf(codes.Internal, "failed to get traffic: %v", err)
+    }
+    
+    // Проверяем optional поле OnlyActive
+    var filteredTraffics []*domain.Traffic
+    for _, traffic := range traffics {
+        if req.OnlyActive != nil && *req.OnlyActive && !traffic.Enabled {
+            continue
+        }
+        filteredTraffics = append(filteredTraffics, traffic)
+    }
+    
+    trafficResponse := make([]*orderpb.Traffic, len(filteredTraffics))
+    for i, traffic := range filteredTraffics {
+        trafficResponse[i] = &orderpb.Traffic{
+            Id:                  traffic.ID,
+            StoreId:            traffic.MerchantStoreID,
+            MerchantId:         traffic.MerchantID,
+            TraderId:           traffic.TraderID,
+            TraderRewardPercent: traffic.TraderRewardPercent,
+            TraderPriority:     traffic.TraderPriority,
+            Enabled:            traffic.Enabled,
+            ActivityParams: &orderpb.TrafficActivityParameters{
+                TraderUnlocked:    traffic.ActivityParams.TraderUnlocked,
+                ManuallyUnlocked:  traffic.ActivityParams.ManuallyUnlocked,
+                AntifraudUnlocked: traffic.ActivityParams.AntifraudUnlocked,
+            },
+            AntifraudParams: &orderpb.TrafficAntifraudParameters{
+                AntifraudRequired: traffic.AntifraudParams.AntifraudRequired,
+            },
+        }
+    }
+    
+    return &orderpb.GetTrafficByMerchantResponse{
+        TrafficRecords: trafficResponse,
+    }, nil
+}
+
+// GetTrafficByTraderStore получает трафик для конкретного трейдера и стора
+func (h *TrafficHandler) GetTrafficByTraderStore(ctx context.Context, req *orderpb.GetTrafficByTraderStoreRequest) (*orderpb.GetTrafficByTraderStoreResponse, error) {
+    if req.TraderId == "" {
+        return nil, status.Error(codes.InvalidArgument, "trader_id is required")
+    }
+    
+    if req.StoreId == "" {
+        return nil, status.Error(codes.InvalidArgument, "store_id is required")
+    }
+    
+    traffic, err := h.trafficUsecase.GetTrafficByTraderStore(req.TraderId, req.StoreId)
+    if err != nil {
+        log.Printf("Failed to get traffic by trader and store: %v", err)
+        return nil, status.Errorf(codes.Internal, "failed to get traffic: %v", err)
+    }
+    
+    if traffic == nil {
+        return &orderpb.GetTrafficByTraderStoreResponse{}, nil
+    }
+    
+    trafficProto := &orderpb.Traffic{
+        Id:                  traffic.ID,
+        StoreId:            traffic.MerchantStoreID,
+        MerchantId:         traffic.MerchantID,
+        TraderId:           traffic.TraderID,
+        TraderRewardPercent: traffic.TraderRewardPercent,
+        TraderPriority:     traffic.TraderPriority,
+        Enabled:            traffic.Enabled,
+        ActivityParams: &orderpb.TrafficActivityParameters{
+            TraderUnlocked:    traffic.ActivityParams.TraderUnlocked,
+            ManuallyUnlocked:  traffic.ActivityParams.ManuallyUnlocked,
+            AntifraudUnlocked: traffic.ActivityParams.AntifraudUnlocked,
+        },
+        AntifraudParams: &orderpb.TrafficAntifraudParameters{
+            AntifraudRequired: traffic.AntifraudParams.AntifraudRequired,
+        },
+    }
+    
+    return &orderpb.GetTrafficByTraderStoreResponse{
+        Traffic: trafficProto,
+    }, nil
+}
+
+// ChangeTrafficStore меняет стор для трафика
+func (h *TrafficHandler) ChangeTrafficStore(ctx context.Context, req *orderpb.ChangeTrafficStoreRequest) (*orderpb.ChangeTrafficStoreResponse, error) {
+    if req.TrafficId == "" {
+        return nil, status.Error(codes.InvalidArgument, "traffic_id is required")
+    }
+    
+    if req.NewStoreId == "" {
+        return nil, status.Error(codes.InvalidArgument, "new_store_id is required")
+    }
+    
+    err := h.trafficUsecase.ChangeTrafficStore(req.TrafficId, req.NewStoreId)
+    if err != nil {
+        log.Printf("Failed to change traffic store: %v", err)
+        return nil, status.Errorf(codes.Internal, "failed to change store: %v", err)
+    }
+    
+    return &orderpb.ChangeTrafficStoreResponse{
+        Success: true,
+    }, nil
+}
+
+// Также нужно обновить AddTraffic и EditTraffic для работы с StoreID:
+
+func (h *TrafficHandler) AddTraffic(ctx context.Context, r *orderpb.AddTrafficRequest) (*orderpb.AddTrafficResponse, error) {
+    // Теперь используем store_id вместо merchant_id
+    traffic := &domain.Traffic{
+        MerchantStoreID:	r.StoreId,
+        TraderID:           r.TraderId,
+        TraderRewardPercent: r.TraderRewardPercent,
+        TraderPriority:     r.TraderPriority,
+        Enabled:            r.Enabled,
+        ActivityParams: domain.TrafficActivityParams{
+            TraderUnlocked:    r.ActivityParams.TraderUnlocked,
+            AntifraudUnlocked: r.ActivityParams.AntifraudUnlocked,
+            ManuallyUnlocked:  r.ActivityParams.ManuallyUnlocked,
+        },
+        AntifraudParams: domain.TrafficAntifraudParams{
+            AntifraudRequired: r.AntifraudParams.AntifraudRequired,
+        },
+    }
+    
+    if err := h.trafficUsecase.AddTraffic(traffic); err != nil {
+        return &orderpb.AddTrafficResponse{
+            Message: "failed to add new traffic",
+        }, err
+    }
+    
+    return &orderpb.AddTrafficResponse{
+        Message: "Successfully added new traffic",
     }, nil
 }

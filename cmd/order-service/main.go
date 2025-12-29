@@ -108,6 +108,12 @@ func setupGRPCServer(useCases *setup.UseCases, antiFraudSystem *setup.AntiFraudS
     // Используем antiFraudSystem.UseCase вместо useCases.AntiFraudUseCase
     orderpb.RegisterAntiFraudServiceServer(server, 
         grpcapi.NewAntiFraudHandler(antiFraudSystem.UseCase))
+
+    orderpb.RegisterMerchantStoreServiceServer(server,
+        grpcapi.NewMerchantStoreHandler(
+            useCases.MerchantStoreUsecase,
+            useCases.TrafficUsecase,
+        ))
     
     return server
 }

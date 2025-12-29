@@ -1,0 +1,179 @@
+syntax = "proto3";
+
+package order;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+// import "google/protobuf/empty.proto";
+
+option go_package = "github.com/LavaJover/shvark-order-service/proto/gen;orderpb";
+
+service MerchantStoreService {
+    // CRUD операций для сторов
+    rpc CreateStore(CreateStoreRequest) returns (CreateStoreResponse);
+    rpc UpdateStore(UpdateStoreRequest) returns (UpdateStoreResponse);
+    rpc DeleteStore(DeleteStoreRequest) returns (DeleteStoreResponse);
+    rpc GetStore(GetStoreRequest) returns (GetStoreResponse);
+    rpc ListStores(ListStoresRequest) returns (ListStoresResponse);
+    rpc GetStoresByMerchant(GetStoresByMerchantRequest) returns (GetStoresByMerchantResponse);
+    
+    // Управление подключением трейдеров к стору
+    rpc ConnectTrader(ConnectTraderRequest) returns (ConnectTraderResponse);
+    rpc UpdateTraderConnection(UpdateTraderConnectionRequest) returns (UpdateTraderConnectionResponse);
+    rpc DisconnectTrader(DisconnectTraderRequest) returns (DisconnectTraderResponse);
+    rpc GetStoreTraffic(GetStoreTrafficRequest) returns (GetStoreTrafficResponse);
+    rpc GetTraderStores(GetTraderStoresRequest) returns (GetTraderStoresResponse);
+}
+
+message Store {
+    string id = 1;
+    string merchant_id = 2;
+    string name = 3;
+    float platform_fee = 4;
+    bool is_active = 5;
+    google.protobuf.Duration deals_duration = 6;
+    string description = 7;
+    string category = 8;
+    int32 max_daily_deals = 9;
+    float min_deal_amount = 10;
+    float max_deal_amount = 11;
+    string currency = 12;
+    google.protobuf.Timestamp created_at = 13;
+    google.protobuf.Timestamp updated_at = 14;
+}
+
+message CreateStoreRequest {
+    string merchant_id = 1;
+    string name = 2;
+    float platform_fee = 3;
+    google.protobuf.Duration deals_duration = 4;
+    string description = 5;
+    string category = 6;
+    int32 max_daily_deals = 7;
+    float min_deal_amount = 8;
+    float max_deal_amount = 9;
+    string currency = 10;
+}
+
+message CreateStoreResponse {
+    Store store = 1;
+}
+
+message UpdateStoreRequest {
+    string id = 1;
+    optional string name = 2;
+    optional float platform_fee = 3;
+    optional bool is_active = 4;
+    optional google.protobuf.Duration deals_duration = 5;
+    optional string description = 6;
+    optional string category = 7;
+    optional int32 max_daily_deals = 8;
+    optional float min_deal_amount = 9;
+    optional float max_deal_amount = 10;
+    optional string currency = 11;
+}
+
+message UpdateStoreResponse {
+    Store store = 1;
+}
+
+message DeleteStoreRequest {
+    string id = 1;
+}
+
+message DeleteStoreResponse {
+    bool success = 1;
+}
+
+message GetStoreRequest {
+    string id = 1;
+}
+
+message GetStoreResponse {
+    Store store = 1;
+}
+
+message ListStoresRequest {
+    int32 page = 1;
+    int32 limit = 2;
+    optional string category = 3;
+    optional bool only_active = 4;
+}
+
+message ListStoresResponse {
+    repeated Store stores = 1;
+    int32 total = 2;
+    int32 page = 3;
+    int32 limit = 4;
+}
+
+message GetStoresByMerchantRequest {
+    string merchant_id = 1;
+    optional bool only_active = 2;
+}
+
+message GetStoresByMerchantResponse {
+    repeated Store stores = 1;
+}
+
+message ConnectTraderRequest {
+    string store_id = 1;
+    string trader_id = 2;
+    float trader_reward_percent = 3;
+    bool enabled = 4;
+}
+
+message ConnectTraderResponse {
+    bool success = 1;
+    string traffic_id = 2;
+}
+
+message UpdateTraderConnectionRequest {
+    string traffic_id = 1;
+    optional double trader_reward_percent = 2;
+    optional bool enabled = 3;
+    optional bool trader_unlocked = 5;
+    optional bool antifraud_unlocked = 6;
+    optional bool manually_unlocked = 7;
+}
+
+message UpdateTraderConnectionResponse {
+    bool success = 1;
+}
+
+message DisconnectTraderRequest {
+    string traffic_id = 1;
+}
+
+message DisconnectTraderResponse {
+    bool success = 1;
+}
+
+message TrafficInfo {
+    string traffic_id = 1;
+    string store_id = 2;
+    string merchant_id = 3;
+    string trader_id = 4;
+    float trader_reward_percent = 5;
+    bool enabled = 6;
+    google.protobuf.Timestamp created_at = 7;
+    google.protobuf.Timestamp updated_at = 8;
+}
+
+message GetStoreTrafficRequest {
+    string store_id = 1;
+    bool only_active = 2;
+}
+
+message GetStoreTrafficResponse {
+    repeated TrafficInfo traffics = 1;
+}
+
+message GetTraderStoresRequest {
+    string trader_id = 1;
+    optional bool only_active = 2;
+}
+
+message GetTraderStoresResponse {
+    repeated Store stores = 1;
+}

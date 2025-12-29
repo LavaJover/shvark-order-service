@@ -46,6 +46,7 @@ type DefaultOrderUsecase struct {
 	TeamRelationsUsecase usecase.TeamRelationsUsecase
 	Publisher 			*publisher.KafkaPublisher
 	Metrics				*metrics.OrderMetrics	
+	MerchantStoreUsecase usecase.MerchantStoreUsecase
 }
 
 func NewDefaultOrderUsecase(
@@ -55,7 +56,9 @@ func NewDefaultOrderUsecase(
 	bankDetailUsecase usecase.BankDetailUsecase,
 	kafkaPublisher *publisher.KafkaPublisher,
 	teamRelationsUsecase usecase.TeamRelationsUsecase,
-	orderMetrics *metrics.OrderMetrics) *DefaultOrderUsecase {
+	orderMetrics *metrics.OrderMetrics,
+	merchantStoreUsecase usecase.MerchantStoreUsecase,
+) *DefaultOrderUsecase {
 
 	return &DefaultOrderUsecase{
 		OrderRepo: orderRepo,
@@ -65,5 +68,6 @@ func NewDefaultOrderUsecase(
 		Publisher: kafkaPublisher,
 		TeamRelationsUsecase: teamRelationsUsecase,
 		Metrics: orderMetrics,
+		MerchantStoreUsecase: merchantStoreUsecase,
 	}
 }

@@ -33,6 +33,10 @@ const (
 	TrafficService_GetTrafficLockStatuses_FullMethodName        = "/order.TrafficService/GetTrafficLockStatuses"
 	TrafficService_CheckTrafficUnlocked_FullMethodName          = "/order.TrafficService/CheckTrafficUnlocked"
 	TrafficService_GetTraderTraffic_FullMethodName              = "/order.TrafficService/GetTraderTraffic"
+	TrafficService_GetTrafficByStore_FullMethodName             = "/order.TrafficService/GetTrafficByStore"
+	TrafficService_GetTrafficByMerchant_FullMethodName          = "/order.TrafficService/GetTrafficByMerchant"
+	TrafficService_GetTrafficByTraderStore_FullMethodName       = "/order.TrafficService/GetTrafficByTraderStore"
+	TrafficService_ChangeTrafficStore_FullMethodName            = "/order.TrafficService/ChangeTrafficStore"
 )
 
 // TrafficServiceClient is the client API for TrafficService service.
@@ -56,6 +60,12 @@ type TrafficServiceClient interface {
 	GetTrafficLockStatuses(ctx context.Context, in *GetTrafficLockStatusesRequest, opts ...grpc.CallOption) (*GetTrafficLockStatusesResponse, error)
 	CheckTrafficUnlocked(ctx context.Context, in *CheckTrafficUnlockedRequest, opts ...grpc.CallOption) (*CheckTrafficUnlockedResponse, error)
 	GetTraderTraffic(ctx context.Context, in *GetTraderTrafficRequest, opts ...grpc.CallOption) (*GetTraderTrafficResponse, error)
+	// Новые методы для работы с Store
+	// rpc GetTraderTraffic(GetTraderTrafficRequest) returns (GetTraderTrafficResponse);
+	GetTrafficByStore(ctx context.Context, in *GetTrafficByStoreRequest, opts ...grpc.CallOption) (*GetTrafficByStoreResponse, error)
+	GetTrafficByMerchant(ctx context.Context, in *GetTrafficByMerchantRequest, opts ...grpc.CallOption) (*GetTrafficByMerchantResponse, error)
+	GetTrafficByTraderStore(ctx context.Context, in *GetTrafficByTraderStoreRequest, opts ...grpc.CallOption) (*GetTrafficByTraderStoreResponse, error)
+	ChangeTrafficStore(ctx context.Context, in *ChangeTrafficStoreRequest, opts ...grpc.CallOption) (*ChangeTrafficStoreResponse, error)
 }
 
 type trafficServiceClient struct {
@@ -206,6 +216,46 @@ func (c *trafficServiceClient) GetTraderTraffic(ctx context.Context, in *GetTrad
 	return out, nil
 }
 
+func (c *trafficServiceClient) GetTrafficByStore(ctx context.Context, in *GetTrafficByStoreRequest, opts ...grpc.CallOption) (*GetTrafficByStoreResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTrafficByStoreResponse)
+	err := c.cc.Invoke(ctx, TrafficService_GetTrafficByStore_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trafficServiceClient) GetTrafficByMerchant(ctx context.Context, in *GetTrafficByMerchantRequest, opts ...grpc.CallOption) (*GetTrafficByMerchantResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTrafficByMerchantResponse)
+	err := c.cc.Invoke(ctx, TrafficService_GetTrafficByMerchant_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trafficServiceClient) GetTrafficByTraderStore(ctx context.Context, in *GetTrafficByTraderStoreRequest, opts ...grpc.CallOption) (*GetTrafficByTraderStoreResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTrafficByTraderStoreResponse)
+	err := c.cc.Invoke(ctx, TrafficService_GetTrafficByTraderStore_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trafficServiceClient) ChangeTrafficStore(ctx context.Context, in *ChangeTrafficStoreRequest, opts ...grpc.CallOption) (*ChangeTrafficStoreResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ChangeTrafficStoreResponse)
+	err := c.cc.Invoke(ctx, TrafficService_ChangeTrafficStore_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TrafficServiceServer is the server API for TrafficService service.
 // All implementations must embed UnimplementedTrafficServiceServer
 // for forward compatibility.
@@ -227,6 +277,12 @@ type TrafficServiceServer interface {
 	GetTrafficLockStatuses(context.Context, *GetTrafficLockStatusesRequest) (*GetTrafficLockStatusesResponse, error)
 	CheckTrafficUnlocked(context.Context, *CheckTrafficUnlockedRequest) (*CheckTrafficUnlockedResponse, error)
 	GetTraderTraffic(context.Context, *GetTraderTrafficRequest) (*GetTraderTrafficResponse, error)
+	// Новые методы для работы с Store
+	// rpc GetTraderTraffic(GetTraderTrafficRequest) returns (GetTraderTrafficResponse);
+	GetTrafficByStore(context.Context, *GetTrafficByStoreRequest) (*GetTrafficByStoreResponse, error)
+	GetTrafficByMerchant(context.Context, *GetTrafficByMerchantRequest) (*GetTrafficByMerchantResponse, error)
+	GetTrafficByTraderStore(context.Context, *GetTrafficByTraderStoreRequest) (*GetTrafficByTraderStoreResponse, error)
+	ChangeTrafficStore(context.Context, *ChangeTrafficStoreRequest) (*ChangeTrafficStoreResponse, error)
 	mustEmbedUnimplementedTrafficServiceServer()
 }
 
@@ -278,6 +334,18 @@ func (UnimplementedTrafficServiceServer) CheckTrafficUnlocked(context.Context, *
 }
 func (UnimplementedTrafficServiceServer) GetTraderTraffic(context.Context, *GetTraderTrafficRequest) (*GetTraderTrafficResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTraderTraffic not implemented")
+}
+func (UnimplementedTrafficServiceServer) GetTrafficByStore(context.Context, *GetTrafficByStoreRequest) (*GetTrafficByStoreResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTrafficByStore not implemented")
+}
+func (UnimplementedTrafficServiceServer) GetTrafficByMerchant(context.Context, *GetTrafficByMerchantRequest) (*GetTrafficByMerchantResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTrafficByMerchant not implemented")
+}
+func (UnimplementedTrafficServiceServer) GetTrafficByTraderStore(context.Context, *GetTrafficByTraderStoreRequest) (*GetTrafficByTraderStoreResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTrafficByTraderStore not implemented")
+}
+func (UnimplementedTrafficServiceServer) ChangeTrafficStore(context.Context, *ChangeTrafficStoreRequest) (*ChangeTrafficStoreResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangeTrafficStore not implemented")
 }
 func (UnimplementedTrafficServiceServer) mustEmbedUnimplementedTrafficServiceServer() {}
 func (UnimplementedTrafficServiceServer) testEmbeddedByValue()                        {}
@@ -552,6 +620,78 @@ func _TrafficService_GetTraderTraffic_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TrafficService_GetTrafficByStore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTrafficByStoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).GetTrafficByStore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_GetTrafficByStore_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).GetTrafficByStore(ctx, req.(*GetTrafficByStoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrafficService_GetTrafficByMerchant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTrafficByMerchantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).GetTrafficByMerchant(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_GetTrafficByMerchant_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).GetTrafficByMerchant(ctx, req.(*GetTrafficByMerchantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrafficService_GetTrafficByTraderStore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTrafficByTraderStoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).GetTrafficByTraderStore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_GetTrafficByTraderStore_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).GetTrafficByTraderStore(ctx, req.(*GetTrafficByTraderStoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrafficService_ChangeTrafficStore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangeTrafficStoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrafficServiceServer).ChangeTrafficStore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrafficService_ChangeTrafficStore_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrafficServiceServer).ChangeTrafficStore(ctx, req.(*ChangeTrafficStoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TrafficService_ServiceDesc is the grpc.ServiceDesc for TrafficService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -614,6 +754,22 @@ var TrafficService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTraderTraffic",
 			Handler:    _TrafficService_GetTraderTraffic_Handler,
+		},
+		{
+			MethodName: "GetTrafficByStore",
+			Handler:    _TrafficService_GetTrafficByStore_Handler,
+		},
+		{
+			MethodName: "GetTrafficByMerchant",
+			Handler:    _TrafficService_GetTrafficByMerchant_Handler,
+		},
+		{
+			MethodName: "GetTrafficByTraderStore",
+			Handler:    _TrafficService_GetTrafficByTraderStore_Handler,
+		},
+		{
+			MethodName: "ChangeTrafficStore",
+			Handler:    _TrafficService_ChangeTrafficStore_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

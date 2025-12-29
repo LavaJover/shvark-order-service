@@ -57,6 +57,7 @@ func MustInitDB(cfg *config.OrderConfig) *gorm.DB {
 		&engine.AntiFraudAuditLog{},
 		&engine.UnlockAuditLog{},
 		&models.AutomaticLogModel{},
+		&models.MerchantStoreModel{},
 	)
 	if err != nil {
 		log.Printf("⚠️ AutoMigrate warnings: %v", err)

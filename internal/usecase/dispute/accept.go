@@ -26,10 +26,23 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 	if order.Status != domain.StatusDisputeCreated {
 		return fmt.Errorf("invalid order status to accept dispute: %s", order.Status)
 	}
-	traffic, err := disputeUc.trafficRepo.GetTrafficByTraderMerchant(order.RequisiteDetails.TraderID, order.MerchantInfo.MerchantID)
-	if err != nil {
-		return err
-	}
+    // ===== ПОЛУЧЕНИЕ ТРАФИКА С ДАННЫМИ STORE (JOIN) =====
+    trafficWithStore, err := disputeUc.TrafficUsecase.GetTrafficWithStoreByTraderStore(
+        order.RequisiteDetails.TraderID, 
+        order.MerchantInfo.StoreID,
+    )
+
+    if err != nil {
+        return fmt.Errorf("failed to get traffic with store: %w", err)
+    }
+    
+    if trafficWithStore == nil {
+        return fmt.Errorf("traffic not found for trader %s and store %s", 
+            order.RequisiteDetails.TraderID, order.MerchantInfo.StoreID)
+    }
+    
+    traffic := &trafficWithStore.Traffic
+    storeFromTraffic := &trafficWithStore.Store
 	// Search for team relations to find commission users
 	var commissionUsers []walletRequest.CommissionUser
 	teamRelations, err := disputeUc.teamRelationsUsecase.GetRelationshipsByTraderID(order.RequisiteDetails.TraderID)
@@ -41,6 +54,7 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 			})
 		}
 	}
+
 	op := &DisputeOperation{
 		OrderID: order.ID,
 		DisputeID: disputeID,
@@ -59,7 +73,7 @@ func (disputeUc *DefaultDisputeUsecase) AcceptDispute(disputeID string) error {
 				MerchantID: order.MerchantInfo.MerchantID,
 				OrderID: fmt.Sprintf("%s_dispute_%s", dispute.OrderID, dispute.ID),
 				RewardPercent: traffic.TraderRewardPercent,
-				PlatformFee: traffic.PlatformFee,
+				PlatformFee: storeFromTraffic.PlatformFee,
 				CommissionUsers: commissionUsers,
 			},
 		},

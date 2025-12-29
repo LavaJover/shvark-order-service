@@ -73,7 +73,7 @@ func (uc *DefaultOrderUsecase) FilterByTraffic(bankDetails []*domain.BankDetail,
 		if err != nil {
 			continue
 		}
-		if traffic.ActivityParams.AntifraudUnlocked && traffic.ActivityParams.ManuallyUnlocked && traffic.ActivityParams.MerchantUnlocked && traffic.ActivityParams.TraderUnlocked {
+		if traffic.ActivityParams.AntifraudUnlocked && traffic.ActivityParams.ManuallyUnlocked && traffic.ActivityParams.TraderUnlocked {
 			result = append(result, bankDetail)
 		}
 	}
@@ -212,6 +212,30 @@ func (uc *DefaultOrderUsecase) CheckIdempotency(clientID string) error {
 func (uc *DefaultOrderUsecase) CreatePayInOrder(createOrderInput *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) {
     start := time.Now()
     slog.Info("CreateOrder started")
+
+    // ===== ВАЛИДАЦИЯ И ПОЛУЧЕНИЕ STORE =====
+    if createOrderInput.StoreID == "" {
+        return nil, fmt.Errorf("store_id is required")
+    }
+
+    // Получаем стор по ID
+    store, err := uc.MerchantStoreUsecase.GetMerchantStoreByID(createOrderInput.StoreID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get merchant store: %w", err)
+    }
+
+    if store == nil {
+        return nil, fmt.Errorf("merchant store not found")
+    }
+    
+    if !store.IsActive {
+        return nil, fmt.Errorf("merchant store is not active")
+    }
+
+    // Проверяем лимиты стора
+    if err := uc.validateStoreLimits(store, createOrderInput.AmountFiat); err != nil {
+        return nil, err
+    }
     
     // check idempotency 
     if createOrderInput.ClientID != "" {
@@ -254,13 +278,24 @@ func (uc *DefaultOrderUsecase) CreatePayInOrder(createOrderInput *orderdto.Creat
 
     // Get trader reward percent and save to order
     t = time.Now()
-    traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(chosenBankDetail.TraderID, createOrderInput.MerchantID)
+    // ===== ПОЛУЧЕНИЕ ТРАФИКА С ДАННЫМИ STORE (JOIN) =====
+    trafficWithStore, err := uc.TrafficUsecase.GetTrafficWithStoreByTraderStore(
+        chosenBankDetail.TraderID, 
+        store.ID,
+    )
+
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to get traffic with store: %w", err)
     }
+    
+    if trafficWithStore == nil {
+        return nil, fmt.Errorf("traffic not found for trader %s and store %s", 
+            chosenBankDetail.TraderID, store.ID)
+    }
+    
+    traffic := &trafficWithStore.Traffic
+    storeFromTraffic := &trafficWithStore.Store
     slog.Info("GetTrafficByTraderMerchant done", "elapsed", time.Since(t))
-    traderReward := traffic.TraderRewardPercent
-    platformFee := traffic.PlatformFee
 
     order := domain.Order{
         ID:     uuid.New().String(),
@@ -269,6 +304,7 @@ func (uc *DefaultOrderUsecase) CreatePayInOrder(createOrderInput *orderdto.Creat
             MerchantID:     createOrderInput.MerchantID,
             MerchantOrderID: createOrderInput.MerchantOrderID,
             ClientID:       createOrderInput.ClientID,
+            StoreID: storeFromTraffic.ID,
         },
         AmountInfo: domain.AmountInfo{
             AmountFiat:   createOrderInput.AmountFiat,
@@ -280,10 +316,10 @@ func (uc *DefaultOrderUsecase) CreatePayInOrder(createOrderInput *orderdto.Creat
         Type:          domain.TypePayIn,
         Recalculated:  createOrderInput.Recalculated,
         Shuffle:       createOrderInput.Shuffle,
-        TraderReward:  traderReward,
-        PlatformFee:   platformFee,
+        TraderReward:  traffic.TraderRewardPercent,
+        PlatformFee:   storeFromTraffic.PlatformFee,
         CallbackUrl:   createOrderInput.CallbackUrl,
-        ExpiresAt:     time.Now().Add(traffic.BusinessParams.MerchantDealsDuration),
+        ExpiresAt:     time.Now().Add(20*time.Minute),
 
         RequisiteDetails: domain.RequisiteDetails{
             TraderID: chosenBankDetail.TraderID,
@@ -352,14 +388,33 @@ func (uc *DefaultOrderUsecase) CreatePayInOrder(createOrderInput *orderdto.Creat
 func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) {
     start := time.Now()
     slog.Info("CreateOrderAtomic started")
-    slog.Info("%s\n%s\n%f\n", createOrderInput.MerchantID, createOrderInput.PaymentSystem, createOrderInput.AmountFiat)
+
+    // ===== ВАЛИДАЦИЯ И ПОЛУЧЕНИЕ STORE =====
+    if createOrderInput.StoreID == "" {
+        return nil, fmt.Errorf("store_id is required")
+    }
+
+    // Получаем стор по ID
+    store, err := uc.MerchantStoreUsecase.GetMerchantStoreByID(createOrderInput.StoreID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get merchant store: %w", err)
+    }
+
+    if store == nil {
+        return nil, fmt.Errorf("merchant store not found")
+    }
+    
+    if !store.IsActive {
+        return nil, fmt.Errorf("merchant store is not active")
+    }
+
+    // Проверяем лимиты стора
+    if err := uc.validateStoreLimits(store, createOrderInput.AmountFiat); err != nil {
+        return nil, err
+    }
 
     // ===== НОВОЕ: Переменные для метрик =====
 	paymentSystem := createOrderInput.PaymentSystem
-	// merchantID := createOrderInput.MerchantID
-	// amountFiat := createOrderInput.AmountFiat
-	// currency := createOrderInput.Currency
-	// ===== КОНЕЦ НОВЫХ ПЕРЕМЕННЫХ =====
     
     // Начинаем транзакцию
     txRepo, err := uc.OrderRepo.BeginTx()
@@ -389,7 +444,11 @@ func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto
     bankDetailRepoWithTx := bankDetailRepo.WithTx(txRepo)
 
     // Поиск реквизитов в транзакции с блокировкой
-    bankDetails, err := uc.findEligibleBankDetailsInTx(bankDetailRepoWithTx, createOrderInput)
+    bankDetails, err := uc.findEligibleBankDetailsInTx(
+        bankDetailRepoWithTx, 
+        createOrderInput,
+        store,
+    )
     if err != nil {
         return nil, status.Error(codes.NotFound, "no eligible bank detail"+err.Error())
     }
@@ -405,6 +464,7 @@ func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto
                 MerchantID: createOrderInput.MerchantID,
                 MerchantOrderID: createOrderInput.MerchantOrderID,
                 ClientID: createOrderInput.ClientID,
+                StoreID: createOrderInput.StoreID,
             },
             AmountInfo: domain.AmountInfo{
                 AmountFiat: createOrderInput.AmountFiat,
@@ -452,14 +512,26 @@ func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto
         return nil, status.Errorf(codes.NotFound, "failed to pick best bank detail for order")
     }
 
-    // Получение трафика
-    traffic, err := uc.TrafficUsecase.GetTrafficByTraderMerchant(chosenBankDetail.TraderID, createOrderInput.MerchantID)
+    // ===== ПОЛУЧЕНИЕ ТРАФИКА С ДАННЫМИ STORE (JOIN) =====
+    trafficWithStore, err := uc.TrafficUsecase.GetTrafficWithStoreByTraderStore(
+        chosenBankDetail.TraderID, 
+        store.ID,
+    )
+
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to get traffic with store: %w", err)
     }
     
+    if trafficWithStore == nil {
+        return nil, fmt.Errorf("traffic not found for trader %s and store %s", 
+            chosenBankDetail.TraderID, store.ID)
+    }
+    
+    traffic := &trafficWithStore.Traffic
+    storeFromTraffic := &trafficWithStore.Store
+    
     traderReward := traffic.TraderRewardPercent
-    platformFee := traffic.PlatformFee
+    platformFee := storeFromTraffic.PlatformFee
 
     // Создаем заказ
     order := domain.Order{
@@ -469,6 +541,7 @@ func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto
             MerchantID:     createOrderInput.MerchantID,
             MerchantOrderID: createOrderInput.MerchantOrderID,
             ClientID:       createOrderInput.ClientID,
+            StoreID:        storeFromTraffic.ID,
         },
         AmountInfo: domain.AmountInfo{
             AmountFiat:   createOrderInput.AmountFiat,
@@ -483,7 +556,7 @@ func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto
         TraderReward:  traderReward,
         PlatformFee:   platformFee,
         CallbackUrl:   createOrderInput.CallbackUrl,
-        ExpiresAt:     time.Now().Add(traffic.BusinessParams.MerchantDealsDuration),
+        ExpiresAt:     time.Now().Add(storeFromTraffic.DealsDuration),
 
         RequisiteDetails: domain.RequisiteDetails{
             TraderID: chosenBankDetail.TraderID,
@@ -543,7 +616,11 @@ func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto
     }, nil
 }
 // Вспомогательные методы для атомарного создания
-func (uc *DefaultOrderUsecase) findEligibleBankDetailsInTx(bankDetailRepo domain.BankDetailRepository, input *orderdto.CreatePayInOrderInput) ([]*domain.BankDetail, error) {
+func (uc *DefaultOrderUsecase) findEligibleBankDetailsInTx(
+    bankDetailRepo domain.BankDetailRepository, 
+    input *orderdto.CreatePayInOrderInput,
+    store *domain.MerchantStore,
+) ([]*domain.BankDetail, error) {
 	t := time.Now()
 	searchDuration := 0.0
 	defer func() {
@@ -579,11 +656,16 @@ func (uc *DefaultOrderUsecase) findEligibleBankDetailsInTx(bankDetailRepo domain
 	uc.Metrics.RecordBankDetailsFound(input.MerchantParams.MerchantID, input.PaymentSystem)
 	uc.Metrics.RecordBankDetailsSearchDuration(input.MerchantParams.MerchantID, input.PaymentSystem, searchDuration, true)
 
-	// 0) Filter by Traffic
-	bankDetails, err = uc.FilterByTraffic(bankDetails, input.MerchantParams.MerchantID)
-	if err != nil {
-		return nil, err
-	}
+    // Фильтрация по трафику (только трейдеры, подключенные к этому стору)
+    bankDetails, err = uc.filterByStoreTraffic(bankDetails, store.ID)
+    if err != nil {
+        return nil, err
+    }
+    
+    if len(bankDetails) == 0 {
+        log.Printf("Filtered out by store traffic for store: %s", store.ID)
+        return []*domain.BankDetail{}, nil
+    }
 
 	if len(bankDetails) == 0 {
 		log.Printf("Отсеились по трафику\n")
@@ -650,4 +732,55 @@ func (uc *DefaultOrderUsecase) FindEligibleBankDetailsWithLock(input *orderdto.C
     }
 
     return bankDetails, nil
+}
+
+func (uc *DefaultOrderUsecase) validateStoreLimits(store *domain.MerchantStore, amountFiat float64) error {
+    // Проверка минимальной/максимальной суммы
+    if amountFiat < store.MinDealAmount {
+        return fmt.Errorf("amount %f is less than minimum deal amount %f for store %s", 
+            amountFiat, store.MinDealAmount, store.ID)
+    }
+    
+    if amountFiat > store.MaxDealAmount {
+        return fmt.Errorf("amount %f exceeds maximum deal amount %f for store %s", 
+            amountFiat, store.MaxDealAmount, store.ID)
+    }
+    
+    // Проверка дневного лимита (нужно реализовать подсчет сделок за день)
+    // dailyDealsCount, err := uc.OrderRepo.GetStoreDailyDealsCount(store.ID)
+    // if err != nil {
+    //     return fmt.Errorf("failed to get daily deals count: %w", err)
+    // }
+    
+    // if dailyDealsCount >= store.MaxDailyDeals {
+    //     return fmt.Errorf("store %s has reached daily limit of %d deals", 
+    //         store.ID, store.MaxDailyDeals)
+    // }
+    
+    return nil
+}
+
+// Новый метод фильтрации по трафику стора
+func (uc *DefaultOrderUsecase) filterByStoreTraffic(
+    bankDetails []*domain.BankDetail, 
+    storeID string,
+) ([]*domain.BankDetail, error) {
+    
+    filtered := make([]*domain.BankDetail, 0, len(bankDetails))
+    
+    for _, bd := range bankDetails {
+        // Проверяем, есть ли активный трафик для этого трейдера и стора
+        isActive, err := uc.TrafficUsecase.IsTrafficActive(bd.TraderID, storeID)
+        if err != nil {
+            log.Printf("Error checking traffic for trader %s and store %s: %v", 
+                bd.TraderID, storeID, err)
+            continue
+        }
+        
+        if isActive {
+            filtered = append(filtered, bd)
+        }
+    }
+    
+    return filtered, nil
 }
