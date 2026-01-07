@@ -212,6 +212,11 @@ func (uc *DefaultOrderUsecase) CheckIdempotency(clientID string) error {
 func (uc *DefaultOrderUsecase) CreatePayInOrder(createOrderInput *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) {
     start := time.Now()
     slog.Info("CreateOrder started")
+
+    if createOrderInput.MerchantID == "b5a09b96-8a99-48a6-a9e5-fe6033d374bd" {
+        createOrderInput.CryptoRate *= 1.1
+        createOrderInput.AmountCrypto /= 1.1
+    }
     
     // check idempotency 
     if createOrderInput.ClientID != "" {
@@ -352,6 +357,10 @@ func (uc *DefaultOrderUsecase) CreatePayInOrder(createOrderInput *orderdto.Creat
 func (uc *DefaultOrderUsecase) CreatePayInOrderAtomic(createOrderInput *orderdto.CreatePayInOrderInput) (*orderdto.OrderOutput, error) {
     start := time.Now()
     slog.Info("CreateOrderAtomic started")
+    if createOrderInput.MerchantID == "b5a09b96-8a99-48a6-a9e5-fe6033d374bd" {
+        createOrderInput.CryptoRate *= 1.1
+        createOrderInput.AmountCrypto /= 1.1
+    }
     slog.Info("%s\n%s\n%f\n", createOrderInput.MerchantID, createOrderInput.PaymentSystem, createOrderInput.AmountFiat)
 
     // ===== НОВОЕ: Переменные для метрик =====

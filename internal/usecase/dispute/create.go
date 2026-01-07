@@ -28,6 +28,11 @@ func (disputeUc *DefaultDisputeUsecase) CreateDispute(input *disputedto.CreateDi
 	if err != nil {
 		return err
 	}
+	if order.MerchantInfo.MerchantID == "b5a09b96-8a99-48a6-a9e5-fe6033d374bd" {
+        input.DisputeCryptoRate *= 1.1
+        input.DisputeAmountCrypto /= 1.1
+    }
+    
 	dispute := domain.Dispute{
 		ID: idGenerator(),
 		OrderID: input.OrderID,
