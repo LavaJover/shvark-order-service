@@ -63,7 +63,7 @@ func (h *TrafficHandler) EditTraffic(ctx context.Context, r *orderpb.EditTraffic
 		MerchantID: r.MerchantId,
 		TraderID: r.TraderId,
 		TraderReward: r.TraderReward,
-		TraderPriority: r.TraderProirity,
+		TraderPriority: r.TraderPriority,
 		PlatformFee: r.PlatformFee,
 		Enabled: r.Enabled,
 		Name: r.Name,
